@@ -1,35 +1,50 @@
-# Replay of a real /litreview run (radiology multi-agent review, 2026-09-05).
-# The review file, paper-graph DB, and stats below are unedited outputs of that run;
-# the multi-minute agent pipeline itself is not re-executed here.
+# A real, live /litreview run over a local PDF corpus, recorded inside the omp TUI.
+# Nothing is replayed: the slash command expands the pipeline prompt and the
+# scholar/screener/synthesizer agents execute on camera (played back at 5x; the
+# Hide block only sets up a scratch dir, env, and an advisor-off config overlay).
+#
+# Setup (once): the README quickstart — plugin installed and
+#   cp research/prompts/litreview.md ~/.omp/agent/prompts/
 # Render from the repo root: vhs assets/research/tapes/litreview.tape
+# The run length varies; the fixed sleep below is sized generously. If the tail
+# has too much idle, trim from the mp4 twin:
+#   ffmpeg -i assets/research/tapes/litreview.mp4 -t <end> -vf \
+#     "fps=8,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse" out.gif
+# (vhs Wait+Screen cannot see this TUI's screen once a turn is streaming, so the
+# run cannot be gated on output text — hence the fixed sleep.)
 Output assets/research/litreview.gif
+Output assets/research/tapes/litreview.mp4
 
-Set FontSize 15
-Set Width 1200
-Set Height 680
+Require omp
+Set FontSize 14
+Set Width 960
+Set Height 560
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 25ms
 Set Shell "bash"
+Set Framerate 8
+Set PlaybackSpeed 5.0
+Set WaitTimeout 2m
 
-Type `# omp -p "/litreview LLM agents for radiology report generation --criteria: include only multi-LLM-agent systems evaluated on radiology tasks; max 8 candidates"`
+Hide
+Type "rm -rf /tmp/rh-demo-tui && mkdir -p /tmp/rh-demo-tui && printf 'advisor:\n  enabled: false\n' > /tmp/rh-demo-tui/overlay.yml"
 Enter
-Sleep 1.5s
-
-Type "# scholar searched arXiv+OpenAlex, screener kept 5/8, synthesizer wrote the review:"
+Type "export RESEARCH_CORPUS_DIR=$HOME/Research/Papers PAPER_GRAPH_DB=/tmp/rh-demo-tui/papers.db"
 Enter
-Type "head -n 24 /tmp/rh-demo/review-llm-agents-radiology-report-generation.md"
+Type "omp --model sonnet --hide-thinking --auto-approve --config /tmp/rh-demo-tui/overlay.yml --session-dir /tmp/rh-demo-tui/.sessions --cwd /tmp/rh-demo-tui"
 Enter
-Sleep 4s
-Type "ls /tmp/rh-demo/papers/"
-Enter
-Sleep 1.5s
-
-Type "# every included paper landed in the second-brain graph:"
-Enter
-Type "PAPER_GRAPH_DB=/tmp/rh-demo/pg-e2e.db python3 research/skills/paper-graph/scripts/paper_graph.py stats"
+Wait+Screen@90s /Recent sessions|Tip:/
+Sleep 5s
+Type "/clear"
 Enter
 Sleep 2s
+Show
 
-Type "PAPER_GRAPH_DB=/tmp/rh-demo/pg-e2e.db python3 research/skills/paper-graph/scripts/paper_graph.py neighbors zeng2024radcouncil --depth 1"
+Sleep 1s
+Type "/litreview multi-agent LLM feedback and critique on clinical tasks --criteria: include only papers where two or more LLM agents interact via feedback, critique, or debate on a clinical task; corpus-only (offline, skip auto-edges); max 4 candidates; proceed with the include verdicts automatically and do not ask me any questions; keep the review under 400 words; end your final report with the line: GRAPH -> <N> papers / <E> edges (with the real stats numbers)"
+Sleep 4s
 Enter
-Sleep 3.5s
+
+# Real pipeline runtime (scholar scan, screener verdicts, synthesizer review,
+# graph adds) — recorded live, played back at 5x.
+Sleep 420s
