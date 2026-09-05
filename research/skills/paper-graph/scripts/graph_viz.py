@@ -102,8 +102,8 @@ function step() {
     const d = Math.sqrt(dx * dx + dy * dy) || 1;
     const f = 0.02 * (d - 120) * alpha;
     dx /= d; dy /= d;
-    l.a.vx += dx * f * d; l.a.vy += dy * f * d;
-    l.b.vx -= dx * f * d; l.b.vy -= dy * f * d;
+    l.a.vx += dx * f; l.a.vy += dy * f;
+    l.b.vx -= dx * f; l.b.vy -= dy * f;
   }
   for (const n of nodes) {
     n.vx += (W / 2 - n.x) * 0.002 * alpha;
