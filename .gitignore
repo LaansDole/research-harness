@@ -93,3 +93,6 @@ packages/coding-agent/bench/boot-baseline.json
 /.bazelrc.user
 
 .parity/
+
+# vhs mp4 twins emitted next to the demo tapes
+/assets/research/tapes/*.mp4

@@ -12,7 +12,7 @@
 
 ![litreview demo](assets/research/litreview.gif)
 
-One command searches arXiv and OpenAlex, screens candidates against your criteria, fetches open-access PDFs, writes a cited review, and files every included paper into a local knowledge graph.
+One command — typed in the interactive omp TUI, as recorded above — searches your sources (arXiv + OpenAlex, or a local PDF corpus via `RESEARCH_CORPUS_DIR` for fully offline runs like the demo), screens candidates against your criteria, fetches open-access PDFs, writes a cited review, and files every included paper into a local knowledge graph.
 
 ## Literature review pipeline
 
@@ -25,9 +25,9 @@ Three agents run the pipeline: `scholar` searches (arXiv + OpenAlex, keyless), `
 
 ## Second-brain paper graph
 
-![paper-graph CLI](assets/research/paper-graph.gif)
+![librarian agent growing the paper graph](assets/research/paper-graph.gif)
 
-Every reviewed paper lands in a local SQLite graph (`~/.research-harness/papers.db`) with typed edges: `cites`, `related`, `same-topic`. `auto-edges` resolves papers on OpenAlex and links them to the papers you already have via `referenced_works` — Connected-Papers style, offline-first.
+In the demo the `librarian` agent grows the graph live from the TUI: corpus scan, add/link with metadata, OpenAlex `auto-edges`, a connection query, and the HTML export. Every reviewed paper lands in a local SQLite graph (`~/.research-harness/papers.db`) with typed edges: `cites`, `related`, `same-topic`. `auto-edges` resolves papers on OpenAlex and links them to the papers you already have via `referenced_works` — Connected-Papers style, offline-first. The same operations are scriptable directly:
 
 ```sh
 pg="python3 research/skills/paper-graph/scripts/paper_graph.py"
