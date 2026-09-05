@@ -20,10 +20,10 @@ python3 scripts/paper_graph.py add --id medagents --title "MedAgents: Large Lang
 ```
 
 ```json
-{"id": "medagents", "title": "MedAgents: Large Language Models as Collaborators for Zero-shot Medical Reasoning", "authors": "Xiangru Tang, Anni Zou", "year": 2023, "venue": null, "doi": "10.48550/arXiv.2311.10537", "url": null, "abstract": null, "openalex_id": null, "added_at": "2026-09-05T02:39:09Z"}
+{"id": "medagents", "title": "MedAgents: Large Language Models as Collaborators for Zero-shot Medical Reasoning", "authors": "Xiangru Tang, Anni Zou", "year": 2023, "venue": null, "doi": "10.48550/arXiv.2311.10537", "url": null, "abstract": null, "openalex_id": null, "path": null, "added_at": "2026-09-05T02:39:09Z"}
 ```
 
-Re-adding the same `--id` updates it; fields omitted on the second add keep their existing values. Optional flags: `--authors --year --venue --doi --url --abstract`.
+Re-adding the same `--id` updates it; fields omitted on the second add keep their existing values. Optional flags: `--authors --year --venue --doi --url --abstract --path`. `--path` stores the absolute file path of a local-corpus PDF (records from `literature-search/scripts/local_library.py scan`), so local papers are first-class graph nodes.
 
 ### link — add a typed edge
 

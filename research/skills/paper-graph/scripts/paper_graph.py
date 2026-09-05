@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS papers (
     url TEXT,
     abstract TEXT,
     openalex_id TEXT,
+    path TEXT,
     added_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS edges (
@@ -59,10 +60,12 @@ def connect():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
-    # Migrate DBs created before openalex_id existed.
+    # Migrate DBs created before openalex_id/path existed.
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(papers)")}
     if "openalex_id" not in cols:
         conn.execute("ALTER TABLE papers ADD COLUMN openalex_id TEXT")
+    if "path" not in cols:
+        conn.execute("ALTER TABLE papers ADD COLUMN path TEXT")
     conn.commit()
     return conn
 
@@ -110,8 +113,8 @@ def norm_doi(doi):
 
 def cmd_add(conn, args):
     conn.execute(
-        """INSERT INTO papers (id, title, authors, year, venue, doi, url, abstract, added_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """INSERT INTO papers (id, title, authors, year, venue, doi, url, abstract, path, added_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              title = excluded.title,
              authors = COALESCE(excluded.authors, authors),
@@ -119,7 +122,8 @@ def cmd_add(conn, args):
              venue = COALESCE(excluded.venue, venue),
              doi = COALESCE(excluded.doi, doi),
              url = COALESCE(excluded.url, url),
-             abstract = COALESCE(excluded.abstract, abstract)""",
+             abstract = COALESCE(excluded.abstract, abstract),
+             path = COALESCE(excluded.path, path)""",
         (
             args.id,
             args.title,
@@ -129,6 +133,7 @@ def cmd_add(conn, args):
             args.doi,
             args.url,
             args.abstract,
+            args.path,
             now(),
         ),
     )
@@ -377,6 +382,7 @@ def main():
     p.add_argument("--doi")
     p.add_argument("--url")
     p.add_argument("--abstract")
+    p.add_argument("--path", help="local file path (local-corpus papers)")
     p.set_defaults(fn=cmd_add)
 
     p = sub.add_parser("link", help="add a typed edge (auto-creates stub nodes)")

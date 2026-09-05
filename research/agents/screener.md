@@ -36,7 +36,7 @@ Screen candidate papers against the caller's criteria using ONLY the provided ti
 
 <procedure>
 1. Read the screening methodology FIRST: locate the `literature-search` skill directory (the one holding its SKILL.md and `scripts/`) and read `references/SCREENING.md` relative to it — e.g. via `skill://literature-search/references/SCREENING.md`. Only if the skill cannot be located, glob for `**/literature-search/references/SCREENING.md`. Its rules govern every verdict.
-2. Input: screening criteria + a batch of candidates (id, title, abstract) + optional `stage` (`title-abstract` default, or `fulltext`).
+2. Input: screening criteria + a batch of candidates (id, title, abstract) + optional `stage` (`title-abstract` default, or `fulltext`). Local-corpus candidates (`source: local`) carry a `path` to the PDF; their full text is available via `literature-search/scripts/local_library.py extract --path <pdf>` (the caller supplies it, or read the `path` directly with the read tool), so `stage=fulltext` screening is always possible for them.
 3. If the criteria are free-form, restructure them into PCC (Population / Concept / Context, remainder under Other) before screening, and state the PCC criteria you screened against.
 4. Apply the criteria strictly to each candidate. Judge only what the provided text states — do not assume unstated methods or results.
 5. Missing or empty abstract at the title/abstract stage ⇒ `exclude` with rationale "no abstract".
