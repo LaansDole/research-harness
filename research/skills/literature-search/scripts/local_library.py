@@ -33,6 +33,25 @@ TITLE_SKIP_RE = re.compile(
     r"|licens|open access|preprint|research article|original article|citation:)"
     r"|.*\d+\s*\(\d{4}\)\s*\d+"
 )
+# Conference/journal banner lines stamped above the real title (IEEE/ACM/Springer
+# front matter, running heads). Searched anywhere in the line, unlike TITLE_SKIP_RE.
+BANNER_RE = re.compile(
+    r"(?i)(?:^\s*(?:19|20)\d{2}\b"
+    r"|international conference|conference on|conference \(|proceedings of"
+    r"|\bieee\b|\bacm\b|workshop on|symposium|international journal|journal of"
+    r"|journal homepage|contents lists|sciencedirect|authorized licensed use"
+    r"|isbn|issn|\bdoi\s*:|\u00a9|978-\d|peer[\s-]*review)"
+)
+# Affiliation vocabulary; a title candidate containing these is author front matter.
+AFFIL_RE = re.compile(
+    r"(?i)\b(university|institute|department|college|school of|laboratory"
+    r"|faculty|academy|hospital of|centers?|centres?|co\.,?\s*ltd)\b"
+)
+# A title ending in one of these (or trailing punctuation) is mid-sentence: the
+# next line is a wrapped continuation even if it looks like a name list.
+TITLE_CONNECTORS = frozenset(
+    "a an the and or of for with via to in on by from based using through toward towards".split()
+)
 
 
 def norm_ws(s):
@@ -225,9 +244,11 @@ def plausible_meta_title(title, stem):
     t = norm_ws(title or "")
     if len(t) <= 15:
         return False
+    if BANNER_RE.search(t):
+        return False
     if re.search(r"(?i)\.(pdf|dvi|docx?|tex|indd|eps|ps)\b", t):
         return False
-    if re.match(r"(?i)^(microsoft (word|powerpoint)|untitled|doi[:\s]|https?://|10\.\d{4,9}/)", t):
+    if re.match(r"(?i)^(microsoft (word|powerpoint)|untitled|type of the paper|doi[:\s]|https?://|10\.\d{4,9}/)", t):
         return False
     if slugify(t) == slugify(stem):
         return False  # metadata just echoes the filename
@@ -235,30 +256,113 @@ def plausible_meta_title(title, stem):
     return letters >= len(t) * 0.5
 
 
+def _authorish(line):
+    """Author/affiliation front matter: emails, superscript markers, name lists."""
+    if "@" in line or re.search(r"[*\u2020\u2021\u2217]|\(B\)", line):
+        return True
+    if AFFIL_RE.search(line):
+        return True
+    # Superscript-annotated names: "Kai Chen1 , Ji Qi2", "Chendan Liang1,3,4".
+    if re.search(r"[A-Za-z]\d", line) and re.search(r"\d\s*[,*\u2020\u2021\u2217]|\d$", line):
+        return True
+    return bool(re.search(r"\d\s*,\s*[\d*]|\d,\s+[A-Z]", line))
+
+
+def _name_word(w):
+    if re.fullmatch(r"[A-Z]\.", w):
+        return True  # middle initial, as in "Duy H. Ho"
+    return len(w) >= 2 and w[0].isupper() and w[1:].islower()
+
+
+def _looks_name_list(line):
+    words = line.replace(",", " ").split()
+    return 2 <= len(words) <= 4 and all(_name_word(w) for w in words)
+
+
+def _dangling(title):
+    """Title ends mid-phrase, so the next line must be a wrapped continuation."""
+    t = title.rstrip()
+    if t.endswith((":", ";", ",", "-", "\u2013", "\u2014")):
+        return True
+    last = re.sub(r"[^\w'-]+$", "", t.rsplit(None, 1)[-1]).lower() if t else ""
+    return last in TITLE_CONNECTORS
+
+
+def _join_wrapped_title(title, following):
+    """Append wrapped title lines until author/abstract front matter starts."""
+    if title.endswith((".", "?", "!")):
+        return title
+    for line in following:
+        if len(title) > 300:
+            break
+        forced = _dangling(title)
+        if ABSTRACT_RE.match(line) or STOP_RE.match(line):
+            break
+        if TITLE_SKIP_RE.match(line) or BANNER_RE.search(line):
+            break
+        if _authorish(line) or line.count(",") >= 2:
+            break
+        if not forced and _looks_name_list(line):
+            break  # "Daze Lu" — an author name, not a continuation
+        letters = sum(c.isalpha() for c in line)
+        if not (3 <= len(line) <= 200 and letters >= len(line) * 0.55):
+            break
+        title = f"{title} {line}"
+        if line.endswith((".", "?", "!")):
+            break
+    return title
+
+
 def title_from_text(text):
     lines = [norm_ws(line) for line in text.splitlines()]
     lines = [line for line in lines if line]
-    for line in lines[:40]:
+    for i, line in enumerate(lines[:40]):
         if ABSTRACT_RE.match(line):
             break  # ran past the title zone
-        if TITLE_SKIP_RE.match(line):
+        if TITLE_SKIP_RE.match(line) or BANNER_RE.search(line):
             continue
         if "journal" in line.lower() and len(line.split()) <= 6:
             continue  # journal name banner, not a title
+        if _authorish(line) or line.isupper():
+            continue  # authors, or an all-caps running head
         letters = sum(c.isalpha() for c in line)
         if (
             20 <= len(line) <= 250
-            and len(line.split()) >= 4
+            and len(line.split()) >= 3
             and letters >= len(line) * 0.55
-            and "@" not in line
         ):
-            return line
+            return _join_wrapped_title(line, lines[i + 1 : i + 4])
     return None
+
+
+def _titleish(t):
+    return (
+        len(t) >= 25
+        and len(t.split()) >= 4
+        and sum(c.isalpha() for c in t) >= len(t) * 0.5
+        and not BANNER_RE.search(t)
+    )
+
+
+def _prefer_filename_title(title, fname_title):
+    """These corpora often have descriptive filenames; use them over weak extractions."""
+    if not _titleish(fname_title):
+        return False
+    if BANNER_RE.search(title):
+        return True
+    if len(title) < 25 and len(fname_title) > len(title):
+        return True
+    # Extracted title is a truncated prefix/fragment of the descriptive filename.
+    ts, fs = slugify(title), slugify(fname_title)
+    return bool(ts) and len(fs) > len(ts) and ts in fs
 
 
 def title_from_filename(stem):
     t = re.sub(r"\s*\(\d+\)\s*$", "", stem)  # trailing " (1)" copy marker
-    return norm_ws(re.sub(r"[_\-]+", " ", t))
+    if "_" in t:
+        # Underscores are the word separator; hyphens are real ("Multi-Agent").
+        return norm_ws(t.replace("_", " "))
+    return norm_ws(re.sub(r"[\s\-]+", " ", t))
 
 
 STRUCTURED_START_RE = re.compile(
@@ -362,6 +466,9 @@ def scan_one(path):
             rec["title"] = meta["title"]
         else:
             rec["title"] = title_from_text(text) or title_from_filename(stem)
+        fname_title = title_from_filename(stem)
+        if _prefer_filename_title(rec["title"], fname_title):
+            rec["title"] = fname_title
         rec["authors"] = meta.get("author")
         rec["year"] = year_from(meta, text)
         rec["doi"] = doi_from_text(text)
