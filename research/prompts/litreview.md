@@ -12,9 +12,8 @@ Pipeline — execute in order:
 4. **Present verdicts.** Show a table: title, verdict, rationale. Interactive: ask the user to confirm/adjust includes. Headless/-p mode: proceed with the `include` verdicts automatically (treat `maybe` as exclude).
 5. **Fetch OA PDFs.** For each included paper with a non-null `pdf_url`/`oa_pdf_url`, run `python3 ~/Projects/research-harness/research/skills/literature-search/scripts/fetch_paper.py --url <url> --out ./papers/<id or slug>.pdf` (if that path is absent, glob for `**/literature-search/scripts/fetch_paper.py`). Skip null URLs — never substitute shadow-library sources. A failed fetch is noted, not fatal.
 6. **Synthesize.** Spawn the `synthesizer` agent via the task tool with the research question, the criteria and counts, the included papers' metadata, and the local paths of any fetched PDFs. It writes `review-<slug>.md` in the cwd.
-7. **Report.** Print the review file path, include/exclude/maybe counts, and how many PDFs were fetched.
-8. **Grow the paper graph.** Locate `paper_graph.py` (try `~/Projects/research-harness/research/skills/paper-graph/scripts/paper_graph.py`, else glob for `**/paper-graph/scripts/paper_graph.py`). Then, for the INCLUDED papers only:
+7. **Grow the paper graph.** Locate `paper_graph.py` (try `~/Projects/research-harness/research/skills/paper-graph/scripts/paper_graph.py`, else glob for `**/paper-graph/scripts/paper_graph.py`). Then, for the INCLUDED papers only:
    - `add` each with a stable slug id and all known metadata (`--title --authors --year --venue --doi --url --abstract`).
    - `link` every pair of included papers with `--type same-topic --note "<review slug>"` (they co-appear in this review).
    - Run `auto-edges <id>` for each added paper to pull citation edges from OpenAlex; a failed or empty run is noted, not fatal.
-   - Print the output of `stats` so the user sees the graph grow.
+8. **Report.** This step is MANDATORY and always last. Print the review file path, include/exclude/maybe counts, how many PDFs were fetched, and the output of `paper_graph.py stats` so the user sees the graph grow.
