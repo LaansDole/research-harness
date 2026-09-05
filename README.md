@@ -10,7 +10,9 @@
   <img src="https://img.shields.io/badge/APIs-arXiv%20%2B%20OpenAlex%20(keyless)-ffa94d?style=flat&colorA=222222" alt="keyless APIs">
 </p>
 
-![litreview demo](assets/research/litreview.gif)
+![omp TUI: the final turn of a live /litreview run over a 49-file local PDF corpus. The scholar, screener, and synthesizer agents have finished, and the results table reads: Candidates screened 0 -> 4 (from 49-file local corpus scan), Verdicts 4 include / 0 exclude / 0 maybe, Review file review-multi-agent-llm-clinical-feedback.md (~330-word body + refs), PDFs fetched 0 (local corpus, no fetch needed), Paper graph 0 papers / 0 edges -> 4 papers / 6 same-topic edges. The report ends with the requested stats line GRAPH -> 4 papers / 6 edges, and the status bar shows the real session: Sonnet 5, 6.2%/1M context, $0.37.](assets/research/litreview-poster.png)
+
+_[Watch the capture ↗](assets/research/litreview.mp4)_
 
 One command — typed in the interactive omp TUI, as recorded above — searches your sources (arXiv + OpenAlex, or a local PDF corpus via `RESEARCH_CORPUS_DIR` for fully offline runs like the demo), screens candidates against your criteria, fetches open-access PDFs, writes a cited review, and files every included paper into a local knowledge graph.
 
@@ -25,7 +27,9 @@ Three agents run the pipeline: `scholar` searches (arXiv + OpenAlex, keyless), `
 
 ## Second-brain paper graph
 
-![librarian agent growing the paper graph](assets/research/paper-graph.gif)
+![omp TUI: the librarian agent has finished growing the paper graph from the local corpus. The before/after table reads: Papers in graph 0 -> 3 (sem-agents, medcoact, sr-mapr), Metadata none -> full (title/authors/year/venue/DOI/OpenAlex ID/abstract/path) per paper, Edges 0 -> 3 same-topic (fully connected triangle), OpenAlex citation edges 0 -> 0 with each paper resolved (27/9/10 references respectively) but none among these 3 nodes, Viz export -> /tmp/rh-demo-graph/graph.html (offline, interactive). Above it, the librarian answers what connects the first two papers: a direct same-topic edge — both do integrated diagnosis+treatment via specialized multi-agent roles with reflection/confidence mechanisms.](assets/research/paper-graph-poster.png)
+
+_[Watch the capture ↗](assets/research/paper-graph.mp4)_
 
 In the demo the `librarian` agent grows the graph live from the TUI: corpus scan, add/link with metadata, OpenAlex `auto-edges`, a connection query, and the HTML export. Every reviewed paper lands in a local SQLite graph (`~/.research-harness/papers.db`) with typed edges: `cites`, `related`, `same-topic`. `auto-edges` resolves papers on OpenAlex and links them to the papers you already have via `referenced_works` — Connected-Papers style, offline-first. The same operations are scriptable directly:
 

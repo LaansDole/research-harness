@@ -1,24 +1,26 @@
 # The librarian agent growing the second-brain paper graph, live in the omp TUI.
 # Nothing is replayed: corpus scan, add/link, auto-edges, connection query, and
-# HTML export all execute on camera (played back at 4x; the Hide block only sets
-# up a scratch dir, env, and an advisor-off config overlay).
+# HTML export all execute on camera at real-time pacing (the Hide block only
+# sets up a scratch dir, env, and an advisor-off config overlay).
 #
 # Render from the repo root: vhs assets/research/tapes/paper-graph.tape
+# The fixed sleep is sized generously, so the raw capture ends with idle tail.
+# Trim the idle air afterwards (keep 1x pacing):
+#   ffmpeg -i assets/research/paper-graph.mp4 -ss <start> -to <end> \
+#     -c:v libx264 -crf 26 -pix_fmt yuv420p trimmed.mp4
 # (vhs Wait+Screen cannot see this TUI's screen once a turn is streaming, so the
-# run cannot be gated on output text — hence the fixed sleep. Trim from the mp4
-# twin if the tail idles too long.)
-Output assets/research/paper-graph.gif
-Output assets/research/tapes/paper-graph.mp4
+# run cannot be gated on output text — hence the fixed sleep.)
+Output assets/research/paper-graph.mp4
 
 Require omp
-Set FontSize 14
-Set Width 960
-Set Height 560
+Set FontSize 18
+Set Width 1600
+Set Height 1000
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 25ms
 Set Shell "bash"
-Set Framerate 8
-Set PlaybackSpeed 4.0
+Set Framerate 12
+Set PlaybackSpeed 1.0
 Set WaitTimeout 2m
 
 Hide
@@ -41,5 +43,5 @@ Sleep 4s
 Enter
 
 # Real librarian runtime (corpus scan, graph writes, OpenAlex lookups, export)
-# — recorded live, played back at 4x.
+# — recorded live at real-time pacing.
 Sleep 360s

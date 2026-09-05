@@ -1,29 +1,28 @@
 # A real, live /litreview run over a local PDF corpus, recorded inside the omp TUI.
 # Nothing is replayed: the slash command expands the pipeline prompt and the
-# scholar/screener/synthesizer agents execute on camera (played back at 5x; the
+# scholar/screener/synthesizer agents execute on camera at real-time pacing (the
 # Hide block only sets up a scratch dir, env, and an advisor-off config overlay).
 #
 # Setup (once): the README quickstart — plugin installed and
 #   cp research/prompts/litreview.md ~/.omp/agent/prompts/
 # Render from the repo root: vhs assets/research/tapes/litreview.tape
-# The run length varies; the fixed sleep below is sized generously. If the tail
-# has too much idle, trim from the mp4 twin:
-#   ffmpeg -i assets/research/tapes/litreview.mp4 -t <end> -vf \
-#     "fps=8,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse" out.gif
+# The run length varies; the fixed sleep below is sized generously, so the raw
+# capture ends with idle tail. Trim the idle air afterwards (keep 1x pacing):
+#   ffmpeg -i assets/research/litreview.mp4 -ss <start> -to <end> \
+#     -c:v libx264 -crf 26 -pix_fmt yuv420p trimmed.mp4
 # (vhs Wait+Screen cannot see this TUI's screen once a turn is streaming, so the
 # run cannot be gated on output text — hence the fixed sleep.)
-Output assets/research/litreview.gif
-Output assets/research/tapes/litreview.mp4
+Output assets/research/litreview.mp4
 
 Require omp
-Set FontSize 14
-Set Width 960
-Set Height 560
+Set FontSize 18
+Set Width 1600
+Set Height 1000
 Set Theme "Catppuccin Mocha"
 Set TypingSpeed 25ms
 Set Shell "bash"
-Set Framerate 8
-Set PlaybackSpeed 5.0
+Set Framerate 12
+Set PlaybackSpeed 1.0
 Set WaitTimeout 2m
 
 Hide
@@ -46,5 +45,5 @@ Sleep 4s
 Enter
 
 # Real pipeline runtime (scholar scan, screener verdicts, synthesizer review,
-# graph adds) — recorded live, played back at 5x.
+# graph adds) — recorded live at real-time pacing.
 Sleep 420s
