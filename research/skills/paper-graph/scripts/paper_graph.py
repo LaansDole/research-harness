@@ -7,9 +7,17 @@ import sqlite3
 import sys
 import urllib.error
 import urllib.parse
-import urllib.request
 from collections import deque
 from datetime import datetime, timezone
+
+sys.path.insert(
+    0,
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..", "..", "literature-search", "scripts",
+    ),
+)
+import _http
 
 UA = "research-harness/0.2 (personal research tool)"
 EDGE_TYPES = ("cites", "related", "same-topic")
@@ -240,9 +248,7 @@ def openalex_get(path_or_url):
     url = path_or_url
     if not url.startswith("http"):
         url = "https://api.openalex.org" + url
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        return json.load(resp)
+    return json.loads(_http.fetch(url, UA, timeout=30))
 
 
 def resolve_openalex(paper):

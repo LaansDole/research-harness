@@ -53,9 +53,15 @@ python3 scripts/fetch_paper.py --url https://arxiv.org/pdf/2308.08155 --out pape
 
 Downloads with an honest UA header, follows redirects, requires HTTP 200 and >10KB, creates parent dirs, prints `saved <path> (<n> bytes)`. Nonzero exit + stderr message otherwise. Only pass open-access URLs (`pdf_url` from arXiv, `oa_pdf_url` from OpenAlex); skip records where the URL is null.
 
+## Rate limiting & retries
+
+All network calls share `scripts/_http.py`: up to 4 attempts on HTTP 429/500/502/503/504 and on timeouts, exponential backoff 3s/9s/27s (capped 60s), honoring a numeric `Retry-After` header. Retry notices go to stderr; stdout stays pure JSON lines. `arxiv_search.py` additionally enforces >=3s between arXiv requests in one process (arXiv's guidance is ~1 request per 3s).
+
+Set `OPENALEX_MAILTO=you@example.org` to join OpenAlex's polite pool (appends `mailto:` to the User-Agent). Unset means no mailto is sent.
+
 ## Failure modes
 
-- HTTP failure (network down, API 5xx): the script exits 1 with a stderr message. Retry once; if it still fails, note the outage and continue with the other source.
+- HTTP failure (network down, rate limit, API 5xx): retried automatically as above; after exhausting retries the script exits 1 with a stderr message naming the status code. Note the outage and continue with the other source.
 - Empty result set: valid — the query matched nothing; broaden the query.
 - fetch_paper "response too small": the URL served an HTML landing page, not a PDF; skip it.
 

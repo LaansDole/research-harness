@@ -2,12 +2,16 @@
 """Search the arXiv Atom export API (keyless). One JSON object per line."""
 import argparse
 import json
+import os
 import re
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _http
 
 ATOM = "{http://www.w3.org/2005/Atom}"
 UA = "research-harness/0.1 (personal research tool)"
@@ -27,7 +31,7 @@ def main():
     search_query = f"all:{args.query}"
     if args.category:
         search_query += f" AND cat:{args.category}"
-    url = "http://export.arxiv.org/api/query?" + urllib.parse.urlencode(
+    url = "https://export.arxiv.org/api/query?" + urllib.parse.urlencode(
         {
             "search_query": search_query,
             "start": 0,
@@ -36,12 +40,14 @@ def main():
         }
     )
 
-    req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            body = resp.read()
+        # arXiv asks for ~1 request per 3s; min_interval enforces it in-process.
+        body = _http.fetch(url, UA, timeout=30, min_interval=3.0)
+    except urllib.error.HTTPError as e:
+        print(f"arxiv_search: HTTP {e.code} after retries: {e}", file=sys.stderr)
+        sys.exit(1)
     except (urllib.error.URLError, OSError) as e:
-        print(f"arxiv_search: HTTP failure: {e}", file=sys.stderr)
+        print(f"arxiv_search: HTTP failure after retries: {e}", file=sys.stderr)
         sys.exit(1)
 
     root = ET.fromstring(body)

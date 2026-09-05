@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Download an open-access PDF. Requires HTTP 200 and >10KB."""
 import argparse
+import os
 import pathlib
 import sys
 import urllib.error
-import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _http
 
 UA = "research-harness/0.1 (personal research tool)"
 MIN_BYTES = 10 * 1024
@@ -16,16 +19,14 @@ def main():
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
-    req = urllib.request.Request(args.url, headers={"User-Agent": UA})
     try:
         # urlopen follows redirects by default.
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            if resp.status != 200:
-                print(f"fetch_paper: HTTP {resp.status} for {args.url}", file=sys.stderr)
-                sys.exit(1)
-            body = resp.read()
+        body = _http.fetch(args.url, UA, timeout=60)
+    except urllib.error.HTTPError as e:
+        print(f"fetch_paper: HTTP {e.code} after retries for {args.url}", file=sys.stderr)
+        sys.exit(1)
     except (urllib.error.URLError, OSError) as e:
-        print(f"fetch_paper: HTTP failure: {e}", file=sys.stderr)
+        print(f"fetch_paper: HTTP failure after retries: {e}", file=sys.stderr)
         sys.exit(1)
 
     if len(body) <= MIN_BYTES:
