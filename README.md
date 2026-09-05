@@ -16,8 +16,6 @@ One command searches arXiv and OpenAlex, screens candidates against your criteri
 
 ## Literature review pipeline
 
-![litreview](assets/research/litreview.gif)
-
 ```
 /litreview LLM agents for radiology report generation — criteria: include only
 multi-LLM-agent systems evaluated on radiology tasks; max 8 candidates
