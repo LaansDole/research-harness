@@ -90,7 +90,7 @@ def step_unpaywall(doi, title, url):
         print("fetch_paper: skipping Unpaywall — set UNPAYWALL_EMAIL (or OPENALEX_MAILTO); "
               "their API requires a real contact email and this tool never sends a fake one",
               file=sys.stderr)
-        return None
+        return {"skipped": "no contact email configured"}
     data = get_json(f"https://api.unpaywall.org/v2/{urllib.parse.quote(doi, safe='/')}"
                     f"?email={urllib.parse.quote(email)}")
     if not data:
@@ -191,6 +191,9 @@ def cmd_resolve(args):
             continue
         if not hit:
             result["tried"].append({"step": name, "outcome": "miss"})
+            continue
+        if hit.get("skipped"):
+            result["tried"].append({"step": name, "outcome": f"skipped: {hit['skipped']}"})
             continue
         if hit.get("oa_status") and not result["oa_status"]:
             result["oa_status"] = hit["oa_status"]

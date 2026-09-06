@@ -196,9 +196,13 @@ def iter_jsonl(path):
             if not rec.get("title"):
                 yield None, "no title", label
                 continue
+            authors = rec.get("authors") or []
+            if isinstance(authors, str):
+                # local_library scan emits authors as one "; "-joined string.
+                authors = [a.strip() for a in authors.split(";") if a.strip()]
             yield refs_io.make_record(
                 title=rec.get("title"),
-                authors=rec.get("authors") or [],
+                authors=authors,
                 year=rec.get("year"),
                 venue=rec.get("venue") or "",
                 doi=rec.get("doi") or "",
