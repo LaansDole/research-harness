@@ -94,7 +94,7 @@ Per-project PRISMA-ScR review store: `<project>/review.db` (SQLite). One row per
 python3 scripts/review.py --project SLUG import --path refs.ris --database PubMed   # also .bib/.csv/.jsonl
 python3 scripts/review.py --project SLUG dedupe
 python3 scripts/review.py --project SLUG next --stage ta --n 10
-python3 scripts/review.py --project SLUG verdict --id X --stage ta --verdict exclude --rationale "Population: ..." --reason "wrong population" --confidence 0.9
+python3 scripts/review.py --project SLUG verdict --id X --stage ta --verdict exclude --rationale "Population: ..." --reason "wrong population" --confidence HIGH
 python3 scripts/review.py --project SLUG set-state --id X --state fulltext_retrieved --pdf-path p.pdf --oa-source openalex --oa-status gold
 python3 scripts/review.py --project SLUG get --id X
 python3 scripts/review.py --project SLUG list --state included
@@ -103,7 +103,7 @@ python3 scripts/review.py --project SLUG stats
 
 - `import` reuses the `refs_io` parsers (or reads shared-shape JSONL); rows land in state `identified` with the source database recorded (PRISMA needs per-source counts). Idempotent: the unique key is (source_db, DOI-or-normalized-title), so re-importing a file adds nothing. The same paper from a DIFFERENT database imports as a new row on purpose — that is what `dedupe` counts.
 - `dedupe` matches by normalized DOI, then normalized title; losers become `duplicate` with `duplicate_of` pointing at the survivor, and the survivor inherits missing doi/url/abstract/pdf. Screened records are never demoted. Prints one JSON merge line each; idempotent.
-- `verdict` records a screening decision and moves the state. Stage `ta`: include/exclude/maybe (`maybe` leaves the state unchanged so a human can resolve it). Stage `ft`: **binary** — `maybe` exits 1 per SCREENING.md; a verdict straight from `screened_included` records the implied `fulltext_sought`/`fulltext_retrieved` hops in history. `--reason` is the primary exclusion reason used in PRISMA reason breakdowns.
+- `verdict` records a screening decision and moves the state. Stage `ta`: include/exclude/maybe (`maybe` leaves the state unchanged so a human can resolve it). Stage `ft`: **binary** — `maybe` exits 1 per SCREENING.md; a verdict straight from `screened_included` records the implied `fulltext_sought`/`fulltext_retrieved` hops in history. `--reason` is the primary exclusion reason used in PRISMA reason breakdowns. `--confidence` takes the SCREENING.md labels HIGH | MEDIUM | LOW (case-insensitive; stored uppercase); a legacy 0.0-1.0 float is accepted and mapped to a label (>=0.8 HIGH, >=0.5 MEDIUM, else LOW).
 - `next` prints the next unscreened records as JSON lines (`ta`: identified without a verdict; `ft`: screened-in/retrieved without one) so an agent can walk the queue resumably.
 - `set-state` is the retrieval bookkeeping entry point (validates the state machine; also sets `--pdf-path/--oa-status/--oa-source/--reason`). `stats` prints all state/source/reason counts as one JSON object.
 

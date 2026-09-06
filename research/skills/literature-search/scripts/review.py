@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS records (
   state TEXT NOT NULL DEFAULT 'identified',
   ta_verdict TEXT,
   ta_rationale TEXT,
-  ta_confidence REAL,
+  ta_confidence TEXT,
   ft_verdict TEXT,
   ft_rationale TEXT,
   exclusion_reason TEXT,
@@ -99,6 +99,27 @@ def now():
 
 def norm_title(title):
     return re.sub(r"[^a-z0-9]", "", (title or "").lower())
+
+
+def parse_confidence(value):
+    """Confidence label per SCREENING.md: HIGH | MEDIUM | LOW (case-insensitive).
+    A 0.0-1.0 float is accepted for backward compatibility and mapped to a label
+    (>=0.8 HIGH, >=0.5 MEDIUM, else LOW); the label is the canonical form."""
+    v = value.strip().upper()
+    if v in ("HIGH", "MEDIUM", "LOW"):
+        return v
+    try:
+        f = float(v)
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            f"invalid confidence {value!r}: expected HIGH, MEDIUM or LOW"
+            " (case-insensitive), or a 0.0-1.0 float"
+        )
+    if not 0.0 <= f <= 1.0:
+        raise argparse.ArgumentTypeError(
+            f"invalid confidence {value!r}: float form must be between 0.0 and 1.0"
+        )
+    return "HIGH" if f >= 0.8 else "MEDIUM" if f >= 0.5 else "LOW"
 
 
 def project_dir(arg):
@@ -433,7 +454,9 @@ def main():
     p.add_argument("--stage", required=True, choices=["ta", "ft"])
     p.add_argument("--verdict", required=True, choices=["include", "exclude", "maybe"])
     p.add_argument("--rationale", required=True)
-    p.add_argument("--confidence", type=float)
+    p.add_argument("--confidence", type=parse_confidence,
+                   help="HIGH | MEDIUM | LOW (case-insensitive); a 0.0-1.0 float is"
+                        " accepted and mapped to a label")
     p.add_argument("--reason", help="primary exclusion reason (default: the rationale)")
     p.set_defaults(func=cmd_verdict)
 

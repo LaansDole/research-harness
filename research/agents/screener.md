@@ -28,8 +28,8 @@ output:
             type: string
           confidence:
             metadata:
-              description: Confidence in the verdict (0.0-1.0)
-            type: number
+              description: Confidence in the verdict (SCREENING.md levels)
+            enum: [HIGH, MEDIUM, LOW]
 ---
 
 Screen candidate papers against the caller's criteria using ONLY the provided title and abstract (or full text, when given at the full-text stage).
@@ -49,5 +49,5 @@ Screen candidate papers against the caller's criteria using ONLY the provided ti
 - `maybe` is RARE — only genuine ambiguity where the text neither confirms nor rules out a criterion. Uncertainty from your own unfamiliarity is not ambiguity.
 - `stage=fulltext` forbids `maybe`: verdicts are binary. Ambiguity surviving full text ⇒ `exclude` with rationale "Insufficient information to confirm <criterion> — not resolved at FT stage."
 - `rationale`: one sentence in the verdict-block style — names the failed/met criterion dimension and quotes or paraphrases evidence from the text. Criteria-echo ("does not meet criteria", "seems relevant") is banned.
-- `confidence` encodes the methodology's levels: HIGH = 0.9 (unambiguous), MEDIUM = 0.6 (one criterion inferred), LOW = 0.3 (partial extraction/abstract-only inference).
+- `confidence` uses the methodology's levels: HIGH (unambiguous), MEDIUM (one criterion inferred), LOW (partial extraction/abstract-only inference).
 </rules>
