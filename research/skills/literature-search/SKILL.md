@@ -5,7 +5,7 @@ description: "Use when searching academic literature. Search arXiv/OpenAlex, fet
 
 # literature-search
 
-Four python3-stdlib CLI scripts under `scripts/` (relative to this SKILL.md). Three sources are first-class: arXiv (Atom export API), OpenAlex (api.openalex.org), and a **local PDF corpus** (no network). All emit one JSON object per line on stdout; errors go to stderr with exit 1.
+Six python3-stdlib CLI scripts under `scripts/` (relative to this SKILL.md). Three sources are first-class: arXiv (Atom export API), OpenAlex (api.openalex.org), and a **local PDF corpus** (no network); RIS/BibTeX/CSV exports from manually searched databases come in via `refs_io.py`. All emit one JSON object per line on stdout; errors go to stderr with exit 1.
 
 Two reference documents under `references/` (relative to this SKILL.md): `SCREENING.md` (PCC criteria + verdict methodology) and `DATABASES.md` (database selection + per-database search syntax: MeSH vs Emtree vs field tags, truncation, proximity, worked multi-database example). Database recommendations and search strings MUST come from `DATABASES.md`; resolve it relative to the skill directory, and record every executed search (database, exact string, date, hits) in the project's `searches/` directory.
 
@@ -68,6 +68,35 @@ python3 scripts/local_library.py extract --path ~/Research/Papers/paper.pdf [--m
 - `extract --path FILE [--max-chars N]`: full extracted text of one PDF (default cap 200000 chars) as `{"source":"local", "path", "chars", "truncated", "text"}` — use for full-text (`stage=fulltext`) screening.
 
 **Extraction chain** — first that works: `pdftotext` (poppler) if on PATH, then PyMuPDF (`import fitz`) if importable, then a built-in stdlib fallback that reads the PDF `/Title` metadata and returns an empty abstract. Optional tools are detected, never required. A scan NEVER crashes on a bad PDF: each file gets a 60s subprocess timeout, and an unparseable file still emits its record with whatever fields resolved plus an `"extract_error"` field.
+
+## refs_io.py
+
+Import reference exports from databases the harness cannot query (PubMed, Embase, Scopus, ...); export records for Covidence/Zotero/EndNote. No network.
+
+```sh
+python3 scripts/refs_io.py import --path refs.ris            # also .bib, .csv
+python3 scripts/refs_io.py export --format ris --records recs.jsonl --out out.ris
+python3 scripts/refs_io.py export --format bib --from-graph --out out.bib   # from the paper graph ($PAPER_GRAPH_DB or --db)
+```
+
+- `import` emits the shared record shape: `{"source":"import", "id", "doi", "title", "authors":[...], "year", "venue", "abstract", "url"}` — `id` is the normalized DOI when present, else a title slug. Format from extension, else content sniffing. Handles RIS tags TY/TI/T1/AU/PY/JO/JF/T2/DO/AB/N2/UR, BibTeX entry types with nested-brace values, and CSV with aliased headers. A malformed entry NEVER crashes the run: it is skipped with a stderr note and a final `refs_io: imported N, skipped M` summary.
+- `export` reads JSON-line records from `--records`/stdin or `--from-graph`, writes RIS or BibTeX, prints `{"exported", "format", "records"}`.
+
+## prisma.py
+
+PRISMA count ledger per project: maintains `<project>/prisma.json` (`--project DIR`, else `RESEARCH_PROJECT_DIR`, else cwd).
+
+```sh
+python3 scripts/prisma.py --project DIR identify --database pubmed --count 120
+python3 scripts/prisma.py --project DIR dedupe --records all.jsonl > deduped.jsonl   # or: dedupe --removed N
+python3 scripts/prisma.py --project DIR exclude --reason "wrong population" --count 100
+python3 scripts/prisma.py --project DIR include --count 12
+python3 scripts/prisma.py --project DIR show
+```
+
+- `dedupe --records` drops duplicates by normalized DOI, then normalized title (lowercase, non-alphanumerics stripped), prints the kept records, and sets `duplicates_removed`.
+- `show` prints the PRISMA flow block (identified per database, duplicates removed, screened, excluded per reason, included) with derived arithmetic, a `WARNING` line when `included + excluded != screened`, and one machine-readable JSON summary line.
+- Every mutating subcommand rewrites `prisma.json` and echoes it as one JSON line.
 
 ## Rate limiting & retries
 
