@@ -179,11 +179,40 @@ def hop(con, row, path, note=None, **fields):
 # ---------------- subcommands ----------------
 
 
+def iter_jsonl(path):
+    """Yield records from a JSON-lines file in the shared record shape
+    (e.g. /find output), same (record, error, label) contract as refs_io."""
+    with open(path, encoding="utf-8") as fh:
+        for i, line in enumerate(fh, 1):
+            line = line.strip()
+            if not line:
+                continue
+            label = f"JSONL line {i}"
+            try:
+                rec = json.loads(line)
+            except ValueError as e:
+                yield None, str(e), label
+                continue
+            if not rec.get("title"):
+                yield None, "no title", label
+                continue
+            yield refs_io.make_record(
+                title=rec.get("title"),
+                authors=rec.get("authors") or [],
+                year=rec.get("year"),
+                venue=rec.get("venue") or "",
+                doi=rec.get("doi") or "",
+                abstract=rec.get("abstract") or "",
+                url=rec.get("url") or rec.get("pdf_url") or rec.get("oa_pdf_url") or "",
+            ), None, label
+
+
 def cmd_import(con, args):
     source_db = args.database or os.path.splitext(os.path.basename(args.path))[0]
     added = existing = skipped = 0
+    reader = iter_jsonl if args.path.lower().endswith(".jsonl") else refs_io.iter_import
     try:
-        for rec, err, label in refs_io.iter_import(args.path):
+        for rec, err, label in reader(args.path):
             if err:
                 skipped += 1
                 print(f"review: skipped {label}: {err}", file=sys.stderr)

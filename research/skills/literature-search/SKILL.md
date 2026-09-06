@@ -5,7 +5,7 @@ description: "Use when searching academic literature. Search arXiv/OpenAlex, fet
 
 # literature-search
 
-Six python3-stdlib CLI scripts under `scripts/` (relative to this SKILL.md). Three sources are first-class: arXiv (Atom export API), OpenAlex (api.openalex.org), and a **local PDF corpus** (no network); RIS/BibTeX/CSV exports from manually searched databases come in via `refs_io.py`. All emit one JSON object per line on stdout; errors go to stderr with exit 1.
+Eight python3-stdlib CLI scripts under `scripts/` (relative to this SKILL.md). Three sources are first-class: arXiv (Atom export API), OpenAlex (api.openalex.org), and a **local PDF corpus** (no network); RIS/BibTeX/CSV exports from manually searched databases come in via `refs_io.py` or land directly in the per-project review store via `review.py import`. Search scripts emit one JSON object per line on stdout; errors go to stderr with exit 1.
 
 Two reference documents under `references/` (relative to this SKILL.md): `SCREENING.md` (PCC criteria + verdict methodology) and `DATABASES.md` (database selection + per-database search syntax: MeSH vs Emtree vs field tags, truncation, proximity, worked multi-database example). Database recommendations and search strings MUST come from `DATABASES.md`; resolve it relative to the skill directory, and record every executed search (database, exact string, date, hits) in the project's `searches/` directory.
 
@@ -50,10 +50,13 @@ Sample line:
 ## fetch_paper.py
 
 ```sh
-python3 scripts/fetch_paper.py --url https://arxiv.org/pdf/2308.08155 --out papers/autogen.pdf
+python3 scripts/fetch_paper.py fetch --url https://arxiv.org/pdf/2308.08155 --out papers/autogen.pdf
+python3 scripts/fetch_paper.py resolve --doi 10.1234/example [--fetch --out papers/x.pdf]
+python3 scripts/fetch_paper.py resolve --id <record-id> --project <slug> --fetch
 ```
 
-Downloads with an honest UA header, follows redirects, requires HTTP 200 and >10KB, creates parent dirs, prints `saved <path> (<n> bytes)`. Nonzero exit + stderr message otherwise. Only pass open-access URLs (`pdf_url` from arXiv, `oa_pdf_url` from OpenAlex); skip records where the URL is null.
+- `fetch` (also the default when invoked with bare `--url`/`--out`): downloads with an honest UA header, follows redirects, requires HTTP 200 and >10KB, creates parent dirs, prints `saved <path> (<n> bytes)`. Nonzero exit + stderr message otherwise. Only pass open-access URLs.
+- `resolve`: OA-first cascade. Tries in order: **OpenAlex** (`best_oa_location.pdf_url`, else `open_access.oa_url`), **Unpaywall** (`best_oa_location.url_for_pdf`, else `url` — requires a contact email from `UNPAYWALL_EMAIL` or `OPENALEX_MAILTO`; unset means the step is SKIPPED with a stderr notice, never a fake address), **arXiv** (id detected in the DOI/URL), **local corpus** (`RESEARCH_CORPUS_DIR`, matched by DOI then normalized title), and **web search LAST** — which only returns a `candidate_url` (a scholar search page) for human review, never downloading from an arbitrary host. Output is one JSON object with `resolved`, `oa_source` (which step won), `oa_status` (gold/green/hybrid/bronze/closed as reported by OpenAlex/Unpaywall), `pdf_url`/`pdf_path`, and a `tried` trail. With `--id` the outcome is written back to the record in `review.db` (`fulltext_sought` -> `fulltext_retrieved`/`fulltext_not_retrieved`, plus `pdf_path`/`oa_source`/`oa_status`); already-retrieved records short-circuit, so re-runs are idempotent. `--fetch` downloads the resolved URL (default out: `<project>/papers/<id>.pdf`); a failed download falls through to the next step.
 
 ## local_library.py
 
@@ -82,9 +85,44 @@ python3 scripts/refs_io.py export --format bib --from-graph --out out.bib   # fr
 - `import` emits the shared record shape: `{"source":"import", "id", "doi", "title", "authors":[...], "year", "venue", "abstract", "url"}` — `id` is the normalized DOI when present, else a title slug. Format from extension, else content sniffing. Handles RIS tags TY/TI/T1/AU/PY/JO/JF/T2/DO/AB/N2/UR, BibTeX entry types with nested-brace values, and CSV with aliased headers. A malformed entry NEVER crashes the run: it is skipped with a stderr note and a final `refs_io: imported N, skipped M` summary.
 - `export` reads JSON-line records from `--records`/stdin or `--from-graph`, writes RIS or BibTeX, prints `{"exported", "format", "records"}`.
 
-## prisma.py
 
-PRISMA count ledger per project: maintains `<project>/prisma.json` (`--project DIR`, else `RESEARCH_PROJECT_DIR`, else cwd).
+## review.py
+
+Per-project PRISMA-ScR review store: `<project>/review.db` (SQLite). One row per record with the explicit state machine `identified -> duplicate | screened_excluded | screened_included -> fulltext_sought -> fulltext_retrieved | fulltext_not_retrieved -> included | fulltext_excluded`, plus a `history` table timestamping every transition — PRISMA counts are derived, never hand-typed. `--project` takes a slug under `~/.research-harness/projects/` or a directory; default from `RESEARCH_PROJECT_DIR`, else the active-project file.
+
+```sh
+python3 scripts/review.py --project SLUG import --path refs.ris --database PubMed   # also .bib/.csv/.jsonl
+python3 scripts/review.py --project SLUG dedupe
+python3 scripts/review.py --project SLUG next --stage ta --n 10
+python3 scripts/review.py --project SLUG verdict --id X --stage ta --verdict exclude --rationale "Population: ..." --reason "wrong population" --confidence 0.9
+python3 scripts/review.py --project SLUG set-state --id X --state fulltext_retrieved --pdf-path p.pdf --oa-source openalex --oa-status gold
+python3 scripts/review.py --project SLUG get --id X
+python3 scripts/review.py --project SLUG list --state included
+python3 scripts/review.py --project SLUG stats
+```
+
+- `import` reuses the `refs_io` parsers (or reads shared-shape JSONL); rows land in state `identified` with the source database recorded (PRISMA needs per-source counts). Idempotent: the unique key is (source_db, DOI-or-normalized-title), so re-importing a file adds nothing. The same paper from a DIFFERENT database imports as a new row on purpose — that is what `dedupe` counts.
+- `dedupe` matches by normalized DOI, then normalized title; losers become `duplicate` with `duplicate_of` pointing at the survivor, and the survivor inherits missing doi/url/abstract/pdf. Screened records are never demoted. Prints one JSON merge line each; idempotent.
+- `verdict` records a screening decision and moves the state. Stage `ta`: include/exclude/maybe (`maybe` leaves the state unchanged so a human can resolve it). Stage `ft`: **binary** — `maybe` exits 1 per SCREENING.md; a verdict straight from `screened_included` records the implied `fulltext_sought`/`fulltext_retrieved` hops in history. `--reason` is the primary exclusion reason used in PRISMA reason breakdowns.
+- `next` prints the next unscreened records as JSON lines (`ta`: identified without a verdict; `ft`: screened-in/retrieved without one) so an agent can walk the queue resumably.
+- `set-state` is the retrieval bookkeeping entry point (validates the state machine; also sets `--pdf-path/--oa-status/--oa-source/--reason`). `stats` prints all state/source/reason counts as one JSON object.
+
+## prisma_scr.py
+
+PRISMA-ScR flow diagram derived from `review.db` — every count computed from record states, so the arithmetic reconciles by construction.
+
+```sh
+python3 scripts/prisma_scr.py --project SLUG --format text      # box-drawn, for the terminal (default)
+python3 scripts/prisma_scr.py --project SLUG --format mermaid   # fenced flowchart for manuscripts/GitHub
+python3 scripts/prisma_scr.py --project SLUG --format svg --out prisma.svg   # standalone PRISMA-ScR 2018 layout
+python3 scripts/prisma_scr.py --project SLUG --format html --out prisma.html
+```
+
+Four stages (Identification / Screening / Eligibility / Included) with per-source identified counts and exclusion-reason breakdowns in the side boxes; pending records (unscreened, retrieval in flight) surface as explicit `NOTE:` lines and an arithmetic footer shows the full derivation. Exits 1 with a pointer to `prisma.py` when the project has no `review.db`.
+
+## prisma.py (legacy manual ledger)
+
+Manual PRISMA count ledger per project: maintains `<project>/prisma.json` (`--project DIR`, else `RESEARCH_PROJECT_DIR`, else cwd). Use it only when there is no `review.db` (counts from databases the harness never saw as records); otherwise prefer the derived `prisma_scr.py`.
 
 ```sh
 python3 scripts/prisma.py --project DIR identify --database pubmed --count 120
@@ -102,7 +140,7 @@ python3 scripts/prisma.py --project DIR show
 
 All network calls share `scripts/_http.py`: up to 4 attempts on HTTP 429/500/502/503/504 and on timeouts, exponential backoff 3s/9s/27s (capped 60s), honoring a numeric `Retry-After` header. Retry notices go to stderr; stdout stays pure JSON lines. `arxiv_search.py` additionally enforces >=3s between arXiv requests in one process (arXiv's guidance is ~1 request per 3s).
 
-Set `OPENALEX_MAILTO=you@example.org` to join OpenAlex's polite pool (appends `mailto:` to the User-Agent). Unset means no mailto is sent.
+Set `OPENALEX_MAILTO=you@example.org` to join OpenAlex's polite pool (appends `mailto:` to the User-Agent). Unset means no mailto is sent. Unpaywall requires a contact email (`UNPAYWALL_EMAIL`, else `OPENALEX_MAILTO`); when neither is set, `fetch_paper.py resolve` skips that step with a stderr notice instead of sending a fake address.
 
 ## Failure modes
 

@@ -305,4 +305,4 @@ Every executed search MUST be recorded for PRISMA reproducibility (PRISMA-S). On
 - **date** the search was run,
 - **hits** returned (per line for numbered strategies, plus the final count).
 
-Suggested filename: `searches/<date>-<database>.md`, e.g. `searches/2026-09-06-embase.md`. Re-running a search (e.g. an update before submission) gets a new file, never an edit — the audit trail is append-only. Records exported from each database feed the shared import pipeline (RIS/BibTeX) and dedupe by normalized DOI, then normalized title.
+Suggested filename: `searches/<date>-<database>.md`, e.g. `searches/2026-09-06-embase.md`. Re-running a search (e.g. an update before submission) gets a new file, never an edit — the audit trail is append-only. Records exported from each database feed the review store (`scripts/review.py import`, one `--database` per source so PRISMA keeps per-source identified counts); from there the workflow is import -> dedupe (DOI, then normalized title) -> screen (`SCREENING.md`) -> fulltext (OA-first cascade) -> prisma (`scripts/prisma_scr.py`, derived from record states) -> review/export.

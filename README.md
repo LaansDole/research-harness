@@ -27,7 +27,7 @@ Three agents run the pipeline: `scholar` searches (arXiv + OpenAlex, keyless), `
 
 ## Research mode
 
-`research` launches omp as a systematic-review assistant: it frames questions as PCC/PICO, recommends databases with rationale (from the skill's `DATABASES.md` — coverage, gaps, MeSH vs Emtree vs field-tag syntax), builds ready-to-paste per-database search strings, keeps PRISMA counts honest, and proposes the next workflow step after every command.
+`research` launches omp as a self-contained scoping-review assistant — screening, full-text review, and the PRISMA-ScR diagram all happen inside the harness (Covidence becomes optional). It frames questions as PCC/PICO, recommends databases with rationale (from the skill's `DATABASES.md` — coverage, gaps, MeSH vs Emtree vs field-tag syntax), builds ready-to-paste per-database search strings, keeps every PRISMA count derived from per-record states, and proposes the next workflow step after every command.
 
 | Command | Does |
 |---|---|
@@ -35,15 +35,17 @@ Three agents run the pipeline: `scholar` searches (arXiv + OpenAlex, keyless), `
 | `/databases` | which databases to search for THIS question, with rationale and gaps |
 | `/searchstring [db]` | ready-to-paste strings in each database's exact syntax, recorded for reproducibility |
 | `/find` | run what CAN be run: arXiv + OpenAlex + local corpus |
-| `/import <file>` | ingest RIS/BibTeX/CSV exports from databases the harness cannot query |
-| `/prisma` | dedupe (DOI, then normalized title) and show the PRISMA ledger |
-| `/screen` | PCC verdicts with evidence-based rationales per `SCREENING.md` |
+| `/import <file>` | ingest RIS/BibTeX/CSV exports into the per-record review store (`review.db`) |
+| `/dedupe` | mark duplicates in the store (DOI, then normalized title), survivors keep merged metadata |
+| `/screen` | walk the unscreened queue with PCC verdicts per `SCREENING.md`, persisted per record; resumable |
+| `/fulltext` | OA-first retrieval cascade: OpenAlex -> Unpaywall -> arXiv -> local corpus -> web-search candidate |
+| `/prisma [--format]` | PRISMA-ScR flow diagram DERIVED from record states (text/mermaid/svg/html) |
 | `/review` | synthesize a cited review from the includes |
 | `/graph` | view the paper graph inside the terminal (`paper_graph.py view`; inline PNG on Kitty terminals) |
 | `/export <ris\|bib>` | export for Covidence/Zotero/EndNote |
 | `/litreview <question>` | the end-to-end shortcut |
 
-Each review lives in its own project under `~/.research-harness/projects/<slug>/` (scope, recorded searches, PRISMA counts, records), so several reviews can run side by side. Paywalled databases are never scraped: the mode writes the strings, you paste them and bring back the exports.
+Each review lives in its own project under `~/.research-harness/projects/<slug>/` (scope, recorded searches, the `review.db` record store, fetched PDFs), so several reviews can run side by side. The workflow reads: import -> dedupe -> screen -> fulltext -> prisma -> review/export. Paywalled databases are never scraped: the mode writes the strings, you paste them and bring back the exports. Full texts are fetched from open-access sources only — OpenAlex and Unpaywall are asked first, web search is a last resort that returns a candidate URL for you to approve.
 
 ## Second-brain paper graph
 
