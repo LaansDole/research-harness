@@ -14,6 +14,9 @@ import shutil
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from refs_io import norm_authors
+
 SUBPROCESS_TIMEOUT = 60  # seconds per file; one bad PDF must not hang a scan
 ABSTRACT_CAP = 4000
 DOI_RE = re.compile(r"10\.\d{4,9}/\S+")
@@ -437,7 +440,7 @@ def scan_one(path):
         "id": slugify(stem),
         "path": os.path.abspath(path),
         "title": None,
-        "authors": None,
+        "authors": [],
         "year": None,
         "doi": None,
         "abstract": "",
@@ -469,7 +472,7 @@ def scan_one(path):
         fname_title = title_from_filename(stem)
         if _prefer_filename_title(rec["title"], fname_title):
             rec["title"] = fname_title
-        rec["authors"] = meta.get("author")
+        rec["authors"] = norm_authors(meta.get("author"))
         rec["year"] = year_from(meta, text)
         rec["doi"] = doi_from_text(text)
         rec["abstract"] = abstract_from_text(text)

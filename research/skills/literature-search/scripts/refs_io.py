@@ -34,6 +34,20 @@ def slug(title, max_len=60):
     return s[:max_len].rstrip("-") or "untitled"
 
 
+def norm_authors(value):
+    """Canonical author list from either a str or a list of str.
+
+    A semicolon separates authors; a comma is part of "Surname, Given" and
+    never a separator, so a semicolon-free string is ONE author. Never
+    iterate a bare string as authors — that yields single characters.
+    """
+    if value is None:
+        return []
+    if isinstance(value, str):
+        value = value.split(";")
+    return [norm_ws(a) for a in value if norm_ws(a)]
+
+
 def make_record(title, authors, year, venue, doi, abstract, url):
     doi = norm_doi(doi)
     return {
@@ -41,7 +55,7 @@ def make_record(title, authors, year, venue, doi, abstract, url):
         "id": doi if doi else slug(title),
         "doi": doi,
         "title": norm_ws(title),
-        "authors": [norm_ws(a) for a in authors if norm_ws(a)],
+        "authors": norm_authors(authors),
         "year": year,
         "venue": norm_ws(venue) or None,
         "abstract": norm_ws(abstract),
@@ -108,7 +122,7 @@ def export_ris(records, out):
         for r in records:
             fh.write(f"TY  - {ris_type.get(r.get('type', ''), 'JOUR')}\n")
             fh.write(f"TI  - {r.get('title', '')}\n")
-            for a in r.get("authors") or []:
+            for a in norm_authors(r.get("authors")):
                 fh.write(f"AU  - {a}\n")
             if r.get("year"):
                 fh.write(f"PY  - {r['year']}\n")
@@ -213,7 +227,7 @@ def export_bib(records, out):
                     fh.write(f"  {name} = {{{val}}},\n")
 
             field("title", r.get("title"))
-            field("author", " and ".join(r.get("authors") or []))
+            field("author", " and ".join(norm_authors(r.get("authors"))))
             field("year", r.get("year"))
             venue_field = "booktitle" if rtype == "inproceedings" else "journal"
             field(venue_field, r.get("venue"))
@@ -355,10 +369,7 @@ def read_graph_records(db_path):
     finally:
         con.close()
     for row in rows:
-        # Authors are ";"-separated; a comma is part of a "Surname, Given" name,
-        # never a separator, so a semicolon-free string is one author.
-        authors_str = row["authors"] or ""
-        authors = [a.strip() for a in authors_str.split(";") if a.strip()]
+        authors = norm_authors(row["authors"])
         yield {
             "source": "import",
             "id": row["id"],
