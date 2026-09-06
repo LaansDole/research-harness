@@ -285,45 +285,32 @@ def sniff_format(path, text):
     return "csv"
 
 
-def cmd_import(args):
-    try:
-        with open(args.path, encoding="utf-8", errors="replace") as fh:
-            text = fh.read()
-    except OSError as e:
-        print(f"refs_io: cannot read {args.path}: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    fmt = sniff_format(args.path, text)
-    imported = skipped = 0
-
-    def emit(rec):
-        nonlocal imported
-        print(json.dumps(rec, ensure_ascii=False))
-        imported += 1
-
-    def skip(what, err):
-        nonlocal skipped
-        skipped += 1
-        print(f"refs_io: skipped {what}: {err}", file=sys.stderr)
-
+def iter_import(path):
+    """Yield (record, None, label) or (None, error, label) per entry in a
+    RIS/BibTeX/CSV file. Raises OSError when the file cannot be read."""
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    fmt = sniff_format(path, text)
     if fmt == "ris":
         for i, (fields, err) in enumerate(parse_ris(text), 1):
+            label = f"RIS entry {i}"
             if err:
-                skip(f"RIS entry {i}", err)
+                yield None, err, label
                 continue
             try:
-                emit(ris_to_record(fields))
+                yield ris_to_record(fields), None, label
             except ValueError as e:
-                skip(f"RIS entry {i}", e)
+                yield None, str(e), label
     elif fmt == "bib":
         for i, (etype, body, unbalanced) in enumerate(_bib_entries(text), 1):
+            label = f"BibTeX entry {i}"
             if unbalanced:
-                skip(f"BibTeX entry {i}", "unbalanced braces")
+                yield None, "unbalanced braces", label
                 continue
             try:
-                emit(bib_to_record(etype, _bib_fields(body)))
+                yield bib_to_record(etype, _bib_fields(body)), None, label
             except ValueError as e:
-                skip(f"BibTeX entry {i}", e)
+                yield None, str(e), label
     else:
         reader = csv.DictReader(text.splitlines())
         gen = csv_rows_to_records(reader)
@@ -331,11 +318,26 @@ def cmd_import(args):
         while True:
             i += 1
             try:
-                emit(next(gen))
+                yield next(gen), None, f"CSV row {i}"
             except StopIteration:
                 break
             except ValueError as e:
-                skip(f"CSV row {i}", e)
+                yield None, str(e), f"CSV row {i}"
+
+
+def cmd_import(args):
+    imported = skipped = 0
+    try:
+        for rec, err, label in iter_import(args.path):
+            if err:
+                skipped += 1
+                print(f"refs_io: skipped {label}: {err}", file=sys.stderr)
+                continue
+            print(json.dumps(rec, ensure_ascii=False))
+            imported += 1
+    except OSError as e:
+        print(f"refs_io: cannot read {args.path}: {e}", file=sys.stderr)
+        sys.exit(1)
 
     print(f"refs_io: imported {imported}, skipped {skipped}", file=sys.stderr)
     sys.exit(0)
