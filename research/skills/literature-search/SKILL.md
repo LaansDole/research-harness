@@ -7,6 +7,8 @@ description: "Use when searching academic literature. Search arXiv/OpenAlex, fet
 
 Four python3-stdlib CLI scripts under `scripts/` (relative to this SKILL.md). Three sources are first-class: arXiv (Atom export API), OpenAlex (api.openalex.org), and a **local PDF corpus** (no network). All emit one JSON object per line on stdout; errors go to stderr with exit 1.
 
+Two reference documents under `references/` (relative to this SKILL.md): `SCREENING.md` (PCC criteria + verdict methodology) and `DATABASES.md` (database selection + per-database search syntax: MeSH vs Emtree vs field tags, truncation, proximity, worked multi-database example). Database recommendations and search strings MUST come from `DATABASES.md`; resolve it relative to the skill directory, and record every executed search (database, exact string, date, hits) in the project's `searches/` directory.
+
 **Policy: Open-access sources only; never fetch from shadow libraries.**
 
 ## arxiv_search.py
