@@ -251,6 +251,8 @@ CSV_ALIASES = {
 
 
 def csv_rows_to_records(reader):
+    """Yield (record, None) or (None, error) per CSV row. A bad row must not
+    end the generator — raising from inside would drop every row after it."""
     header = {norm_ws(h).lower(): h for h in (reader.fieldnames or [])}
 
     def col(key):
@@ -267,7 +269,8 @@ def csv_rows_to_records(reader):
 
         title = get("title")
         if not title:
-            raise ValueError("no title")
+            yield None, "no title"
+            continue
         authors = re.split(r"\s*;\s*", get("authors")) if get("authors") else []
         if len(authors) == 1 and "," in authors[0] and authors[0].count(",") > 1:
             authors = re.split(r"\s*,\s*", authors[0])
@@ -279,7 +282,7 @@ def csv_rows_to_records(reader):
             doi=get("doi"),
             abstract=get("abstract"),
             url=get("url"),
-        )
+        ), None
 
 
 # ---------------- import driver ----------------
@@ -327,16 +330,8 @@ def iter_import(path):
                 yield None, str(e), label
     else:
         reader = csv.DictReader(text.splitlines())
-        gen = csv_rows_to_records(reader)
-        i = 0
-        while True:
-            i += 1
-            try:
-                yield next(gen), None, f"CSV row {i}"
-            except StopIteration:
-                break
-            except ValueError as e:
-                yield None, str(e), f"CSV row {i}"
+        for i, (rec, err) in enumerate(csv_rows_to_records(reader), 1):
+            yield rec, err, f"CSV row {i}"
 
 
 def cmd_import(args):
