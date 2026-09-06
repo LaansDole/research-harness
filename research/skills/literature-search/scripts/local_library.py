@@ -192,6 +192,29 @@ def _pdf_string_values(raw, key):
     return [norm_ws(v) for v in values if norm_ws(v)]
 
 
+def _info_author(raw):
+    """/Author from the trailer-referenced Info dict only.
+
+    Raw-byte scans see every /Author in the file — annotation authors and
+    embedded documents included — so the first match is often garbage from a
+    figure or attachment. The trailer's /Info reference names the one dict
+    that describes the document itself; later trailers win (incremental
+    updates append).
+    """
+    for num, gen in reversed(re.findall(rb"/Info\s+(\d+)\s+(\d+)\s+R", raw)):
+        m = re.search(
+            rb"(?:^|[\r\n>])" + num + rb"\s+" + gen + rb"\s+obj\b", raw
+        )
+        if not m:
+            continue
+        end = raw.find(b"endobj", m.end())
+        obj = raw[m.end() : end if end > 0 else m.end() + 4096]
+        authors = _pdf_string_values(obj, b"Author")
+        if authors:
+            return authors[0]
+    return None
+
+
 def pdf_meta(raw):
     """{title, author, year} from raw PDF bytes; any value may be None.
 
@@ -201,8 +224,12 @@ def pdf_meta(raw):
     titles = _pdf_string_values(raw, b"Title")
     # Multiple /Title keys occur (outlines etc.); the longest is usually the doc title.
     title = max(titles, key=len) if titles else None
-    authors = _pdf_string_values(raw, b"Author")
-    author = authors[0] if authors else None
+    author = _info_author(raw)
+    if not plausible_meta_author(author):
+        author = next(
+            (a for a in _pdf_string_values(raw, b"Author") if plausible_meta_author(a)),
+            None,
+        )
     year = None
     for key in (b"CreationDate", b"ModDate"):
         for v in _pdf_string_values(raw, key):
@@ -259,6 +286,36 @@ def plausible_meta_title(title, stem):
     return letters >= len(t) * 0.5
 
 
+PUBLISHER_RE = re.compile(
+    r"(?i)^(elsevier|ieee|springer|acm|wiley|mdpi|taylor\s*&\s*francis|sage"
+    r"|nature|frontiers|admin(istrator)?|user|owner|author|unknown)$"
+)
+# Venue or role strings that masquerade as capitalized name lists.
+VENUE_ROLE_RE = re.compile(r"(?i)\b(society|annual meeting|editor(ial)?s?)\b")
+
+
+
+def plausible_meta_author(author):
+    """Metadata /Author worth trusting: same banner discipline as titles."""
+    a = norm_ws(author or "")
+    if len(a) < 4:
+        return False
+    if "@" in a or re.search(r"(?i)https?://|www\.|10\.\d{4,9}/", a):
+        return False
+    if re.search(r"(?i)\.(pdf|dvi|docx?|tex|indd|eps|ps)\b", a):
+        return False
+    if BANNER_RE.search(a) or PUBLISHER_RE.match(a):
+        return False
+    if ":" in a or VENUE_ROLE_RE.search(a):
+        return False  # venue or role string ("Associate Editor: ..."), not a person
+    if re.fullmatch(r"[A-Z][A-Z\d]+", a):
+        return False  # journal/venue acronym ("IJLTEMAS")
+    if not re.search(r"[A-Z]", a):
+        return False  # tooling usernames: "negul.d", "rajesh"
+    letters = sum(ch.isalpha() for ch in a)
+    return letters >= len(a) * 0.5
+
+
 def _authorish(line):
     """Author/affiliation front matter: emails, superscript markers, name lists."""
     if "@" in line or re.search(r"[*\u2020\u2021\u2217]|\(B\)", line):
@@ -280,6 +337,63 @@ def _name_word(w):
 def _looks_name_list(line):
     words = line.replace(",", " ").split()
     return 2 <= len(words) <= 4 and all(_name_word(w) for w in words)
+
+
+NAME_PARTICLES = frozenset("van von der den de la le del bin ibn ter da di".split())
+
+
+def _is_person_name(n):
+    words = n.split()
+    if not 2 <= len(words) <= 5 or len(n) < 4:
+        return False
+    return all(_name_word(w) or w in NAME_PARTICLES for w in words)
+
+
+def authors_from_text(text, title):
+    """Author names from page-1 front matter; [] when nothing is trustworthy.
+
+    Only runs below a located title line: the author block sits between the
+    title and the abstract/affiliation block. An honest empty list beats a
+    fabricated string, so every rejection here falls through to [].
+    """
+    ts = slugify(title or "")
+    if len(ts) < 10:
+        return []
+    lines = [norm_ws(line) for line in text.splitlines() if norm_ws(line)]
+    start = None
+    for i, line in enumerate(lines[:40]):
+        ls = slugify(line)
+        if len(ls) >= 10 and ls in ts:
+            start = i + 1  # keep advancing past wrapped title lines
+        elif start is not None:
+            break
+    if start is None:
+        return []
+    for line in lines[start : start + 8]:
+        if ABSTRACT_RE.match(line) or STOP_RE.match(line):
+            break
+        if len(line) < 4 or "@" in line:
+            continue
+        if re.search(r"(?i)https?://|www\.|contents lists available", line):
+            continue
+        if BANNER_RE.search(line) or AFFIL_RE.search(line) or "journal" in line.lower():
+            continue
+        if ":" in line or VENUE_ROLE_RE.search(line):
+            continue  # "Associate Editor: ...", "... Society Annual Meeting"
+        if sum(c.isdigit() for c in line) > len(line) * 0.2:
+            continue  # digits-heavy affiliation/citation text
+        # Strip superscript markers: "Jia Li a,*, Tong Zhou b" / "Kai Chen1".
+        cand = re.sub(r"[\d*\u2020\u2021\u2217]+", " ", line)
+        cand = re.sub(r"(?<=[\s,])[a-z](?=[\s,]|$)", " ", cand)
+        names = [
+            norm_ws(p)
+            for chunk in cand.split(",")
+            for p in re.split(r"\s+and\s+", chunk)
+            if norm_ws(p)
+        ]
+        if names and all(_is_person_name(n) for n in names):
+            return names
+    return []
 
 
 def _dangling(title):
@@ -472,7 +586,12 @@ def scan_one(path):
         fname_title = title_from_filename(stem)
         if _prefer_filename_title(rec["title"], fname_title):
             rec["title"] = fname_title
-        rec["authors"] = norm_authors(meta.get("author"))
+        if plausible_meta_author(meta.get("author")):
+            rec["authors"] = norm_authors(meta.get("author"))
+        else:
+            rec["authors"] = norm_authors(authors_from_text(text, rec["title"]))
+        if not rec["authors"]:
+            rec["authors_note"] = "no plausible author extracted"
         rec["year"] = year_from(meta, text)
         rec["doi"] = doi_from_text(text)
         rec["abstract"] = abstract_from_text(text)
