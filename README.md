@@ -14,7 +14,7 @@
 
 _[Watch the capture ↗](assets/research/litreview.mp4)_
 
-One command — typed in the interactive omp TUI, as recorded above — searches your sources (arXiv + OpenAlex, or a local PDF corpus via `RESEARCH_CORPUS_DIR` for fully offline runs like the demo), screens candidates against your criteria, fetches open-access PDFs, writes a cited review, and files every included paper into a local knowledge graph.
+One command — typed in the interactive omp TUI, as recorded above — searches your sources (arXiv + OpenAlex, or a local PDF corpus via `RESEARCH_CORPUS_DIR` for fully offline runs like the demo), screens candidates against your criteria, fetches open-access PDFs, writes a cited review, and files every included paper into a local knowledge graph. `/litreview` is the end-to-end shortcut; the full research mode below breaks the same workflow into researcher-shaped commands.
 
 ## Literature review pipeline
 
@@ -24,6 +24,26 @@ multi-LLM-agent systems evaluated on radiology tasks; max 8 candidates
 ```
 
 Three agents run the pipeline: `scholar` searches (arXiv + OpenAlex, keyless), `screener` applies your include/exclude criteria with per-paper rationales, `synthesizer` writes `review-<slug>.md` with citations. Open-access PDFs only — null URLs are skipped, never substituted.
+
+## Research mode
+
+`research` launches omp as a systematic-review assistant: it frames questions as PCC/PICO, recommends databases with rationale (from the skill's `DATABASES.md` — coverage, gaps, MeSH vs Emtree vs field-tag syntax), builds ready-to-paste per-database search strings, keeps PRISMA counts honest, and proposes the next workflow step after every command.
+
+| Command | Does |
+|---|---|
+| `/scope <question>` | PCC/PICO framing + inclusion/exclusion table; creates the project |
+| `/databases` | which databases to search for THIS question, with rationale and gaps |
+| `/searchstring [db]` | ready-to-paste strings in each database's exact syntax, recorded for reproducibility |
+| `/find` | run what CAN be run: arXiv + OpenAlex + local corpus |
+| `/import <file>` | ingest RIS/BibTeX/CSV exports from databases the harness cannot query |
+| `/prisma` | dedupe (DOI, then normalized title) and show the PRISMA ledger |
+| `/screen` | PCC verdicts with evidence-based rationales per `SCREENING.md` |
+| `/review` | synthesize a cited review from the includes |
+| `/graph` | view the paper graph inside the terminal (`paper_graph.py view`; inline PNG on Kitty terminals) |
+| `/export <ris\|bib>` | export for Covidence/Zotero/EndNote |
+| `/litreview <question>` | the end-to-end shortcut |
+
+Each review lives in its own project under `~/.research-harness/projects/<slug>/` (scope, recorded searches, PRISMA counts, records), so several reviews can run side by side. Paywalled databases are never scraped: the mode writes the strings, you paste them and bring back the exports.
 
 ## Second-brain paper graph
 
@@ -54,20 +74,11 @@ This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi) — th
 ```sh
 git clone https://github.com/LaansDole/research-harness
 cd research-harness
-bun install
-
-# register the research layer with your installed omp
-omp plugin install ./research
-
-# bootstrap the research agents and the /litreview command
-cp research/agents/*.md ~/.omp/agent/agents/
-mkdir -p ~/.omp/agent/prompts && cp research/prompts/litreview.md ~/.omp/agent/prompts/
-
-# run a review
-omp -p "/litreview <your question> — criteria: <include/exclude>; max 8 candidates"
+./setup.sh     # installs the plugin, agents, prompts, config, and the launcher — idempotent
+research       # opens the omp TUI in research mode ('research doctor' to verify the wiring)
 ```
 
-Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (stdlib only — no pip installs), network for arXiv/OpenAlex.
+Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (stdlib only — no pip installs), network for arXiv/OpenAlex (a local corpus works fully offline).
 
 ## Credits
 
