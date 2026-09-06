@@ -353,9 +353,10 @@ def read_graph_records(db_path):
     finally:
         con.close()
     for row in rows:
+        # Authors are ";"-separated; a comma is part of a "Surname, Given" name,
+        # never a separator, so a semicolon-free string is one author.
         authors_str = row["authors"] or ""
-        sep = ";" if ";" in authors_str else ","
-        authors = [a.strip() for a in authors_str.split(sep) if a.strip()]
+        authors = [a.strip() for a in authors_str.split(";") if a.strip()]
         yield {
             "source": "import",
             "id": row["id"],
