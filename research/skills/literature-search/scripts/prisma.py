@@ -149,8 +149,10 @@ def main():
 
     p = sub.add_parser("dedupe", help="set duplicates_removed, or dedupe a JSONL file")
     g = p.add_mutually_exclusive_group(required=True)
-    g.add_argument("--removed", type=int)
-    g.add_argument("--records", help="JSONL file: print kept records, count dropped")
+    g.add_argument("--count", "--removed", dest="count", type=int,
+                   help="set duplicates_removed directly")
+    g.add_argument("--path", "--records", dest="path",
+                   help="JSONL file: print kept records, count dropped")
 
     p = sub.add_parser("exclude", help="set an exclusion reason's count")
     p.add_argument("--reason", required=True)
@@ -172,17 +174,17 @@ def main():
     if args.cmd == "identify":
         data["identified"][args.database] = args.count
     elif args.cmd == "dedupe":
-        if args.records is not None:
+        if args.path is not None:
             try:
-                kept, dropped = dedupe_records(args.records)
+                kept, dropped = dedupe_records(args.path)
             except OSError as e:
-                print(f"prisma: cannot read {args.records}: {e}", file=sys.stderr)
+                print(f"prisma: cannot read {args.path}: {e}", file=sys.stderr)
                 sys.exit(1)
             for rec in kept:
                 print(json.dumps(rec, ensure_ascii=False))
             data["duplicates_removed"] = dropped
         else:
-            data["duplicates_removed"] = args.removed
+            data["duplicates_removed"] = args.count
     elif args.cmd == "exclude":
         data["excluded"][args.reason] = args.count
     elif args.cmd == "include":
