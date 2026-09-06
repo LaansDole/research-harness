@@ -71,6 +71,54 @@ The export is ONE self-contained HTML file — vanilla-JS force-directed canvas,
 
 This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi) — the coding agent with the IDE wired in: 60+ providers, 31 built-in tools, LSP/DAP integration, subagents, and a Rust core. The research layer is purely additive (everything lives under `research/`), so upstream updates merge clean. Upstream's full README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
+## Architecture
+
+The research layer is purely additive — mode prompt, prompt commands, agents, two skills, and three stores, all under `research/` — wired into stock omp through its plugin and agent extension points. Full design doc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+```mermaid
+flowchart TB
+    user["Researcher"]
+
+    subgraph modeLayer["Research mode - an omp session"]
+        launcher["bin/research launcher + doctor"]
+        system["research/mode/system.md - appended system prompt"]
+        commands["Prompt commands: /scope /databases /searchstring /find /import /dedupe /screen /fulltext /prisma /review /graph /export /litreview"]
+    end
+
+    subgraph agentLayer["Agents - spawned via the task tool"]
+        scholar["scholar - search and dedupe"]
+        screener["screener - PCC verdicts"]
+        synthesizer["synthesizer - cited review"]
+        librarian["librarian - graph curation"]
+    end
+
+    subgraph skillLayer["Skills - python3 stdlib scripts"]
+        lit["literature-search: arxiv_search / openalex_search / fetch_paper / local_library / refs_io / review / prisma_scr / prisma / _http"]
+        pg["paper-graph: paper_graph / graph_viz / graph_png"]
+    end
+
+    subgraph storeLayer["Stores"]
+        reviewdb[("review.db per project - records + history")]
+        papersdb[("papers.db - paper graph nodes + typed edges")]
+        files["Project files: scope.md, searches/, records/, papers/, prisma.json"]
+    end
+
+    outputs["Outputs: review-slug.md, PRISMA-ScR diagram, graph.html, RIS/BibTeX exports"]
+
+    user --> launcher
+    launcher --> system
+    user --> commands
+    commands --> agentLayer
+    commands --> skillLayer
+    agentLayer --> skillLayer
+    skillLayer --> reviewdb
+    skillLayer --> papersdb
+    skillLayer --> files
+    reviewdb --> outputs
+    papersdb --> outputs
+    files --> outputs
+```
+
 ## Quickstart
 
 ```sh
