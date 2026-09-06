@@ -1,6 +1,6 @@
 ---
 name: paper-graph
-description: "Use when managing the paper knowledge graph: add/link papers, query neighbors, auto-discover citation edges via OpenAlex, export interactive HTML."
+description: "Use when managing the paper knowledge graph: add/link papers, query neighbors, auto-discover citation edges via OpenAlex, view the graph in the terminal, export interactive HTML."
 ---
 
 # paper-graph
@@ -81,6 +81,26 @@ python3 scripts/paper_graph.py stats
 ```json
 {"papers": 2, "edges": {"cites": 0, "related": 1, "same-topic": 0}, "total_edges": 1}
 ```
+
+### view — render the graph IN the terminal
+
+```sh
+python3 scripts/paper_graph.py view                      # whole-graph overview
+python3 scripts/paper_graph.py view --id bert --depth 2  # one paper's neighborhood
+python3 scripts/paper_graph.py view --image              # inline PNG on Kitty-graphics terminals
+```
+
+```
+paper graph: 5 papers, 4 edges (1 cites, 3 same-topic)
+
+medcoact  MedCoAct: Confidence-aware multi-agent collaboration fo... (2024)  [deg 3]
+|-- [cites ->] autogen  AutoGen: Enabling next-gen LLM applications via multi-a... (2023)  [deg 1]
+`-- [same-topic] sem-agents  Semantic agents for integrated diagnosis and treatment ... (2024)  [deg 2]
+
+isolated: lonely
+```
+
+The PRIMARY graph experience — human-readable text (not JSON lines), safe in any terminal: ASCII tree, no color codes, titles truncated. Without `--id`: one tree per connected component (highest-degree roots first) plus an `isolated:` list. With `--id`: that paper's BFS neighborhood (default depth 2). `cites` edges show direction (`cites ->` / `cited by`); other types are symmetric. `--image` transmits a PNG via the Kitty graphics protocol (stdlib rasterizer in `graph_png.py`, node index legend printed below) when the terminal advertises support AND stdout is a TTY; otherwise it silently falls back to the text view — always safe to pass.
 
 ### auto-edges — citation discovery via OpenAlex
 

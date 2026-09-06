@@ -246,6 +246,116 @@ def cmd_stats(conn, args):
     emit({"papers": papers, "edges": by_type, "total_edges": total})
 
 
+# ---------- terminal view ----------
+
+
+def _trunc(text, n):
+    text = " ".join((text or "").split())
+    return text if len(text) <= n else text[: n - 3] + "..."
+
+
+def _load_graph(conn):
+    papers = {r["id"]: r for r in conn.execute("SELECT * FROM papers")}
+    edges = [dict(r) for r in conn.execute("SELECT * FROM edges ORDER BY type, src, dst")]
+    adj = {}
+    for e in edges:
+        adj.setdefault(e["src"], []).append(e)
+        adj.setdefault(e["dst"], []).append(e)
+    return papers, edges, adj
+
+
+def _node_line(pid, papers, adj):
+    p = papers.get(pid)
+    title = _trunc(p["title"], 58) if p is not None and p["title"] else "(no title)"
+    year = f" ({p['year']})" if p is not None and p["year"] else ""
+    return f"{pid}  {title}{year}  [deg {len(adj.get(pid, []))}]"
+
+
+def _edge_tag(edge, node):
+    """Edge label seen from `node`; cites is directional."""
+    if edge["type"] == "cites":
+        return "cites ->" if edge["src"] == node else "cited by"
+    return edge["type"]
+
+
+def _render_tree(node, papers, adj, seen, depth_left, prefix, lines):
+    kids = []
+    if depth_left > 0:
+        for e in adj.get(node, []):
+            other = e["dst"] if e["src"] == node else e["src"]
+            if other in seen:
+                continue
+            seen.add(other)
+            kids.append((other, e))
+    for i, (other, e) in enumerate(kids):
+        last = i == len(kids) - 1
+        branch = "`-- " if last else "|-- "
+        lines.append(f"{prefix}{branch}[{_edge_tag(e, node)}] {_node_line(other, papers, adj)}")
+        _render_tree(other, papers, adj, seen, depth_left - 1,
+                     prefix + ("    " if last else "|   "), lines)
+
+
+def _view_text(papers, edges, adj, root=None, depth=None):
+    lines = []
+    by_type = {}
+    for e in edges:
+        by_type[e["type"]] = by_type.get(e["type"], 0) + 1
+    counts = ", ".join(f"{n} {t}" for t, n in sorted(by_type.items())) or "no edges"
+    lines.append(f"paper graph: {len(papers)} papers, {len(edges)} edges ({counts})")
+    lines.append("")
+    if root:
+        depth = 2 if depth is None else depth
+        seen = {root}
+        lines.append(_node_line(root, papers, adj))
+        _render_tree(root, papers, adj, seen, depth, "", lines)
+        return lines, seen
+    # Overview: one tree per component, highest-degree node first.
+    depth = 1 if depth is None else depth
+    order = sorted(papers, key=lambda pid: (-len(adj.get(pid, [])), pid))
+    seen = set()
+    isolated = []
+    for pid in order:
+        if pid in seen:
+            continue
+        if not adj.get(pid):
+            isolated.append(pid)
+            continue
+        seen.add(pid)
+        lines.append(_node_line(pid, papers, adj))
+        _render_tree(pid, papers, adj, seen, depth, "", lines)
+        lines.append("")
+    if isolated:
+        lines.append("isolated: " + ", ".join(isolated))
+    while lines and not lines[-1]:
+        lines.pop()
+    return lines, seen | set(isolated)
+
+
+def cmd_view(conn, args):
+    papers, edges, adj = _load_graph(conn)
+    if not papers:
+        print("paper graph: empty (add papers first)")
+        return
+    if args.id and args.id not in papers:
+        die(f"no such paper: {args.id}")
+    lines, shown = _view_text(papers, edges, adj, root=args.id, depth=args.depth)
+    if args.image:
+        try:
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import graph_png
+
+            if graph_png.kitty_available() and sys.stdout.isatty():
+                sub_papers = {pid: papers[pid] for pid in shown if pid in papers}
+                sub_edges = [e for e in edges if e["src"] in shown and e["dst"] in shown]
+                idx = graph_png.emit_kitty(graph_png.render_png(sub_papers, sub_edges, adj))
+                for i, pid in idx:
+                    print(f"  {i:>3}  {_node_line(pid, papers, adj)}")
+                return
+        except Exception:
+            pass  # any image failure falls back to the text view
+    print("\n".join(lines))
+
+
 # ---------- OpenAlex ----------
 
 
@@ -419,6 +529,15 @@ def main():
 
     p = sub.add_parser("stats", help="node/edge counts")
     p.set_defaults(fn=cmd_stats)
+
+    p = sub.add_parser(
+        "view", help="render the graph in the terminal (text; --image on Kitty-graphics terminals)"
+    )
+    p.add_argument("--id", help="center the view on this paper's neighborhood")
+    p.add_argument("--depth", type=int, help="hops to show (default: 2 with --id, 1 overview)")
+    p.add_argument("--image", action="store_true",
+                   help="inline PNG when the terminal supports Kitty graphics; silent text fallback")
+    p.set_defaults(fn=cmd_view)
 
     p = sub.add_parser(
         "auto-edges", help="add cites edges from OpenAlex referenced_works"
