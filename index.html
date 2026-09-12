@@ -6,7 +6,7 @@
     <title>research-harness — live TUI captures</title>
     <meta
       name="description"
-      content="Two real terminal captures of research-harness running in the oh-my-pi TUI: an end-to-end /litreview run over a local PDF corpus, and the librarian agent growing the paper graph."
+      content="Unedited terminal captures of research-harness running in the oh-my-pi TUI: a researcher planning a scoping review in plain language, and the librarian agent growing the paper graph."
     />
     <style>
       :root {
@@ -62,6 +62,7 @@
       footer { margin-top: 44px; color: var(--muted); font-size: 0.88rem; }
       footer a { color: var(--accent); }
       .note { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); font-size: 0.88rem; margin-top: 18px; }
+      .turn { color: var(--text); }
     </style>
   </head>
   <body>
@@ -69,45 +70,54 @@
       <header>
         <h1>research-harness — live TUI captures</h1>
         <p>
-          Two unedited terminal recordings of <a href="https://github.com/LaansDole/research-harness">research-harness</a>
-          driving oh-my-pi: real agent turns, real output, no staged replay.
+          Unedited terminal recordings of <a href="https://github.com/LaansDole/research-harness">research-harness</a>
+          driving oh-my-pi. Real agent turns, real output, no staged replay — every command typed here is a sentence a
+          researcher would actually write.
         </p>
-        <span class="pill">1600x1000 · full length · open-access APIs only</span>
+        <span class="pill">1600x1000 · 1x playback · open-access sources only</span>
       </header>
 
-      <section id="litreview">
-        <h2>1 · End-to-end /litreview run</h2>
+      <section id="guided-review">
+        <h2>1 · Planning a scoping review</h2>
         <p class="sub">
-          scholar → screener → synthesizer, over a local PDF corpus (offline). The run screens candidates against
-          explicit criteria, writes the cited review, and files the includes into the paper graph.
+          A researcher types one plain sentence — <em>"I'm starting a scoping review on how LLM agents help with triage
+          in the emergency department. Where do I start?"</em> — and the harness carries the method: it frames the
+          question, tells you which databases to search and why, writes the ready-to-paste search strings in each
+          database's own syntax, and runs the searches it can run itself.
         </p>
-        <video controls preload="metadata" poster="posters/litreview-poster.png">
-          <source src="litreview.mp4" type="video/mp4" />
+        <video controls preload="metadata" poster="posters/guided-review-poster.png">
+          <source src="guided-review.mp4" type="video/mp4" />
           Your browser cannot play this capture.
-          <a href="litreview.mp4">Download the MP4</a>.
+          <a href="guided-review.mp4">Download the MP4</a>.
         </video>
         <p class="meta">
-          98 s · 1600x1000 · recorded with <code>vhs</code>. Ends on the requested stats line
-          <code>GRAPH -&gt; 4 papers / 6 edges</code>.
+          ~10 min · 1600x1000 · four turns, unedited. There is real waiting on screen where the agents work — scrub
+          the player rather than watching every second.
         </p>
         <ul>
-          <li>Recorded before research mode shipped: <code>/litreview</code> and the paper graph are unchanged since.</li>
-          <li>Not shown here: the mode's command set, <code>review.db</code>, and the PRISMA-ScR diagram.</li>
+          <li><span class="turn">Turn 1</span> — the review question, a PCC table, flagged assumptions, and a project created under <code>~/.research-harness/projects/</code>.</li>
+          <li><span class="turn">Turn 2</span> — <code>/databases</code>: PubMed/MEDLINE · Embase · Scopus · arXiv, each with why-for-this-question, coverage gaps, access and syntax family; the sources it can query itself are separated from the ones you paste.</li>
+          <li><span class="turn">Turn 3</span> — the search strings per database (MeSH in PubMed, <code>:ti,ab,kw</code> in Embase, <code>TITLE-ABS-KEY()</code> in Scopus, field tags in arXiv), saved under <code>searches/</code> for PRISMA reproducibility.</li>
+          <li><span class="turn">Turn 4</span> — <code>/find</code>: the searches the harness runs itself, with the counts and the records written to the review store.</li>
         </ul>
       </section>
 
       <section id="paper-graph">
         <h2>2 · The librarian agent grows the paper graph</h2>
         <p class="sub">
-          Corpus scan, add/link with metadata, OpenAlex <code>auto-edges</code>, a connection query, and the
-          offline HTML export — all inside the TUI.
+          The same plain-language posture, aimed at the second brain: <em>"here's my folder of papers on multi-agent
+          medical AI — add the most relevant ones to my paper graph and tell me what connects them"</em>, then
+          <em>"export that view so I can explore it myself"</em>.
         </p>
         <video controls preload="metadata" poster="posters/paper-graph-poster.png">
           <source src="paper-graph.mp4" type="video/mp4" />
           Your browser cannot play this capture.
           <a href="paper-graph.mp4">Download the MP4</a>.
         </video>
-        <p class="meta">90 s · 1600x1000 · ends on the graph stats.</p>
+        <p class="meta">
+          1600x1000 · 1x playback. The corpus is a six-paper folder for this topic; the real library is larger and the
+          full scan does not fit a capture.
+        </p>
       </section>
 
       <section id="viz">
