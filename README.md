@@ -69,7 +69,17 @@ The export is ONE self-contained HTML file — vanilla-JS force-directed canvas,
 
 ## Everything oh-my-pi has
 
-This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi) — the coding agent with the IDE wired in: 60+ providers, 31 built-in tools, LSP/DAP integration, subagents, and a Rust core. The research layer is purely additive (everything lives under `research/`), so upstream updates merge clean. Upstream's full README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
+This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi) — the coding agent with the IDE wired in: 60+ providers, 31 built-in tools, 14 LSP ops, 28 DAP ops, subagents, and a ~80k-line Rust core. The research layer only adds paths (`research/`, `research/tests/`, `assets/research/`, `setup.sh`, `bin/research`, `docs/ARCHITECTURE.md`, `docs/UPSTREAM.md`) and reaches stock omp through its plugin, prompt, and agent extension points; the 778-commit merge from upstream touched none of them, and the only file both sides own is `README.md`. Upstream's full README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
+
+**Staying in sync with upstream** (synced to upstream `main` f97fa5c9, 2026-09-12):
+
+```sh
+git remote add upstream https://github.com/can1357/oh-my-pi.git   # one-time
+git fetch upstream main
+git merge upstream/main                                           # only README.md conflicts
+git checkout --ours README.md && git add README.md                # this repo keeps its README
+git show upstream/main:README.md                                  # refresh the body of docs/UPSTREAM.md
+```
 
 ## Architecture
 
