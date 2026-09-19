@@ -82,6 +82,27 @@ doctor() {
 		warn "config missing: $CONFIG (run setup.sh)"
 	fi
 
+	local jev_scripts jev_state
+	jev_scripts="$RESEARCH_HARNESS_HOME/research/skills/literature-search/scripts"
+	jev_state="$(python3 -c "
+import sys
+sys.path.insert(0, sys.argv[1])
+import jev_client
+key = jev_client.resolve_key()
+if not key:
+    print('off')
+else:
+    try:
+        print('ready ' + ','.join(jev_client.list_models(key)))
+    except Exception as exc:
+        print('unreachable ' + type(exc).__name__)
+" "$jev_scripts" 2>/dev/null || echo 'unreachable ImportError')"
+	case "$jev_state" in
+	ready*) ok "Jev first-pass enabled (models: ${jev_state#ready })" ;;
+	off) warn "Jev first-pass OFF (optional - set TYPESAFE_API_KEY to enable)" ;;
+	*) warn "Jev key set but API unreachable (${jev_state#unreachable }) - first pass will skip" ;;
+	esac
+
 	if [ -n "${RESEARCH_CORPUS_DIR:-}" ]; then
 		if [ -d "$RESEARCH_CORPUS_DIR" ]; then
 			ok "corpus $RESEARCH_CORPUS_DIR ($(find "$RESEARCH_CORPUS_DIR" -maxdepth 1 -name '*.pdf' 2>/dev/null | wc -l | tr -d ' ') PDFs)"
