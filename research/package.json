@@ -19,7 +19,8 @@
       "prompts/graph.md",
       "prompts/prisma.md",
       "prompts/export.md"
-    ]
+    ],
+    "extensions": ["extensions/research-mode"]
   },
   "pi": {
     "skills": ["skills/literature-search", "skills/paper-graph"],
@@ -37,6 +38,7 @@
       "prompts/graph.md",
       "prompts/prisma.md",
       "prompts/export.md"
-    ]
+    ],
+    "extensions": ["extensions/research-mode"]
   }
 }
