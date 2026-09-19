@@ -73,7 +73,7 @@ The export is ONE self-contained HTML file — vanilla-JS force-directed canvas,
 
 This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi) — the coding agent with the IDE wired in: 60+ providers, 31 built-in tools, 14 LSP ops, 28 DAP ops, subagents, and a ~80k-line Rust core. The research layer only adds paths (`research/`, `research/tests/`, `assets/research/`, `setup.sh`, `bin/research`, `docs/ARCHITECTURE.md`, `docs/UPSTREAM.md`) and reaches stock omp through its plugin, prompt, and agent extension points; upstream merges touch none of them, and the only file both sides own is `README.md`. Upstream's full README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
-**Staying in sync with upstream** (synced to upstream `main` f97fa5c9, 2026-09-12):
+**Staying in sync with upstream** (synced to upstream `main` 78b753124d, 2026-09-19):
 
 ```sh
 git remote add upstream https://github.com/can1357/oh-my-pi.git   # one-time
