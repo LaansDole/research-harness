@@ -78,6 +78,15 @@ class FanOutTest(unittest.TestCase):
                 jev_client.fan_out("s", {"a": {"type": "noul", "instructions": "ok?"}}, "k1")
         self.assertIn("Unknown model: x", str(ctx.exception))
 
+    def test_usage_error_422_surfaces_validation_list(self):
+        # FastAPI/pydantic shape: detail is a LIST, not the {message: ...} dict.
+        err = http_error({"detail": [{"type": "too_short", "loc": ["body", "questions"],
+                                      "msg": "Dictionary should have at least 1 item"}]}, 422)
+        with mock.patch.object(jev_client.urllib.request, "urlopen", raising(err)):
+            with self.assertRaises(jev_client.JevUsageError) as ctx:
+                jev_client.fan_out("s", {}, "k1")
+        self.assertIn("at least 1 item", str(ctx.exception))
+
     def test_auth_error_401_raises_jev_auth_error(self):
         err = http_error({"detail": "bad key"}, 401)
         with mock.patch.object(jev_client.urllib.request, "urlopen", raising(err)):
