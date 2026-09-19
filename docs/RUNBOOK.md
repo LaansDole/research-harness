@@ -200,6 +200,8 @@ Fix it by searching the machine-queryable sources for the same papers, which bri
 
 `/find` searches OpenAlex, arXiv and your local PDF folder for your scoped question and imports each source separately. Then re-run:
 
+> **Measured 2026-09-19: bare `/find` did not finish.** On a fresh 50-record project it ran **25 minutes and wrote nothing** — no records, no `records/found-*.jsonl`, no output at all — before it was killed. The step spawns the `scholar` agent with no candidate cap (`research/prompts/find.md` step 2), and the underlying scripts are not the bottleneck: `openalex_search.py` and `arxiv_search.py` each answered the same query in about a second when run directly. If you only need the abstracts your CSV is missing, ask for that instead and bound it — *"can you look up the first five on OpenAlex and pull their abstracts in?"* returned in **39 s** with 5 of 5 backfilled. Give `/find` a cap (`/find max 20`) if you want it to do candidate discovery, and expect a wait.
+
 ```text
 /dedupe
 ```
