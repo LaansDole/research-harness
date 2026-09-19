@@ -136,5 +136,45 @@ class TestUpToDateNoop(unittest.TestCase):
             self.assertFalse(os.path.exists(fx.marker))
 
 
+class TestMergeAndDocs(unittest.TestCase):
+    def test_merge_creates_branch_updates_docs_runs_gate(self):
+        """ahead>0 -> sync branch with merge commit, UPSTREAM.md body = upstream README,
+        sync-note sha updated, research gate invoked."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp)
+            fx.upstream_commit("NEW.md", "new upstream file\n", "upstream adds a file")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("SYNCED branch=sync/upstream", r.stdout)
+
+            # merge commit is HEAD~1, doc commit is HEAD
+            subjects = subprocess.run(
+                ["git", "-C", fx.fork, "log", "--format=%s", "-2", "sync/upstream"],
+                capture_output=True, text=True, check=True).stdout.splitlines()
+            self.assertEqual(subjects[1], "Merge upstream can1357/oh-my-pi main (1 commits) into main")
+
+            # vendored body matches upstream README, header carries new sha
+            body = subprocess.run(
+                ["git", "-C", fx.fork, "show", "sync/upstream:docs/UPSTREAM.md"],
+                capture_output=True, text=True, check=True).stdout
+            upstream_readme = subprocess.run(
+                ["git", "-C", fx.fork, "show", "upstream/main:README.md"],
+                capture_output=True, text=True, check=True).stdout
+            self.assertEqual(body.splitlines(True)[4:], upstream_readme.splitlines(True))
+            self.assertNotIn("oldsha0", body.splitlines(True)[0])
+
+            # sync-note updated on the branch
+            readme = subprocess.run(
+                ["git", "-C", fx.fork, "show", "sync/upstream:README.md"],
+                capture_output=True, text=True, check=True).stdout
+            up_sha = subprocess.run(
+                ["git", "-C", fx.fork, "rev-parse", "--short", "upstream/main"],
+                capture_output=True, text=True, check=True).stdout.strip()
+            self.assertIn(f"synced to upstream `main` {up_sha},", readme)
+
+            # research gate actually ran
+            self.assertTrue(os.path.exists(fx.marker))
+
+
 if __name__ == "__main__":
     unittest.main()

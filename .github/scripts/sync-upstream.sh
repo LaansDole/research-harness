@@ -67,7 +67,8 @@ fi
 # --- update README sync-note sha/date ---------------------------------------
 grep -qF 'Staying in sync with upstream' README.md \
   || fail "sync-note line missing from README.md — aborting before commit"
-perl -pi -e 's/\Q**Staying in sync with upstream** (synced to upstream `main` \E[0-9a-f]+, \d{4}-\d{2}-\d{2}\Q):\E/**Staying in sync with upstream** (synced to upstream `main` '"$UP_SHA"', '"$UP_DATE"'):/' README.md
+# sha token = whatever sits between the fixed prefix and the comma (short sha, long sha, placeholder)
+perl -pi -e 's/\Q**Staying in sync with upstream** (synced to upstream `main` \E[^,]+, \d{4}-\d{2}-\d{2}\Q):\E/**Staying in sync with upstream** (synced to upstream `main` '"$UP_SHA"', '"$UP_DATE"'):/' README.md
 grep -qF "(synced to upstream \`main\` $UP_SHA, $UP_DATE):" README.md \
   || fail "sync-note update did not land"
 
