@@ -217,5 +217,35 @@ class TestConflictPolicy(unittest.TestCase):
                 self.assertEqual(unmerged, "docs/SHARED.md")
 
 
+class TestDryRunAndSafety(unittest.TestCase):
+    def test_dry_run_pushes_nothing(self):
+        """SYNC_DRY_RUN=1 -> DRY-RUN-OK locally, origin gains no branch."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp)
+            fx.upstream_commit("NEW.md", "x\n", "upstream file")
+            r = fx.run_script("SYNC_DRY_RUN=1")
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertIn("DRY-RUN-OK branch=sync/upstream", r.stdout)
+            remote_branches = subprocess.run(
+                ["git", "-C", fx.fork, "ls-remote", "--heads", "origin"],
+                capture_output=True, text=True, check=True).stdout
+            self.assertNotIn("sync/upstream", remote_branches)
+
+    def test_missing_sync_note_aborts_before_merge(self):
+        """README without the sync line -> exit 1, no sync branch created."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp)
+            bare_readme = "# research-harness\n\nNo sync note here.\n"
+            fx.commit(fx.fork, "README.md", bare_readme, "drop sync note")
+            fx.upstream_commit("NEW.md", "x\n", "upstream file")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("sync-note", r.stderr)
+            branches = subprocess.run(
+                ["git", "-C", fx.fork, "branch", "--list", "sync/upstream"],
+                capture_output=True, text=True, check=True).stdout.strip()
+            self.assertEqual(branches, "")
+
+
 if __name__ == "__main__":
     unittest.main()
