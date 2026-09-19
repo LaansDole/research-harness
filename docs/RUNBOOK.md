@@ -38,7 +38,7 @@ research-harness is wired:
   launcher research -> ~/Projects/research-harness/bin/research
 ```
 
-**If you don't see 13 prompts**, the install is partial — run the command again and read the error. `setup.sh` is safe to re-run: it never overwrites your own agent files or your `config.env`.
+**If you don't see 13 prompts**, the install is partial — run the command again and read the error. `setup.sh` is safe to re-run: it never overwrites your own agent files, and it keeps the settings it manages. It does **not** keep anything else you put in `config.env` — see the Jev subsection in Part 1 for what that costs you.
 
 ### Step 0.2 — Health check
 
@@ -48,7 +48,7 @@ Type:
 bash bin/research doctor
 ```
 
-Every line must start with `ok`, and the last line must be `status: ready`:
+No line may start with `FAIL`, and the last line must be `status: ready`:
 
 ```text
 research doctor
@@ -62,6 +62,7 @@ research doctor
   ok    prompts (13 commands installed)
   ok    mode system prompt ~/Projects/research-harness/research/mode/system.md
   ok    config ~/.research-harness/config.env
+  warn  Jev first-pass OFF (optional - set TYPESAFE_API_KEY to enable)
   ok    corpus ~/Research/Papers (43 PDFs)
   ok    paper graph ~/.research-harness/papers.db (0 papers, 0 edges)
   ok    projects 1 under ~/.research-harness/projects (active: ...)
@@ -69,7 +70,7 @@ status: ready — run 'research' to start
         type /help in the TUI to see every command
 ```
 
-**A `FAIL` line means the fix is almost always `bash setup.sh`.** A `warn` about the corpus or the paper graph is fine — it means you haven't set a PDF folder, or the graph file doesn't exist yet (it is created the first time you file a paper).
+**A `FAIL` line means the fix is almost always `bash setup.sh`.** A `warn` about the corpus, the paper graph or the Jev first pass is fine — it means you haven't set a PDF folder, the graph file doesn't exist yet (it is created the first time you file a paper), or you haven't opted into the optional first pass (Part 1, after Step 4).
 
 ### Step 0.3 — Run the test suite
 
@@ -82,12 +83,12 @@ bash research/tests/run.sh
 Last three lines should be:
 
 ```text
-Ran 91 tests in 0.160s
+Ran 109 tests in 1.129s
 
 OK (skipped=1)
 ```
 
-It takes well under a second. **Any `FAIL`/`ERROR` here means the scripts themselves are broken** — do not start a review on top of that; report it.
+It takes about a second. **Any `FAIL`/`ERROR` here means the scripts themselves are broken** — do not start a review on top of that; report it.
 
 ---
 
@@ -263,6 +264,50 @@ Counts move as you go. After the first three verdicts above, the store read:
 "identified": 47, "screened_excluded": 2, "screened_included": 1
 ```
 
+### Optional: a cheap first pass with Jev
+
+Before the screener agent reads anything, you can have a decision-only model (TypeSafe's Jev)
+look at the same queue and settle the obvious records. It does not write prose: it returns a
+probability per criterion, and `jev_screen.py` decides only the two clear bands — include when
+every criterion scores ≥ 0.90, exclude when the weakest scores ≤ 0.10. **Everything in between
+is left untouched**, so it never shrinks what you or the screener agent see; it only removes
+records nobody would have argued about. Each auto-verdict carries its probabilities in the
+rationale (`[jev-1.13.0 p=0.04] exclude on criterion 'Context' (…)`) and goes through the same
+`review.py verdict` command a human uses, so you can overturn any of them.
+
+**It is off unless you turn it on, and off means nothing changes.** The key is read from the
+`TYPESAFE_API_KEY` environment variable first, then from a `TYPESAFE_API_KEY="..."` line in
+`~/.research-harness/config.env`; with neither, `research doctor` prints
+`warn  Jev first-pass OFF (optional - set TYPESAFE_API_KEY to enable)` and stays `status: ready`,
+the assistant does not mention the feature, and running the script yourself prints
+`jev_screen: Jev first-pass OFF (no TYPESAFE_API_KEY)` and exits 0 without touching the store.
+That was verified on 2026-09-19 on a scratch project: 3 records in, 3 records still `identified`,
+no verdicts written.
+
+To enable it, add one line to `~/.research-harness/config.env`:
+
+```bash
+TYPESAFE_API_KEY="your-key-here"
+```
+
+**Re-running `bash setup.sh` deletes that line.** Step 6 of the script rewrites `config.env` from
+scratch with only the three settings it manages, so the key silently disappears and the first pass
+goes quiet again. This is not specific to Jev — the same run drops `UNPAYWALL_EMAIL` and
+`OPENALEX_MAILTO` too (both reproduced on 2026-09-19 against a scratch `HOME`), even though the
+file's own header invites you to edit it freely. Re-add your lines after any setup run, or export
+`TYPESAFE_API_KEY` from your shell profile instead, which the resolver checks first.
+
+With a working key `doctor` lists the models it can see (`ok    Jev first-pass enabled (models: ...)`);
+that branch was not exercised here — no real key was used. What was exercised is the other one:
+`Jev key set but API unreachable (HTTPError) - first pass will skip`. **A bad key is worse than no
+key today**: probed on 2026-09-19 with a deliberately invalid key, `jev_screen.py` did not skip —
+it stopped on the first record with a `JevAuthError` traceback and exit 1 (nothing was written).
+Fix or remove the key before screening; the screener agent still works either way.
+
+Guidance on when this kind of model fits at all is in `research/skills/jev-decide/SKILL.md`. The
+short version: calibrated over many calls is not the same as right on any one call, which is why
+the bands are wide and the uncertain middle still reaches you.
+
 ### Step 5 — Get the full texts
 
 Type:
@@ -412,8 +457,8 @@ Measured 2026-09-19 on a 50-record PubMed CSV and a 43-PDF folder.
 
 | Checkpoint | Expected | What a different result means |
 |---|---|---|
-| `bash bin/research doctor` | every line `ok`, `status: ready` | a `FAIL` line → re-run `bash setup.sh` |
-| `bash research/tests/run.sh` | `Ran 91 tests ... OK (skipped=1)`, < 1 s | the scripts are broken; stop and report |
+| `bash bin/research doctor` | no `FAIL` line, `status: ready` (the Jev line is a `warn` until you opt in) | a `FAIL` line → re-run `bash setup.sh` |
+| `bash research/tests/run.sh` | `Ran 109 tests ... OK (skipped=1)`, ~1 s | the scripts are broken; stop and report |
 | `/import` of the 50-record CSV | `added: 50, already_present: 0, skipped: 0` | `skipped > 0` → rows without a title; `added: 0` → format not recognised |
 | Re-run the same `/import` | `added: 0, already_present: 50` | duplicates created → the store is not idempotent; report it |
 | Field completeness after CSV import | 50 titles, 48 DOIs, 50 years, **0 abstracts, 0 journals** | more abstracts is better (a richer export); fewer titles means a parsing problem |
