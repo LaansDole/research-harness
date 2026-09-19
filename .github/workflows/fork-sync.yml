@@ -1,0 +1,68 @@
+name: Fork sync
+
+# Weekly merge of can1357/oh-my-pi:main into this fork + PR.
+# Scheduled workflows only run from the default branch; keep this on main.
+on:
+  schedule:
+    - cron: '17 3 * * 1' # Mon 03:17 UTC = Mon 10:17 +07
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: fork-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge upstream
+        id: merge
+        run: |
+          OUT=$(bash .github/scripts/sync-upstream.sh) || { echo "$OUT"; exit 1; }
+          echo "$OUT"
+          if echo "$OUT" | grep -qx 'UP-TO-DATE'; then
+            echo "status=up-to-date" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=synced" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open sync PR
+        if: steps.merge.outputs.status == 'synced'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DATE=$(date +%F)
+          OPEN=$(gh pr list --head sync/upstream --state open --json number --jq 'length')
+          if [ "$OPEN" != "0" ]; then
+            echo "Sync PR already open — leaving it alone"
+            exit 0
+          fi
+          gh pr create \
+            --base main \
+            --head sync/upstream \
+            --title "Sync upstream can1357/oh-my-pi ($DATE)" \
+            --body "$(cat <<'EOF'
+          Automated weekly upstream sync.
+
+          - Merges `can1357/oh-my-pi:main` into `sync/upstream` (built on `origin/main`).
+          - `README.md` conflict resolved OURS (this fork owns its README); upstream's README stays vendored in `docs/UPSTREAM.md`.
+          - `docs/UPSTREAM.md` + the README sync-note sha are refreshed by the script.
+          - `research/tests/run.sh` passed on the merge result.
+          - Any conflict other than `README.md` fails the run loudly instead of guessing.
+
+          Review, then merge. Never click GitHub's "Discard N commits" — that deletes the research layer.
+          EOF
+          )"
