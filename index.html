@@ -6,7 +6,7 @@
     <title>research-harness — live TUI captures</title>
     <meta
       name="description"
-      content="Unedited terminal captures of research-harness running in the oh-my-pi TUI: a researcher planning a scoping review in plain language, and the librarian agent growing the paper graph."
+      content="Unedited terminal captures of research-harness running in the oh-my-pi TUI: a researcher working a real 50-record PubMed export down to a PRISMA diagram by the repo's own testing runbook, and the librarian agent growing the paper graph."
     />
     <style>
       :root {
@@ -78,12 +78,14 @@
       </header>
 
       <section id="guided-review">
-        <h2>1 · Planning a scoping review</h2>
+        <h2>1 · A scoping review, by the repo's own runbook</h2>
         <p class="sub">
-          A researcher types one plain sentence — <em>"I'm starting a scoping review on how LLM agents help with triage
-          in the emergency department. Where do I start?"</em> — and the harness carries the method: it frames the
-          question, tells you which databases to search and why, writes the ready-to-paste search strings in each
-          database's own syntax, and runs the searches it can run itself.
+          This capture is <a href="https://github.com/LaansDole/research-harness/blob/main/docs/RUNBOOK.md">docs/RUNBOOK.md</a>
+          performed live: both Part 0 environment gates, then Part 1 as far as the first screening pass. A researcher
+          opens with one plain sentence — <em>"I'm starting a scoping review on whether teams of LLM agents that talk to
+          each other make hospital diagnosis better than a single model. Where do I start?"</em> — then imports a real
+          50-record PubMed export and works it down to a PRISMA diagram. Every number on screen is computed during the
+          take, out of the review store as it fills up.
         </p>
         <video controls preload="metadata" poster="posters/guided-review-poster.png">
           <source src="guided-review.mp4" type="video/mp4" />
@@ -91,14 +93,18 @@
           <a href="guided-review.mp4">Download the MP4</a>.
         </video>
         <p class="meta">
-          ~10 min · 1600x1000 · four turns, unedited. There is real waiting on screen where the agents work — scrub
-          the player rather than watching every second.
+          13 min 24 s · 1600x1000 · eleven typed lines, unedited, trimmed only at the tail. Each pause is sized to that
+          turn's measured headless runtime, so a finished turn does not stretch the video — but the agent's real work
+          and your own reading time are still on screen. Scrub the player rather than watching every second.
         </p>
         <ul>
-          <li><span class="turn">Turn 1</span> — the review question, a PCC table, flagged assumptions, and a project created under <code>~/.research-harness/projects/</code>.</li>
-          <li><span class="turn">Turn 2</span> — <code>/databases</code>: PubMed/MEDLINE · Embase · Scopus · arXiv, each with why-for-this-question, coverage gaps, access and syntax family; the sources it can query itself are separated from the ones you paste.</li>
-          <li><span class="turn">Turn 3</span> — the search strings per database (MeSH in PubMed, <code>:ti,ab,kw</code> in Embase, <code>TITLE-ABS-KEY()</code> in Scopus, field tags in arXiv), saved under <code>searches/</code> for PRISMA reproducibility.</li>
-          <li><span class="turn">Turn 4</span> — <code>/find</code>: the searches the harness runs itself, with the counts and the records written to the review store.</li>
+          <li><span class="turn">Part 0</span> — <code>research doctor</code> and the 109-test suite, the two gates the runbook makes you pass before starting.</li>
+          <li><span class="turn">Scope</span> — the question in plain words becomes a PCC framing and a written <code>scope.md</code>, with the inclusion gate the reviewer will be held to.</li>
+          <li><span class="turn"><code>/help</code></span> — the capability guide: every command, what it does, when you would reach for it. The bar at the bottom tracks the active project and screening progress all the way through.</li>
+          <li><span class="turn">Import + dedupe</span> — 50 PubMed records in, <code>0 duplicate(s) marked</code> out (correct for a single-database export).</li>
+          <li><span class="turn">The abstract problem</span> — record 1 shows what a PubMed CSV does not carry, and the fix: OpenAlex lookups that bring the abstracts back.</li>
+          <li><span class="turn">Screening</span> — five records judged against the researcher's own criteria, each with an evidence sentence, a first-failed dimension and a confidence; one left as <code>maybe</code> for full text, and a genuine tension between <code>scope.md</code> and <code>SCREENING.md</code> raised rather than papered over. Nothing is written until the researcher confirms.</li>
+          <li><span class="turn"><code>/prisma</code></span> — the flow diagram derived from record state, with the arithmetic line that has to balance.</li>
         </ul>
       </section>
 
