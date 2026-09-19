@@ -49,6 +49,8 @@ Three agents run the pipeline: `scholar` searches (arXiv + OpenAlex, keyless), `
 
 Each review lives in its own project under `~/.research-harness/projects/<slug>/` (scope, recorded searches, the `review.db` record store, fetched PDFs), so several reviews can run side by side. A full pass reads: scope -> databases -> searchstring -> find + import -> dedupe -> screen -> fulltext -> prisma -> review -> graph -> export. Paywalled databases are never scraped: the mode writes the strings, you paste them and bring back the exports. Full texts come from open-access sources only — OpenAlex first, then Unpaywall (needs `UNPAYWALL_EMAIL` or `OPENALEX_MAILTO`; skipped rather than faked without one), then arXiv and your corpus, with web search a last resort that hands back a candidate URL for you to approve. A record that resolves to nothing ends as `fulltext_not_retrieved` with a reason — never a guessed link.
 
+**Optional Jev first pass** - with a `TYPESAFE_API_KEY` set, `/screen` runs a calibrated first pass over the title/abstract queue (TypeSafe System One, one call per record): only the clear bands are auto-decided into the review store, each verdict carrying the model version and its per-criterion probabilities, and everything uncertain still goes to the `screener` agent. No key, no change in behavior.
+
 ## Second-brain paper graph
 
 ![omp TUI: the librarian agent answers "what connects them" for the papers it just added. The reply lists verified citations found in the papers' own reference lists rather than inferred (medcoact cites clinicalagent, ref [2]; med-debate-mesh cites sem-agents, ref [21]), then same-topic clusters by architecture, naming the tightest methodological pair (sem-agents and sr-mapr), explaining what med-debate-mesh and medcoact each add, and calling out clinicalagent as the outlier since it is the only trial-prediction paper — ending with the next steps it can run: auto-edges per paper, screening the new nodes against the scope, and the HTML export. Status bar shows the real session: Sonnet 5, 14.0%/1M context, $0.61.](assets/research/paper-graph-poster.png)
@@ -85,7 +87,7 @@ git show upstream/main:README.md                                  # refresh the 
 
 ## Architecture
 
-The research layer is purely additive — mode prompt, 13 prompt commands, four agents, two skills, two SQLite stores plus per-project files, all under `research/` — wired into stock omp through its plugin and agent extension points. The Python is stdlib-only and covered by 91 tests (`bash research/tests/run.sh`). Full design doc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+The research layer is purely additive — mode prompt, 13 prompt commands, four agents, three skills, two SQLite stores plus per-project files, all under `research/` — wired into stock omp through its plugin and agent extension points. The Python is stdlib-only and covered by 109 tests (`bash research/tests/run.sh`). Full design doc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```mermaid
 flowchart TB
@@ -105,7 +107,7 @@ flowchart TB
     end
 
     subgraph skillLayer["Skills - python3 stdlib scripts"]
-        lit["literature-search: arxiv_search / openalex_search / fetch_paper / local_library / refs_io / review / prisma_scr / prisma / _http"]
+        lit["literature-search: arxiv_search / openalex_search / fetch_paper / local_library / refs_io / review / prisma_scr / prisma / _http / jev_client / jev_screen"]
         pg["paper-graph: paper_graph / graph_viz / graph_png"]
     end
 

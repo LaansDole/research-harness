@@ -41,7 +41,7 @@ flowchart TB
     end
 
     subgraph skillLayer["Skills - python3 stdlib scripts"]
-        lit["literature-search: arxiv_search / openalex_search / fetch_paper / local_library / refs_io / review / prisma_scr / prisma / _http"]
+        lit["literature-search: arxiv_search / openalex_search / fetch_paper / local_library / refs_io / review / prisma_scr / prisma / _http / jev_client / jev_screen"]
         pg["paper-graph: paper_graph / graph_viz / graph_png"]
     end
 
@@ -78,7 +78,7 @@ flowchart TB
 | librarian agent | `research/agents/librarian.md` | Curates the paper graph: add/link, OpenAlex auto-edges, connection queries, viz export |
 | prompt commands | `research/prompts/*.md` | The 13 `/` commands: `litreview`, `scope`, `databases`, `searchstring`, `find`, `import`, `dedupe`, `screen`, `fulltext`, `review`, `graph`, `prisma`, `export` |
 | mode system prompt | `research/mode/system.md` | Operating posture (proactive workflow, OA-only, no paywalled-database scraping), project layout, and per-command semantics |
-| launcher | `bin/research` | Loads `~/.research-harness/config.env`, exports `RESEARCH_HARNESS_HOME`/`PAPER_GRAPH_DB`, then `exec omp --append-system-prompt research/mode/system.md` (`bin/research:142-147`); `research doctor` verifies the whole installation (`bin/research:36-128`) |
+| launcher | `bin/research` | Loads `~/.research-harness/config.env`, exports `RESEARCH_HARNESS_HOME`/`PAPER_GRAPH_DB`, then `exec omp --append-system-prompt research/mode/system.md` (`bin/research:163-168`); `research doctor` verifies the whole installation (`bin/research:36-149`) |
 | setup | `setup.sh` | Idempotent install: `omp plugin install research/`, copies agents/prompts to `$OMP_AGENT_DIR`, creates `~/.research-harness/`, detects the corpus, persists `config.env`, symlinks the launcher onto PATH |
 | literature-search skill | `research/skills/literature-search/` | Search, import/export, retrieval, review store, PRISMA rendering (scripts below) |
 | — `arxiv_search.py` | `scripts/arxiv_search.py` | arXiv Atom API query → JSON lines; enforces ≥3s between arXiv requests |
@@ -90,11 +90,14 @@ flowchart TB
 | — `prisma_scr.py` | `scripts/prisma_scr.py` | PRISMA-ScR flow diagram derived from `review.db` states (text/mermaid/svg/html) |
 | — `prisma.py` | `scripts/prisma.py` | Legacy manual count ledger (`prisma.json`) for counts that never became records |
 | — `_http.py` | `scripts/_http.py` | Shared HTTP GET with rate-limit-aware retries — the single network chokepoint |
+| — `jev_client.py` | `scripts/jev_client.py` | Optional TypeSafe Jev (System One) client: one POST per fan-out, same retry contract as `_http.py` (`jev_client.py:21-23`) |
+| — `jev_screen.py` | `scripts/jev_screen.py` | Optional calibrated first pass at title/abstract screening (section 6.1); writes verdicts only through the `review.py` CLI |
 | — references | `references/SCREENING.md`, `references/DATABASES.md` | Screening methodology (source of truth for verdicts) and database selection + per-database search syntax |
 | paper-graph skill | `research/skills/paper-graph/` | The second-brain graph |
 | — `paper_graph.py` | `scripts/paper_graph.py` | SQLite graph CRUD, BFS neighbors, terminal `view`, OpenAlex `auto-edges`, export |
 | — `graph_viz.py` | `scripts/graph_viz.py` | One self-contained offline HTML file: canvas force-directed layout, zero external URLs |
 | — `graph_png.py` | `scripts/graph_png.py` | Stdlib PNG rasterizer for inline graph images on Kitty-graphics terminals |
+| jev-decide skill | `research/skills/jev-decide/SKILL.md` | When a decision-only model fits, the fan-out idiom, why bands live in code, and the calibration caveat |
 | tests | `research/tests/` | Offline stdlib-unittest suite (`run.sh`, section 8) |
 
 ## 3. The research workflow
@@ -109,6 +112,7 @@ The mode prompt walks the standard scoping-review pipeline (`research/mode/syste
 | Find | `/find` | scholar | `arxiv_search.py`, `openalex_search.py`, `local_library.py scan`; records land in `records/` and import into the review store |
 | Import | `/import` | — | `review.py import` (RIS/BibTeX/CSV/JSONL → state `identified`, per-source counts); idempotent |
 | Dedupe | `/dedupe` | — | `review.py dedupe` — DOI then normalized title; losers become `duplicate` pointing at their survivor |
+| Screen first pass (optional) | `/screen` | — | `jev_screen.py` decides the clear bands only, when `TYPESAFE_API_KEY` is set (section 6.1) |
 | Screen (T&A) | `/screen` | screener | `review.py next --stage ta` → verdicts per SCREENING.md → `review.py verdict`; resumable |
 | Full-text retrieval | `/fulltext` | — | `fetch_paper.py resolve` cascade (section 5); outcomes recorded on the records |
 | Screen (FT) | `/screen` (ft stage) | screener | `review.py verdict --stage ft` — binary, `maybe` banned |
@@ -218,6 +222,20 @@ The resolve result records which step won (`oa_source`) and the openness class O
 - **Evidence, not echo**: rationales must quote or paraphrase the abstract/full text; "does not meet criteria" is banned (`SCREENING.md:26`).
 - **Verdict block** (`SCREENING.md:28-34`): `Verdict: INCLUDE|EXCLUDE|MAYBE — <evidence-based rationale>` plus `Confidence: HIGH|MEDIUM|LOW`. `review.py` stores the labels uppercase and still accepts a legacy 0.0-1.0 float, mapping ≥0.8 HIGH / ≥0.5 MEDIUM / else LOW (`review.py:104-122`).
 
+### 6.1 Jev first-pass (optional)
+
+A calibrated first pass at the title/abstract stage, off unless a TypeSafe API key is present. It decides only the records it is confident about and hands everything else to the screener agent unchanged. Scripts: `research/skills/literature-search/scripts/jev_client.py` (HTTP) and `jev_screen.py` (policy); usage guidance in `research/skills/jev-decide/SKILL.md`.
+
+- **Off by default, silently.** `resolve_key()` reads `TYPESAFE_API_KEY`, then a `TYPESAFE_API_KEY=` line in `~/.research-harness/config.env`, else `None` (`jev_client.py:38-50`). No key: a stderr notice and exit 0, nothing written (`jev_screen.py:84-87`). `research doctor` reports it as an optional capability and never fails on it (`bin/research:85-104`).
+- **One call per record.** A fan-out POST carries one `noul` (boolean) question per must-meet criterion against the same record state, so the state is tokenized once (`jev_client.py:102-105`, `jev_screen.py:47-50`). Records with an empty abstract are skipped, not judged - the existing "no abstract" exclude rule owns them (`jev_screen.py:106-109`).
+- **The band rule is code, not prompt.** `decide()` takes the MINIMUM probability across criteria (all must hold; an average would let a strong Population score paper over a failed Context) and returns include at `min_p >= 0.90`, exclude at `min_p <= 0.10`, and `None` - leave untouched - for everything between (`jev_screen.py:53-61`, defaults at `jev_screen.py:24-25`, overridable with `--thresholds`).
+- **Provenance in every verdict.** The rationale is `[jev-1.13.0 p=0.04] exclude on criterion 'Context' (Concept=0.71, Context=0.04, Population=0.88)` - the versioned model the API actually served, the deciding probability, and every per-criterion probability, so any auto-verdict can be audited or overturned (`jev_screen.py:117-118`). Confidence is the confidence in the DECISION, so an exclude at `p=0.04` stores `0.96` and maps to HIGH (`jev_screen.py:119-124`, mapping at `review.py:104-122`).
+- **Criteria keys are the PRISMA reason vocabulary.** The lowest-scoring criterion's key is passed verbatim as `review.py verdict --reason` (`jev_screen.py:125-126`) and printed as an exclusion-reason row beside the screener agent's reasons (`prisma_scr.py:40,67`), so `criteria.json` keys MUST be the PCC dimension names the agent uses (`SCREENING.md:25`); a free-form key silently splits one reason row in two.
+- **No privileged write path.** Verdicts go through the same `review.py verdict` CLI a human uses, in a subprocess (`jev_screen.py:34-35,122-126`), so the state machine, history rows, and derived PRISMA counts treat them exactly like agent verdicts. `--dry-run` prints what it would write and writes nothing (`jev_screen.py:127-128`).
+- **Bounded.** `JEV_MAX_RECORDS` (default 200) caps a run and clamps `--limit` (`jev_screen.py:94-95`). Retries match the `_http.py` contract: 4 attempts on 429/500/502/503/504 and timeouts, backoff capped at 60s, notices to stderr only (`jev_client.py:21-23`).
+- **Offline tests.** `test_jev_client.py` mocks `urllib.request.urlopen` inside the client; `test_jev_screen.py` runs a REAL temp project through the REAL `review.py` CLI with only `jev_screen.jev_call` monkeypatched (`test_jev_screen.py:1-6`), so bands, verdict rows, history, and the untouched middle band are asserted end to end. The band edges are pinned by `test_regression_band_edges` (`test_jev_screen.py:132`) and the exclusion reason by `test_regression_exclude_names_argmin_reason` (`test_jev_screen.py:146`).
+- **Calibrated is not correct.** Calibration is a property of the population of calls, not of any one call; a confidently wrong answer was observed in live testing. That is why the bands are wide, the middle escalates, and every probability is kept in the record.
+
 ## 7. Integrity guarantees
 
 | Property | Mechanism |
@@ -233,7 +251,7 @@ The resolve result records which step won (`oa_source`) and the openness class O
 
 ## 8. Testing
 
-`research/tests/` is a python3 stdlib `unittest` suite — 91 tests, no third-party dependencies:
+`research/tests/` is a python3 stdlib `unittest` suite — 109 tests, no third-party dependencies:
 
 ```sh
 bash research/tests/run.sh    # python3 -m unittest discover -s research/tests -v
@@ -244,7 +262,7 @@ Guarantees built into the harness (`research/tests/helpers.py`):
 - **Offline by construction**: `urllib.request.urlopen` is replaced at import time with a guard that raises `NetworkGuard` — a `RuntimeError` on purpose, so `_http`'s retry handler (which catches `URLError`/`OSError`) can never swallow it (`helpers.py:30-40`).
 - **Corpus-independent**: every test runs in its own temp dir with env snapshot/restore (`ResearchCase`); the single corpus smoke test is `skipUnless(CORPUS_PDFS)` and skips cleanly when no corpus is configured.
 
-Coverage by file: `test_http.py` (retry/backoff/Retry-After contract), `test_refs_io.py` (RIS/BibTeX/CSV round-trips, malformed-entry resilience, author normalization), `test_review.py` (import idempotence, dedupe rules, every legal and illegal state transition, verdict semantics), `test_prisma_scr.py` (derived-count invariants across state distributions, all four renderers), `test_prisma.py` (legacy ledger + reconciliation warning), `test_fetch_paper.py` (cascade order and record outcomes), `test_local_library.py` (title/author/DOI heuristics, non-PDF safety), `test_paper_graph.py` (round-trip, edge CHECK, view, offline HTML export).
+Coverage by file: `test_http.py` (retry/backoff/Retry-After contract), `test_refs_io.py` (RIS/BibTeX/CSV round-trips, malformed-entry resilience, author normalization), `test_review.py` (import idempotence, dedupe rules, every legal and illegal state transition, verdict semantics), `test_prisma_scr.py` (derived-count invariants across state distributions, all four renderers), `test_prisma.py` (legacy ledger + reconciliation warning), `test_fetch_paper.py` (cascade order and record outcomes), `test_local_library.py` (title/author/DOI heuristics, non-PDF safety), `test_paper_graph.py` (round-trip, edge CHECK, view, offline HTML export), `test_jev_client.py` (request shape, error mapping, retry, key resolution), `test_jev_screen.py` (bands, provenance, no-abstract skips, dry run, no-key exit 0).
 
 Named regression tests and the bug each guards against:
 
@@ -255,6 +273,7 @@ Named regression tests and the bug each guards against:
 | `test_regression_confidence_accepts_labels` (`test_review.py:264`) | argparse declared `--confidence` as `type=float`, rejecting the documented HIGH/MEDIUM/LOW labels |
 | `test_regression_dedupe_count_persists` (`test_prisma.py:49`) | `prisma.py dedupe --count N` was silently ignored: `duplicates_removed` stayed 0 and `screened` never shrank |
 | `test_regression_pdf_author_metadata_preferred` (`test_local_library.py:67`) | Distiller-produced embedded objects carried a decoy `/Author` 13 times before the document's own Info dict; the trailer-referenced metadata must win |
+| `test_regression_band_edges` (`test_jev_screen.py:132`) | A `>` instead of `>=` at the band edge silently demoted every exactly-at-threshold record to the middle band; the test pins both edges and one step inside each |
 
 ## 9. Extending it
 

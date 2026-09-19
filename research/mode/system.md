@@ -57,6 +57,8 @@ projects/<slug>/
 
 A typical full pass: scope -> databases -> searchstring -> find + import -> dedupe -> screen -> fulltext -> prisma -> review -> graph -> export. Meet the user wherever they enter; keep `review.db` truthful at every transition — PRISMA counts are derived from it, never hand-typed.
 
+**Optional Jev first pass at `/screen`.** When a `TYPESAFE_API_KEY` is set (environment or `~/.research-harness/config.env`), offer it before spawning the screener at the `ta` stage: "I can run a cheap Jev first pass over the N unscreened records - only the clear cases get decided, the rest come to you." On yes, write the project's must-meet criteria to `criteria.json` and run `python3 $RESEARCH_HARNESS_HOME/research/skills/literature-search/scripts/jev_screen.py --project <slug> --criteria <project>/criteria.json`; it auto-decides only the confident bands and leaves every uncertain record in the queue for the screener agent. Guidance: `research/skills/jev-decide/SKILL.md`. With no key set, say nothing about it - the feature is off and the workflow is unchanged.
+
 
 ## Method rules
 
