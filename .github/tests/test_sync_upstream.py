@@ -31,6 +31,7 @@ class Fixture:
 
     def __init__(self, tmp):
         self.tmp = tmp
+        self.origin_ready = False  # fork commits only mirror to origin once it is wired
         self.upstream = os.path.join(tmp, "upstream")
         self.origin = os.path.join(tmp, "origin.git")
         self.fork = os.path.join(tmp, "fork")
@@ -51,6 +52,7 @@ class Fixture:
         self._git("-C", self.fork, "remote", "remove", "origin")
         self._git("-C", self.fork, "remote", "add", "origin", self.origin)
         self._git("-C", self.fork, "push", "-q", "origin", "main")
+        self.origin_ready = True
         self._git("-C", self.fork, "remote", "add", "upstream", self.upstream)
         self._git("-C", self.fork, "fetch", "-q", "upstream")
 
@@ -78,6 +80,9 @@ class Fixture:
             f.write(content)
         self._git("-C", repo, "add", path)
         self._git("-C", repo, "commit", "-q", "-m", msg)
+        # the real fork's main lives on origin; the script builds on the fetched origin/main
+        if repo == self.fork and self.origin_ready:
+            self._git("-C", repo, "push", "-q", "origin", "main")
 
     def upstream_commit(self, path, content, msg):
         self.commit(self.upstream, path, content, msg)
@@ -174,6 +179,42 @@ class TestMergeAndDocs(unittest.TestCase):
 
             # research gate actually ran
             self.assertTrue(os.path.exists(fx.marker))
+
+
+class TestConflictPolicy(unittest.TestCase):
+    def test_readme_conflict_resolves_ours(self):
+        """The fork owns README.md: divergent README histories -> merge succeeds,
+        README on the branch equals the fork's README, exit 0."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp)
+            fx.commit(fx.fork, "README.md", fx.fork_readme("oldsha0", "2000-01-01") + "\nFork-only section.\n", "fork edits readme")
+            fx.upstream_commit("README.md", "upstream readme v2\n", "upstream edits readme")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 0, r.stderr)
+            readme = subprocess.run(
+                ["git", "-C", fx.fork, "show", "sync/upstream:README.md"],
+                capture_output=True, text=True, check=True).stdout
+            self.assertIn("Fork-only section.", readme)
+            self.assertNotIn("upstream readme v2", readme)
+
+    def test_unexpected_conflict_fails_loudly(self):
+        """Divergent non-README file -> exit 1, conflicts listed, no sync-note commit."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp)
+            fx.commit(fx.fork, "docs/SHARED.md", "fork version\n", "fork edits shared")
+            fx.upstream_commit("docs/SHARED.md", "upstream version\n", "upstream edits shared")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("docs/SHARED.md", r.stderr)
+            log = subprocess.run(
+                ["git", "-C", fx.fork, "branch", "--list", "sync/upstream"],
+                capture_output=True, text=True, check=True).stdout.strip()
+            # branch may exist mid-merge; the merge must NOT be committed
+            if log:
+                unmerged = subprocess.run(
+                    ["git", "-C", fx.fork, "diff", "--name-only", "--diff-filter=U"],
+                    capture_output=True, text=True, check=True).stdout.strip()
+                self.assertEqual(unmerged, "docs/SHARED.md")
 
 
 if __name__ == "__main__":
