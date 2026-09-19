@@ -54,6 +54,7 @@ Every line must start with `ok`, and the last line must be `status: ready`:
 research doctor
   ok    omp omp/18.1.19 at ~/.local/bin/omp
   ok    plugin research-harness-tools installed
+  ok    extension research-mode (/help guide + statusline)
   ok    agent scholar
   ok    agent screener
   ok    agent synthesizer
@@ -65,6 +66,7 @@ research doctor
   ok    paper graph ~/.research-harness/papers.db (0 papers, 0 edges)
   ok    projects 1 under ~/.research-harness/projects (active: ...)
 status: ready — run 'research' to start
+        type /help in the TUI to see every command
 ```
 
 **A `FAIL` line means the fix is almost always `bash setup.sh`.** A `warn` about the corpus or the paper graph is fine — it means you haven't set a PDF folder, or the graph file doesn't exist yet (it is created the first time you file a paper).
@@ -86,6 +88,46 @@ OK (skipped=1)
 ```
 
 It takes well under a second. **Any `FAIL`/`ERROR` here means the scripts themselves are broken** — do not start a review on top of that; report it.
+
+---
+
+## Part 0.5 — See what you can type
+
+Open the harness (`research`) and type `/help`. It prints the capability guide: one line on
+what this workspace is, the three ways to start, then every command with what it does and when
+you would use it.
+
+```text
+Your research workspace
+...
+Where to start
+
+  Starting fresh, with only a question         type  /scope
+  You already exported records from a search   type  /import
+  You just want one quick end-to-end pass      type  /litreview
+
+Everything you can type
+
+  command        what it does                                              when you'd use it
+  -------------  --------------------------------------------------------  ----------------------------------
+  /scope         Turns a fuzzy question into a written scope with the       First step of a new review
+                 inclusion and exclusion rules you will screen against
+  /databases     Recommends which databases to search and what each one     Before you run any search
+                 misses
+  ...
+```
+
+The bar at the bottom of the screen carries the same invitation plus where you are:
+
+```text
+active: multi-agent-llm-clinical-decision-support · 0/50 screened · type /help for commands
+```
+
+`0/50` is "records with a title/abstract verdict / records imported" — it moves as you screen,
+and is read read-only from the project's `review.db`. With no active project the bar reads
+`type /help to see what this harness can do` instead. Both lines above were observed on
+2026-09-19: the guide by typing `/help` in the TUI, the no-project hint by hiding
+`~/.research-harness/active-project` for one run.
 
 ---
 
@@ -543,3 +585,18 @@ research -p --no-tools --no-session "/prisma Do not act. Reply with the single w
 ```
 
 Expected output: `READY`. `--no-tools` guarantees it cannot touch your project. **Without `--no-tools`, a headless run acts on your active project** — so keep that flag for smoke tests.
+
+The `/help` guide and the statusline hint are not visible in `-p` output (print mode has no
+status bar and no notification surface), so check those two through the RPC surface instead —
+it reports the same frames the TUI renders:
+
+```bash
+(sleep 3; printf '{"id":"1","type":"prompt","message":"/help"}\n'; sleep 5) \
+  | research --mode rpc --no-session 2>/dev/null > /tmp/help-smoke.log
+grep -c "Everything you can type" /tmp/help-smoke.log
+grep -o '"statusKey":"research","statusText":"[^"]*"' /tmp/help-smoke.log
+```
+
+Expected on 2026-09-19: `1`, then one status line, e.g.
+`"statusKey":"research","statusText":"active: <your-project> · 0/50 screened · type /help for commands"`.
+A zero from the first grep means the extension did not load — run `bash bin/research doctor`.
