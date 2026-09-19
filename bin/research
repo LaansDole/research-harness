@@ -49,6 +49,13 @@ doctor() {
 		fail "plugin research-harness-tools not installed (run setup.sh)"
 	fi
 
+	ext="$HOME/.omp/plugins/node_modules/research-harness-tools/extensions/research-mode/index.ts"
+	if [ -f "$ext" ]; then
+		ok "extension research-mode (/help guide + statusline)"
+	else
+		fail "extension research-mode missing from the installed plugin (run setup.sh)"
+	fi
+
 	for a in scholar screener synthesizer librarian; do
 		if [ -f "$OMP_AGENT_DIR/agents/$a.md" ]; then
 			ok "agent $a"
@@ -146,6 +153,7 @@ except sqlite3.Error:
 		return 1
 	fi
 	echo "status: ready — run 'research' to start"
+	echo "        type /help in the TUI to see every command"
 }
 
 case "${1:-}" in

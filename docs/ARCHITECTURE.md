@@ -99,6 +99,7 @@ flowchart TB
 | — `graph_png.py` | `scripts/graph_png.py` | Stdlib PNG rasterizer for inline graph images on Kitty-graphics terminals |
 | jev-decide skill | `research/skills/jev-decide/SKILL.md` | When a decision-only model fits, the fan-out idiom, why bands live in code, and the calibration caveat |
 | tests | `research/tests/` | Offline stdlib-unittest suite (`run.sh`, section 8) |
+| research-mode extension | `research/extensions/research-mode/` | The capability surface inside omp: `/help` renders `help.md` (all 13 commands, researcher-voiced), and one statusline entry reports the active project plus title/abstract screening progress, read read-only from `review.db` on session start and turn end |
 
 ## 3. The research workflow
 
@@ -121,6 +122,8 @@ The mode prompt walks the standard scoping-review pipeline (`research/mode/syste
 | PRISMA-ScR | `/prisma` | — | `prisma_scr.py` derived diagram (legacy `prisma.py` only when no `review.db` exists) |
 | Export | `/export` | — | `refs_io.py export` (RIS/BibTeX) for Covidence/Zotero/EndNote |
 | End-to-end shortcut | `/litreview` | scholar + screener + synthesizer | The whole mini-review in one command (`research/prompts/litreview.md`) |
+
+Nothing here has to be memorized: `/help` (the research-mode extension) prints this same command list in plain words, and the statusline shows which project is active and how far its title/abstract screening has got.
 
 Paywalled databases (PubMed website, Embase, Scopus, IEEE Xplore, …) are never scraped: the harness emits the search string, the user runs it manually and brings back the export (`research/mode/system.md:9`). The local corpus is read-only (`research/mode/system.md:10`).
 
