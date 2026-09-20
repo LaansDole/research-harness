@@ -14,6 +14,7 @@ How the scoping-review layer is built, where every piece lives, and the guarante
 8. [Testing](#8-testing)
 9. [Extending it](#9-extending-it)
 10. [Known limitations](#10-known-limitations)
+11. [Staying in sync with upstream](#11-staying-in-sync-with-upstream)
 
 ## 1. What this is
 
@@ -296,3 +297,17 @@ Constraints every contributor must respect: **stdlib-only python** (optional bin
 - **Corpus scan is non-recursive** — `local_library.py scan` reads `*.pdf` in one directory only; nested corpus folders need one scan per directory.
 - **`auto-edges` only links papers already in the graph** — it never imports new nodes, and OpenAlex has empty `referenced_works` for some records (notably bare arXiv preprints), so `references: 0` can mean "no data" rather than "no citations".
 - **`review.db` has no multi-reviewer support**: one verdict per stage per record — no dual screening, conflict resolution, or inter-rater agreement (a second reviewer can only overturn via the sibling state edges, which the history records).
+
+## 11. Staying in sync with upstream
+
+`.github/workflows/fork-sync.yml` runs `.github/scripts/sync-upstream.sh` weekly: it merges `upstream/main`, keeps this fork's `README.md` on the one conflict both sides own, refreshes `docs/UPSTREAM.md`, runs the research test suite, and opens a pull request. The README's **Staying in sync with upstream** note is the script's gate and its record — `sync-upstream.sh:26` aborts before merging if that line is missing, and `sync-upstream.sh:71` rewrites its sha and date after.
+
+The manual procedure the workflow automates:
+
+```sh
+git remote add upstream https://github.com/can1357/oh-my-pi.git   # one-time
+git fetch upstream main
+git merge upstream/main                                           # only README.md conflicts
+git checkout --ours README.md && git add README.md                # this repo keeps its README
+git show upstream/main:README.md                                  # refresh the body of docs/UPSTREAM.md
+```
