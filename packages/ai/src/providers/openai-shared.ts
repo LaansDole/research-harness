@@ -1110,15 +1110,15 @@ export function applyChatCompletionsCompatPolicy(params: OpenAICompletionsParams
 	// + local-cache compat flag is safe.
 	if (policy.compat.qwenPreserveThinking) {
 		// Mirror the dialect split that gates `enable_thinking`. The
-		// `qwen` dialect rides the top-level field (the only place
-		// llama.cpp's `--jinja` hook AND Alibaba Cloud Model Studio's
-		// compatible-mode look) while the `qwen-chat-template` dialect
-		// (NVIDIA NIM, vLLM/SGLang's chat-template-kwargs path) MUST
-		// ride only the kwargs copy — NIM's request schema is
-		// `additionalProperties: false` and rejects every unknown
-		// top-level field, the very reason `enable_thinking` is
-		// route-split this way (#2299, see `catalog/src/compat/openai.ts`
-		// thinkingFormat comment).
+		// `qwen` dialect rides the top-level field (where LM Studio AND
+		// Alibaba Cloud Model Studio's compatible-mode look) while the
+		// `qwen-chat-template` dialect (NVIDIA NIM, vLLM/SGLang, and
+		// llama-server, which ignores top-level `enable_thinking` —
+		// ggml-org/llama.cpp#13160 — and reads the jinja kwargs added in
+		// ggml-org/llama.cpp#13196) MUST ride only the kwargs copy: NIM's
+		// request schema is `additionalProperties: false` and rejects every
+		// unknown top-level field, the very reason `enable_thinking` is
+		// route-split this way (#2299).
 		if (policy.compat.thinkingFormat === "qwen") {
 			params.preserve_thinking = true;
 		}

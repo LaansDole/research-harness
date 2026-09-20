@@ -443,17 +443,17 @@ describe("llama.cpp warm-prefix preservation (#3528)", () => {
 
 	it("emits preserve_thinking on the wire for local Qwen + thinking", () => {
 		// End-to-end pin for the user's reported setup (#3541):
-		// `enable_thinking: true` + `preserve_thinking: true` (twin top-level
-		// + chat_template_kwargs) must both ride the body so the chat template
-		// preserves `<think>...</think>` for older assistants. The twin
-		// emission covers llama.cpp / vLLM / SGLang / Alibaba shapes without
-		// per-host sniffing.
+		// `enable_thinking: true` + `preserve_thinking: true` must both ride
+		// the body so the chat template preserves `<think>...</think>` for
+		// older assistants. llama-server ignores top-level `enable_thinking`
+		// (ggml-org/llama.cpp#13160) and reads the jinja kwargs added in
+		// ggml-org/llama.cpp#13196, so both ride `chat_template_kwargs`.
 		const model = llamaCppQwenModel();
 		const params: OpenAICompletionsParams = { model: model.id, messages: [], stream: true };
 		applyChatCompletionsReasoningParams(params, model, model.compat, { reasoning: "medium" });
-		expect(params.enable_thinking).toBe(true);
-		expect(params.preserve_thinking).toBe(true);
-		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true });
+		expect(params.enable_thinking).toBeUndefined();
+		expect(params.preserve_thinking).toBeUndefined();
+		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, enable_thinking: true });
 	});
 
 	it("does NOT emit preserve_thinking for cloud Qwen + thinking", () => {
@@ -481,12 +481,12 @@ describe("llama.cpp warm-prefix preservation (#3528)", () => {
 		const model = llamaCppQwenModel();
 		const params: OpenAICompletionsParams = { model: model.id, messages: [], stream: true };
 		applyChatCompletionsReasoningParams(params, model, model.compat, { disableReasoning: true });
-		expect(params.enable_thinking).toBe(false);
-		expect(params.preserve_thinking).toBe(true);
-		// Disable encoding rides the top-level `enable_thinking: false`
-		// field for the `qwen` dialect; `chat_template_kwargs` only
-		// carries the hoisted `preserve_thinking` mirror.
-		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true });
+		expect(params.enable_thinking).toBeUndefined();
+		expect(params.preserve_thinking).toBeUndefined();
+		// Both knobs ride `chat_template_kwargs` on the `qwen-chat-template`
+		// dialect: the per-turn `enable_thinking: false` next to the
+		// history-only `preserve_thinking: true`.
+		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, enable_thinking: false });
 	});
 
 	it("repairs discovered local Qwen with spec.reasoning=false via upgrade-neutral", () => {
@@ -505,12 +505,14 @@ describe("llama.cpp warm-prefix preservation (#3528)", () => {
 		// No `reasoning` option — mirrors a default request against a
 		// discovered model whose spec hardcodes `reasoning: false`.
 		applyChatCompletionsReasoningParams(params, model, model.compat, undefined);
-		// No effort requested, so the thinking-off default rides; the server
-		// template default would think. `preserve_thinking` still rides so
-		// HISTORY rendering keeps the `<think>` blocks intact.
-		expect(params.enable_thinking).toBe(false);
-		expect(params.preserve_thinking).toBe(true);
-		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true });
+		// `thinking-upgrade-neutral` repairs the discovered spec's stale
+		// `reasoning: false`, so the turn resolves as reasoning-capable and
+		// carries an explicit `enable_thinking: false` for THIS turn.
+		// `preserve_thinking` still rides so HISTORY rendering keeps the
+		// `<think>` blocks intact — the contract this test is named for.
+		expect(params.enable_thinking).toBeUndefined();
+		expect(params.preserve_thinking).toBeUndefined();
+		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, enable_thinking: false });
 	});
 
 	it("emits preserve_thinking for discovered local Qwen even when caller passes disableReasoning", () => {
@@ -521,9 +523,8 @@ describe("llama.cpp warm-prefix preservation (#3528)", () => {
 		const model = llamaCppQwenModel({ reasoning: false });
 		const params: OpenAICompletionsParams = { model: model.id, messages: [], stream: true };
 		applyChatCompletionsReasoningParams(params, model, model.compat, { disableReasoning: true });
-		expect(params.enable_thinking).toBe(false);
-		expect(params.preserve_thinking).toBe(true);
-		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true });
+		expect(params.preserve_thinking).toBeUndefined();
+		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, enable_thinking: false });
 	});
 
 	it("omits top-level preserve_thinking for NVIDIA NIM Qwen (qwen-chat-template dialect)", () => {
@@ -566,7 +567,8 @@ describe("llama.cpp warm-prefix preservation (#3528)", () => {
 		expect(model.compat.qwenPreserveThinking).toBe(false);
 		const params: OpenAICompletionsParams = { model: model.id, messages: [], stream: true };
 		applyChatCompletionsReasoningParams(params, model, model.compat, { reasoning: "medium" });
-		expect(params.enable_thinking).toBe(true);
 		expect(params.preserve_thinking).toBeUndefined();
+		// Thinking still rides; only the history knob is suppressed.
+		expect(params.chat_template_kwargs).toEqual({ enable_thinking: true });
 	});
 });
