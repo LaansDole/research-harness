@@ -43,7 +43,7 @@ A separate screenshot of `/searchstring`, from a review on emergency-department 
 | `/find` | run what CAN be run: arXiv + OpenAlex + local corpus, via the `scholar` agent |
 | `/import <file>` | ingest RIS/BibTeX/CSV/JSONL exports into the per-record review store (`review.db`) with per-database counts; idempotent |
 | `/dedupe` | mark duplicates in the store (DOI, then normalized title), survivors keep merged metadata |
-| `/screen` | walk the unscreened queue with PCC verdicts per `SCREENING.md` — title/abstract or full-text stage — persisted per record; resumable |
+| `/screen` | walk the unscreened queue with PCC verdicts per `SCREENING.md` — title/abstract or full-text stage — persisted per record; resumable (optional Jev pre-screen — see below) |
 | `/fulltext` | OA-first retrieval cascade: OpenAlex -> Unpaywall -> arXiv -> local corpus -> web-search candidate you approve |
 | `/prisma [--format]` | PRISMA-ScR flow diagram DERIVED from record states (text/mermaid/svg/html) |
 | `/review` | synthesize a cited review from the includes, via the `synthesizer` agent |
@@ -53,7 +53,15 @@ A separate screenshot of `/searchstring`, from a review on emergency-department 
 
 Each review lives in its own project under `~/.research-harness/projects/<slug>/` (scope, recorded searches, the `review.db` record store, fetched PDFs), so several reviews can run side by side. A full pass reads: scope -> databases -> searchstring -> find + import -> dedupe -> screen -> fulltext -> prisma -> review -> graph -> export. Paywalled databases are never scraped: the mode writes the strings, you paste them and bring back the exports. Full texts come from open-access sources only — OpenAlex first, then Unpaywall (needs `UNPAYWALL_EMAIL` or `OPENALEX_MAILTO`; skipped rather than faked without one), then arXiv and your corpus, with web search a last resort that hands back a candidate URL for you to approve. A record that resolves to nothing ends as `fulltext_not_retrieved` with a reason — never a guessed link.
 
-**Optional Jev first pass** - with a `TYPESAFE_API_KEY` set, `/screen` runs a calibrated first pass over the title/abstract queue (TypeSafe System One, one call per record): only the clear bands are auto-decided into the review store, each verdict carrying the model version and its per-criterion probabilities, and everything uncertain still goes to the `screener` agent. No key, no change in behavior.
+**Optional Jev first pass** — TypeSafe's Jev is a _decision-only_ model: it never writes prose, it answers specific yes/no questions and hands back a probability for each one. That is the shape screening already has — one question per inclusion criterion — which is why it is fast and costs a small fraction of a general LLM.
+
+**How the pass works.** Before the `screener` agent reads anything, each title/abstract record gets ONE call carrying one question per must-meet criterion from the review's scope. The banding is enforced in code, not judgment: every criterion at or above 0.90 auto-includes, the weakest at or below 0.10 auto-excludes, and everything in between — plus any record with no abstract — is left completely untouched for the `screener` agent and for you. The first pass only removes the records nobody would have argued about; it never shrinks what a human sees.
+
+**Auditable and reversible.** Each auto-verdict is written through the same review-store command a human verdict uses, and carries its provenance in the rationale — `[jev-1.13.0 p=0.04] exclude on criterion 'Context' (Concept=0.71, Context=0.04, Population=0.88)`: the model version that decided, and every per-criterion probability. Any of them can be checked or overturned later.
+
+**Off by default.** Turn it on by adding `TYPESAFE_API_KEY="..."` to `~/.research-harness/config.env` (or exporting it); `research doctor` reports the first pass as OFF when no key is set. With no key the workflow is byte-for-byte unchanged and the assistant never mentions it. Enabled, it is one API call per record — screening the whole queue costs less than a single general-model turn.
+
+`docs/RUNBOOK.md` has the hands-on subsection ("Optional: a cheap first pass with Jev"); `docs/ARCHITECTURE.md` documents the design — band rule, provenance, and key resolution.
 
 ## Second-brain paper graph
 
