@@ -2,6 +2,7 @@ import { TERMINAL } from "../terminal-capabilities";
 import type { Component } from "../tui";
 import { padding, replaceTabs, truncateToWidth, visibleWidth, wrapTextWithAnsi } from "../utils";
 import { APP_NAME } from "@oh-my-pi/pi-utils/dirs";
+import { getBrandDisplayName, getBrandLogo, getBrandTips } from "@oh-my-pi/pi-utils/branding";
 import { theme } from "../theme/theme";
 import tipsText from "./tips.txt" with { type: "text" };
 
@@ -161,7 +162,7 @@ export class WelcomeComponent implements Component {
 		if (theme.getSymbolPreset() === "unicode" && this.#nagRoll < 0.1) {
 			return "Please use nerdfont 😭.";
 		}
-		return pickWeightedTip(TIPS, this.#tipRoll) || undefined;
+		return pickWeightedTip(getBrandTips() ?? TIPS, this.#tipRoll) || undefined;
 	}
 
 	invalidate(): void {
@@ -380,7 +381,7 @@ export class WelcomeComponent implements Component {
 		const lines: string[] = [];
 
 		// Top border with embedded title
-		const title = ` ${APP_NAME} v${this.version} `;
+		const title = ` ${getBrandDisplayName() || APP_NAME} v${this.version} `;
 		const titlePrefixRaw = hChar.repeat(3);
 		const titleStyled = theme.fg("dim", titlePrefixRaw) + theme.fg("muted", title);
 		const titleVisLen = visibleWidth(titlePrefixRaw) + visibleWidth(title);
@@ -470,10 +471,11 @@ export class WelcomeComponent implements Component {
 
 	/** Pick the logo frame for the current intro phase, or the resting frame. */
 	#currentLogoFrame(): readonly string[] {
-		if (this.#animStart == null) return REST_FRAME;
+		const logo = getBrandLogo() ?? PI_LOGO;
+		if (this.#animStart == null) return gradientLogo(logo, 0);
 		const elapsed = performance.now() - this.#animStart;
-		if (elapsed >= INTRO_MS) return REST_FRAME;
-		return introLogoFrame(elapsed / INTRO_MS);
+		if (elapsed >= INTRO_MS) return gradientLogo(logo, 0);
+		return introLogoFrame(logo, elapsed / INTRO_MS);
 	}
 }
 
@@ -593,13 +595,10 @@ const INTRO_SHINE_TRAVERSALS = 3;
  * fades with the same ease-out curve so the highlight is gone by the resting
  * frame.
  */
-function introLogoFrame(progress: number): string[] {
+function introLogoFrame(logo: readonly string[], progress: number): string[] {
 	const eased = 1 - (1 - progress) ** 3;
 	const phase = ((((1 - eased) * INTRO_SWEEPS) % 1) + 1) % 1;
 	const shinePos = (((progress * INTRO_SHINE_TRAVERSALS) % 1) + 1) % 1;
 	const shineStrength = (1 - eased) ** 1.5;
-	return gradientLogo(PI_LOGO, phase, { strength: shineStrength, pos: shinePos });
+	return gradientLogo(logo, phase, { strength: shineStrength, pos: shinePos });
 }
-
-/** Resting gradient frame, cached for re-renders outside of the intro. */
-const REST_FRAME = gradientLogo(PI_LOGO, 0);
