@@ -1,4 +1,4 @@
-<!-- Vendored verbatim from can1357/oh-my-pi README.md @ 10b867cb2e (2026-09-20) for fork reference.
+<!-- Vendored verbatim from can1357/oh-my-pi README.md @ d716bcf60a (2026-09-21) for fork reference.
      Refresh each sync: git show upstream/main:README.md > body, keep this 4-line header.
      Provenance: LaansDole/research-harness fork of can1357/oh-my-pi (itself derived from badlogic/pi-mono).
      Gate: diff <(tail -n +5 docs/UPSTREAM.md) <(git show upstream/main:README.md) -> empty -->

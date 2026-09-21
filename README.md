@@ -93,7 +93,7 @@ Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (s
 
 This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is purely additive — it only adds paths (`research/`, `assets/research/`, `setup.sh`, `bin/research`, `docs/`) and reaches stock omp through its plugin, prompt and agent extension points, so upstream merges stay clean. Design doc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); upstream's own README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
-**Staying in sync with upstream** (synced to upstream `main` 10b867cb2e, 2026-09-20):
+**Staying in sync with upstream** (synced to upstream `main` d716bcf60a, 2026-09-21):
 a weekly GitHub Action merges upstream and opens a pull request; the manual procedure is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#11-staying-in-sync-with-upstream).
 
 ## Credits
