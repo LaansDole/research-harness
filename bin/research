@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Research-mode launcher: loads persisted settings, exports the research env,
-# and starts the installed omp with the research system prompt.
+# and starts omp (the fork's dev wrapper when runnable, else the installed omp)
+# with the research system prompt.
 # Usage: research [omp args...] | research doctor
 set -euo pipefail
 
@@ -21,6 +22,16 @@ export RESEARCH_HARNESS_HOME
 export PAPER_GRAPH_DB="${PAPER_GRAPH_DB:-$HOME/.research-harness/papers.db}"
 if [ -n "${RESEARCH_CORPUS_DIR:-}" ]; then
 	export RESEARCH_CORPUS_DIR
+fi
+
+# Brand the TUI welcome screen (consumed by packages/utils/src/branding.ts).
+BRAND_DIR="$RESEARCH_HARNESS_HOME/research/branding"
+export RESEARCHHARNESS_BRAND_NAME="${RESEARCHHARNESS_BRAND_NAME:-Research Harness}"
+if [ -f "$BRAND_DIR/logo.txt" ]; then
+	export RESEARCHHARNESS_BRAND_LOGO="$BRAND_DIR/logo.txt"
+fi
+if [ -f "$BRAND_DIR/tips.txt" ]; then
+	export RESEARCHHARNESS_BRAND_TIPS="$BRAND_DIR/tips.txt"
 fi
 
 SYSTEM_PROMPT="$RESEARCH_HARNESS_HOME/research/mode/system.md"
@@ -87,6 +98,12 @@ doctor() {
 		ok "config $CONFIG"
 	else
 		warn "config missing: $CONFIG (run setup.sh)"
+	fi
+
+	if [ -f "${RESEARCHHARNESS_BRAND_LOGO:-}" ] && [ -f "${RESEARCHHARNESS_BRAND_TIPS:-}" ]; then
+		ok "brand \"$RESEARCHHARNESS_BRAND_NAME\", logo ok, tips ok"
+	else
+		warn "brand \"$RESEARCHHARNESS_BRAND_NAME\" - logo or tips missing from $BRAND_DIR (welcome screen falls back to the stock omp mark/tips)"
 	fi
 
 	local jev_scripts jev_state
@@ -173,4 +190,15 @@ args=(--append-system-prompt "$SYSTEM_PROMPT")
 if [ "$PWD" = "$HOME" ]; then
 	args+=(--cwd "$HOME/.research-harness")
 fi
-exec omp "${args[@]}" "$@"
+# Prefer the fork's dev wrapper (runs src/ through bun) so fork-level features,
+# including branding, are live; RESEARCH_HARNESS_OMP overrides; without bun or
+# the repo's node_modules the wrapper cannot start, so use the installed omp.
+DEV_OMP="$RESEARCH_HARNESS_HOME/packages/coding-agent/scripts/omp"
+if [ -n "${RESEARCH_HARNESS_OMP:-}" ]; then
+	OMP_BIN="$RESEARCH_HARNESS_OMP"
+elif [ -x "$DEV_OMP" ] && [ -d "$RESEARCH_HARNESS_HOME/node_modules" ] && command -v bun >/dev/null 2>&1; then
+	OMP_BIN="$DEV_OMP"
+else
+	OMP_BIN="omp"
+fi
+exec "$OMP_BIN" "${args[@]}" "$@"

@@ -25,7 +25,7 @@ cd ~/Projects/research-harness
 bash setup.sh
 ```
 
-You should see a short "research-harness is wired" block listing the plugin, 4 agents, 13 prompts, the state directory, your corpus folder, the config file, and the launcher:
+You should see a short "research-harness is wired" block listing the plugin, 4 agents, 13 prompts, the state directory, your corpus folder, the config file, the brand name, and the launcher:
 
 ```text
 research-harness is wired:
@@ -35,10 +35,11 @@ research-harness is wired:
   state    ~/.research-harness (projects/, papers.db)
   corpus   ~/Research/Papers (43 PDFs, read-only)
   config   ~/.research-harness/config.env
+  brand    Research Harness (RESEARCHHARNESS_BRAND_NAME in config.env)
   launcher research -> ~/Projects/research-harness/bin/research
 ```
 
-**If you don't see 13 prompts**, the install is partial — run the command again and read the error. `setup.sh` is safe to re-run: it never overwrites your own agent files, and it keeps the settings it manages. It does **not** keep anything else you put in `config.env` — see the Jev subsection in Part 1 for what that costs you.
+**If you don't see 13 prompts**, the install is partial — run the command again and read the error. `setup.sh` is safe to re-run: it never overwrites your own agent files, and it keeps the settings it manages. It does **not** keep anything else you put in `config.env`, including a changed brand name — see the Jev subsection in Part 1 for what that costs you.
 
 ### Step 0.2 — Health check
 
@@ -62,6 +63,7 @@ research doctor
   ok    prompts (13 commands installed)
   ok    mode system prompt ~/Projects/research-harness/research/mode/system.md
   ok    config ~/.research-harness/config.env
+  ok    brand "Research Harness", logo ok, tips ok
   warn  Jev first-pass OFF (optional - set TYPESAFE_API_KEY to enable)
   ok    corpus ~/Research/Papers (43 PDFs)
   ok    paper graph ~/.research-harness/papers.db (0 papers, 0 edges)
@@ -130,6 +132,43 @@ and is read read-only from the project's `review.db`. With no active project the
 2026-09-19: the guide by typing `/help` in the TUI, the no-project hint by hiding
 `~/.research-harness/active-project` for one run.
 
+### Welcome-screen branding
+
+The box at the top of the session is branded for this harness, not for omp: the border title
+reads `Research Harness v<version>`, the block mark in its left column is a beaker, and the tips are about
+`/find`, `/import` and `/screen` instead of coding-agent jokes.
+
+Three environment variables drive it, all read by `packages/utils/src/branding.ts` at render
+time. `bin/research` exports them for you:
+
+| Variable | Meaning | Unset |
+|---|---|---|
+| `RESEARCHHARNESS_BRAND_NAME` | Name in the border title | Stock `omp` |
+| `RESEARCHHARNESS_BRAND_LOGO` | Path to a logo file, one row per line | Stock omp mark |
+| `RESEARCHHARNESS_BRAND_TIPS` | Path to a tips file, one tip per line | Stock omp tips |
+
+To change the mark or the tips, edit `research/branding/logo.txt` (leading and trailing spaces
+are significant - every row must be the same width) or `research/branding/tips.txt` (one tip
+per line, blank lines ignored) and restart. A missing or unreadable file is not an error: that
+surface silently falls back to stock omp. `research doctor` prints
+`brand "Research Harness", logo ok, tips ok` when both files resolve and a `warn` when either
+is missing.
+
+To change the name, edit the `RESEARCHHARNESS_BRAND_NAME="Research Harness"` line that
+`setup.sh` adds to `~/.research-harness/config.env` (with no such line, `bin/research` still
+uses `Research Harness`). **Re-running `bash setup.sh` puts the default name back**: step 6
+rewrites `config.env` from scratch (see the Jev subsection in Part 1), so re-apply a custom
+name after every setup run.
+
+The brand lives in the fork's source, so the launcher runs the fork: `bin/research` prefers
+`packages/coding-agent/scripts/omp` (the dev wrapper, which runs `packages/coding-agent/src/cli.ts`
+through `bun`) whenever `bun` is on your PATH and the repo's dependencies are installed
+(`node_modules/` at the repo root); otherwise it runs the `omp` on your PATH. Set
+`RESEARCH_HARNESS_OMP=/path/to/omp` to force a specific binary. The wrapper runs this
+checkout's omp version, which can differ from the installed `omp` that `research doctor`
+reports on its first line. **An installed compiled `omp` shows the stock screen until it is
+rebuilt from this fork** - that is expected, not a fault.
+
 ---
 
 ## Part 1 — The worked pass on a real review
@@ -140,7 +179,7 @@ Open the harness:
 research
 ```
 
-You get the omp welcome panel (model name on the left, `/` for commands on the right) and an empty prompt line. Everything below is typed at that prompt. You can also type plain sentences — it is a conversation, the slash commands are just shortcuts.
+You get the Research Harness welcome panel (model name on the left, `/` for commands on the right) and an empty prompt line. Everything below is typed at that prompt. You can also type plain sentences — it is a conversation, the slash commands are just shortcuts.
 
 Where a step below shows a `python3 .../review.py ...` line, that is the command the assistant runs for you. You never have to type it; it is shown so you can recognise it in the transcript and check it yourself later. The outputs quoted as "what you should see" are those scripts' real outputs — in the chat you see the same lines wrapped in the assistant's summary.
 
@@ -293,7 +332,7 @@ TYPESAFE_API_KEY="your-key-here"
 ```
 
 **Re-running `bash setup.sh` deletes that line.** Step 6 of the script rewrites `config.env` from
-scratch with only the three settings it manages, so the key silently disappears and the first pass
+scratch with only the three settings it manages (plus the default brand line), so the key silently disappears and the first pass
 goes quiet again. This is not specific to Jev — the same run drops `UNPAYWALL_EMAIL` and
 `OPENALEX_MAILTO` too (both reproduced on 2026-09-19 against a scratch `HOME`), even though the
 file's own header invites you to edit it freely. Re-add your lines after any setup run, or export
