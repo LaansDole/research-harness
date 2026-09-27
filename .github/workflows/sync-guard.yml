@@ -1,0 +1,27 @@
+name: Sync guard
+
+# Red while a sync PR still carries committed conflict markers in its Sync-Conflict files.
+# Spec: docs/superpowers/specs/2026-09-27-fork-sync-conflict-capture-design.md
+# Optional: make "Sync guard / markers" a required check on main via branch protection.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  markers:
+    if: github.head_ref == 'sync/upstream'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: No conflict markers left in sync conflict files
+        env:
+          BASE_REF: origin/main
+        run: bash .github/scripts/check-sync-markers.sh
