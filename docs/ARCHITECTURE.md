@@ -300,14 +300,14 @@ Constraints every contributor must respect: **stdlib-only python** (optional bin
 
 ## 11. Staying in sync with upstream
 
-`.github/workflows/fork-sync.yml` runs `.github/scripts/sync-upstream.sh` weekly: it merges `upstream/main`, keeps this fork's `README.md` on the one conflict both sides own, refreshes `docs/UPSTREAM.md`, runs the research test suite, and opens a pull request. The README's **Staying in sync with upstream** note is the script's gate and its record — `sync-upstream.sh:26` aborts before merging if that line is missing, and `sync-upstream.sh:71` rewrites its sha and date after.
+`.github/workflows/fork-sync.yml` runs `.github/scripts/sync-upstream.sh` weekly. It merges `upstream/main` and keeps this fork's `README.md`, recorded as a `Sync-Ours` trailer. Every other conflict is committed **with its markers**, with one `Sync-Conflict: <code> <path>` trailer each. It then refreshes `docs/UPSTREAM.md`, runs the research test suite if nothing conflicted, and pushes `sync/upstream`. If the `COMMAND_CODE_API_KEY` secret is set, `.github/scripts/ai-resolve.sh` has headless omp (`vars.SYNC_AI_MODEL`, default `commandcode/z-ai/glm-5.3-flash`) resolve the content conflicts in a separate, guarded commit. That step has no GitHub write credential. `.github/scripts/sync-pr-body.sh` writes the PR body: the conflict table, auto-merged overlap files, and the upstream shortlog. Any conflict makes the PR a draft, and `.github/workflows/sync-guard.yml` stays red while markers remain. The README's **Staying in sync with upstream** note is the script's gate and its record: `sync-upstream.sh:43` aborts before merging if that line is missing, and `sync-upstream.sh:117` rewrites its sha and date afterwards.
 
 The manual procedure the workflow automates:
 
 ```sh
 git remote add upstream https://github.com/can1357/oh-my-pi.git   # one-time
 git fetch upstream main
-git merge upstream/main                                           # only README.md conflicts
+git merge upstream/main                                           # README.md: keep ours; anything else: see the sync PR table
 git checkout --ours README.md && git add README.md                # this repo keeps its README
 git show upstream/main:README.md                                  # refresh the body of docs/UPSTREAM.md
 ```
