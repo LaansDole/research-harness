@@ -1,4 +1,4 @@
-"""Contract tests for .github/scripts/sync-upstream.sh.
+"""Contract tests for .github/scripts/sync-upstream.sh (and the shared Fixture).
 
 Offline: every test builds tiny fixture git repos in a temp dir and runs the
 REAL script against them. No network, no writes outside the temp dir.
@@ -29,7 +29,7 @@ HEADER = textwrap.dedent(
 class Fixture:
     """Builds origin(bare) + upstream + fork repos, wires remotes, seeds env."""
 
-    def __init__(self, tmp):
+    def __init__(self, tmp, base_files=None):
         self.tmp = tmp
         self.origin_ready = False  # fork commits only mirror to origin once it is wired
         self.upstream = os.path.join(tmp, "upstream")
@@ -40,6 +40,8 @@ class Fixture:
         self._git("init", "-q", self.upstream, "-b", "main")
         self.commit(self.upstream, "README.md", "upstream readme v1\n", "upstream base")
         self.commit(self.upstream, "docs/SHARED.md", "shared v1\n", "upstream shared file")
+        for path, content in (base_files or {}).items():  # common-ancestor content
+            self.commit(self.upstream, path, content, f"upstream base {path}")
         # origin: bare remote standing in for github.com/LaansDole/research-harness
         self._git("init", "-q", "--bare", self.origin, "-b", "main")
         # fork: CLONED from upstream so the histories are related (like the real fork);
@@ -49,6 +51,8 @@ class Fixture:
         self.commit(self.fork, "docs/UPSTREAM.md", HEADER + "upstream readme v1\n", "vendor upstream readme")
         self.commit(self.fork, "research/tests/run.sh", STUB_RUN_SH, "stub research gate")
         os.chmod(os.path.join(self.fork, "research", "tests", "run.sh"), 0o755)
+        # commit the exec bit too: a dirty mode change would look like an unclean worktree
+        self._git("-C", self.fork, "commit", "-qam", "research gate is executable")
         self._git("-C", self.fork, "remote", "remove", "origin")
         self._git("-C", self.fork, "remote", "add", "origin", self.origin)
         self._git("-C", self.fork, "push", "-q", "origin", "main")
@@ -88,7 +92,7 @@ class Fixture:
         self.commit(self.upstream, path, content, msg)
         self._git("-C", self.fork, "fetch", "-q", "upstream")
 
-    def run_script(self, *extra_env):
+    def run_script(self, *extra_env, script=SCRIPT):
         env = dict(os.environ)
         env.update(
             UPSTREAM_URL=self.upstream,
@@ -102,13 +106,22 @@ class Fixture:
             k, v = kv.split("=", 1)
             env[k] = v
         return subprocess.run(
-            ["bash", SCRIPT],
+            ["bash", script],
             cwd=self.fork,
             env=env,
             capture_output=True,
             text=True,
             timeout=120,
         )
+
+    def git_out(self, *args):
+        return subprocess.run(
+            ["git", "-C", self.fork, *args], capture_output=True, text=True, check=True
+        ).stdout
+
+    def report(self, name):
+        with open(os.path.join(self.fork, ".git", "sync-report", name)) as f:
+            return f.read()
 
     @staticmethod
     def _git(*args):
@@ -197,24 +210,75 @@ class TestConflictPolicy(unittest.TestCase):
             self.assertIn("Fork-only section.", readme)
             self.assertNotIn("upstream readme v2", readme)
 
-    def test_unexpected_conflict_fails_loudly(self):
-        """Divergent non-README file -> exit 1, conflicts listed, no sync-note commit."""
+    def test_unexpected_conflict_committed_with_markers(self):
+        """Divergent non-README file -> merge committed WITH markers, typed trailer,
+        report lists it, research gate skipped (markers make it meaningless), exit 0."""
         with tempfile.TemporaryDirectory() as tmp:
             fx = Fixture(tmp)
             fx.commit(fx.fork, "docs/SHARED.md", "fork version\n", "fork edits shared")
             fx.upstream_commit("docs/SHARED.md", "upstream version\n", "upstream edits shared")
             r = fx.run_script()
-            self.assertEqual(r.returncode, 1)
-            self.assertIn("docs/SHARED.md", r.stderr)
-            log = subprocess.run(
-                ["git", "-C", fx.fork, "branch", "--list", "sync/upstream"],
-                capture_output=True, text=True, check=True).stdout.strip()
-            # branch may exist mid-merge; the merge must NOT be committed
-            if log:
-                unmerged = subprocess.run(
-                    ["git", "-C", fx.fork, "diff", "--name-only", "--diff-filter=U"],
-                    capture_output=True, text=True, check=True).stdout.strip()
-                self.assertEqual(unmerged, "docs/SHARED.md")
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(r.stdout.rstrip().endswith("conflicts=1"), r.stdout)
+            merge = fx.git_out("log", "--merges", "-1", "--format=%H", "sync/upstream").strip()
+            self.assertEqual(len(fx.git_out("rev-list", "--parents", "-1", merge).split()), 3)
+            self.assertEqual(
+                fx.git_out("log", "-1", "--format=%(trailers:key=Sync-Conflict,valueonly)", merge).strip(),
+                "UU docs/SHARED.md")
+            self.assertIn("<<<<<<< ", fx.git_out("show", "sync/upstream:docs/SHARED.md"))
+            self.assertEqual(fx.report("conflicts.txt"), "UU docs/SHARED.md\n")
+            self.assertIn("<<<<<<< ", fx.report("conflicts.diff"))
+            self.assertFalse(os.path.exists(fx.marker))
+            # the captured branch really reached origin
+            self.assertIn("refs/heads/sync/upstream", fx.git_out("ls-remote", "--heads", "origin"))
+
+    def test_delete_modify_conflict_captured(self):
+        """Upstream deletes a file the fork modified -> tree conflict UD captured,
+        fork's version kept, merge committed."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp, base_files={"docs/GONE.md": "base\n"})
+            fx.commit(fx.fork, "docs/GONE.md", "fork keeps and edits\n", "fork edits gone")
+            fx._git("-C", fx.upstream, "rm", "-q", "docs/GONE.md")
+            fx._git("-C", fx.upstream, "commit", "-q", "-m", "upstream deletes gone")
+            fx._git("-C", fx.fork, "fetch", "-q", "upstream")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 0, r.stderr)
+            merge = fx.git_out("log", "--merges", "-1", "--format=%H", "sync/upstream").strip()
+            self.assertEqual(
+                fx.git_out("log", "-1", "--format=%(trailers:key=Sync-Conflict,valueonly)", merge).strip(),
+                "UD docs/GONE.md")
+            self.assertEqual(fx.git_out("show", "sync/upstream:docs/GONE.md"), "fork keeps and edits\n")
+
+    def test_readme_only_conflict_is_not_counted(self):
+        """README conflict alone -> conflicts=0, gate runs, recorded as Sync-Ours not Sync-Conflict."""
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp)
+            fx.commit(fx.fork, "README.md", fx.fork_readme("oldsha0", "2000-01-01") + "\nFork-only.\n", "fork readme")
+            fx.upstream_commit("README.md", "upstream readme v2\n", "upstream readme")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(r.stdout.rstrip().endswith("conflicts=0"), r.stdout)
+            merge = fx.git_out("log", "--merges", "-1", "--format=%H", "sync/upstream").strip()
+            trailers = fx.git_out("log", "-1", "--format=%(trailers)", merge)
+            self.assertIn("Sync-Ours: UU README.md", trailers)
+            self.assertNotIn("Sync-Conflict", trailers)
+            self.assertTrue(os.path.exists(fx.marker))
+
+
+class TestChangeCapture(unittest.TestCase):
+    def test_overlap_lists_auto_merged_shared_files(self):
+        """Both sides edit different hunks of one file -> clean merge, path flagged in overlap.txt."""
+        base = "l1\nl2\nl3\nl4\nl5\nl6\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            fx = Fixture(tmp, base_files={"src/both.txt": base})
+            fx.commit(fx.fork, "src/both.txt", base.replace("l1", "fork l1"), "fork edits top")
+            fx.upstream_commit("src/both.txt", base.replace("l6", "upstream l6"), "upstream edits bottom")
+            fx.upstream_commit("src/only-upstream.txt", "x\n", "upstream-only file")
+            r = fx.run_script()
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertTrue(r.stdout.rstrip().endswith("conflicts=0"), r.stdout)
+            self.assertEqual(fx.report("overlap.txt"), "src/both.txt\n")
+            self.assertIn("upstream-only file", fx.report("shortlog.txt"))
 
 
 class TestDryRunAndSafety(unittest.TestCase):

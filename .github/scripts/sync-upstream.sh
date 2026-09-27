@@ -1,26 +1,43 @@
 #!/usr/bin/env bash
 # sync-upstream.sh — merge upstream main into this fork and prep the PR branch.
 # Fork-owned (LaansDole/research-harness). Procedure per
-# docs/superpowers/specs/2026-09-19-fork-sync-workflow-design.md.
+# docs/superpowers/specs/2026-09-19-fork-sync-workflow-design.md, conflict capture per
+# docs/superpowers/specs/2026-09-27-fork-sync-conflict-capture-design.md.
 #
-# Env: UPSTREAM_URL (default https://github.com/can1357/oh-my-pi.git)
-#      SYNC_BRANCH  (default sync/upstream)
-#      BASE_REF     (default origin/main)
-#      SYNC_DRY_RUN (1 = stop before push)
-# Exit: 0 synced | 0 + "UP-TO-DATE" when behind=0 | 1 conflict/failed gate | 2 usage
+# Env: UPSTREAM_URL    (default https://github.com/can1357/oh-my-pi.git)
+#      SYNC_BRANCH     (default sync/upstream)
+#      BASE_REF        (default origin/main)
+#      SYNC_DRY_RUN    (1 = stop before push)
+#      SYNC_REPORT_DIR (default <git-dir>/sync-report; never inside the worktree)
+# Exit: 0 synced (conflicts committed with markers) | 0 + "UP-TO-DATE" when behind=0
+#       1 failed gate/push | 2 usage
 set -euo pipefail
+export GIT_LITERAL_PATHSPECS=1 # conflict paths are data, never globs
 
 UPSTREAM_URL="${UPSTREAM_URL:-https://github.com/can1357/oh-my-pi.git}"
 SYNC_BRANCH="${SYNC_BRANCH:-sync/upstream}"
 BASE_REF="${BASE_REF:-origin/main}"
 DRY_RUN="${SYNC_DRY_RUN:-0}"
+REPORT_DIR="${SYNC_REPORT_DIR:-$(git rev-parse --absolute-git-dir)/sync-report}"
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
+
+# git-status XY code for an unmerged path, from which index stages exist
+# (1=base 2=ours/fork 3=theirs/upstream).
+conflict_code() {
+  case "$(git ls-files -u -- "$1" | awk '{print $3}' | sort -u | tr -d '\n')" in
+    123) echo UU ;; 23) echo AA ;; 12) echo UD ;; 13) echo DU ;;
+    2) echo AU ;; 3) echo UA ;; 1) echo DD ;;
+    *) fail "cannot classify conflict for $1" ;;
+  esac
+}
 
 # --- prep (idempotent) -------------------------------------------------------
 git remote get-url upstream >/dev/null 2>&1 || git remote add upstream "$UPSTREAM_URL"
 git fetch -q origin main
 git fetch -q upstream main
+rm -rf "$REPORT_DIR"
+mkdir -p "$REPORT_DIR"
 
 # --- README sync-note presence (fail BEFORE any branch/merge work) -----------
 grep -qF 'Staying in sync with upstream' README.md \
@@ -33,21 +50,50 @@ if [ "$BEHIND" -eq 0 ]; then
 fi
 echo "upstream ahead by $BEHIND commits"
 
+# --- change capture (independent of how the merge goes) ----------------------
+MB=$(git merge-base "$BASE_REF" upstream/main)
+git shortlog --no-merges "$MB..upstream/main" </dev/null > "$REPORT_DIR/shortlog.txt"
+git diff --stat "$MB" upstream/main > "$REPORT_DIR/diffstat.txt"
+
 # --- merge on the FETCHED base ref (never a possibly-stale local main) -------
 git checkout -q -B "$SYNC_BRANCH" "$BASE_REF"
 
+K=0
+: > "$REPORT_DIR/conflicts.txt"
 if ! git merge upstream/main --no-ff -m "Merge upstream can1357/oh-my-pi main ($BEHIND commits) into main"; then
-  CONFLICTS=$(git diff --name-only --diff-filter=U)
-  if [ "$CONFLICTS" = "README.md" ]; then
-    git checkout --ours README.md
-    git add README.md
-    git commit -q --no-edit
+  UNMERGED=()
+  while IFS= read -r -d '' p; do UNMERGED+=("$p"); done < <(git diff --name-only --diff-filter=U -z)
+  [ "${#UNMERGED[@]}" -gt 0 ] || fail "merge failed without conflicts (see git output above)"
+  git diff > "$REPORT_DIR/conflicts.diff" || true
+  TRAILERS=()
+  for p in "${UNMERGED[@]}"; do
+    code=$(conflict_code "$p")
+    if [ "$p" = "README.md" ]; then
+      # The fork owns its README; upstream's lives on in docs/UPSTREAM.md.
+      git checkout --ours README.md
+      git add README.md
+      TRAILERS+=(--trailer "Sync-Ours: $code README.md")
+      continue
+    fi
+    if [ -e "$p" ]; then git add -- "$p"; else git rm -q --cached -- "$p"; fi
+    printf '%s %s\n' "$code" "$p" >> "$REPORT_DIR/conflicts.txt"
+    TRAILERS+=(--trailer "Sync-Conflict: $code $p")
+    K=$((K + 1))
+  done
+  if [ "$K" -eq 0 ]; then
+    SUBJECT="Merge upstream can1357/oh-my-pi main ($BEHIND commits) into main"
   else
-    echo "Unexpected conflicts — refusing to auto-resolve:" >&2
-    echo "$CONFLICTS" >&2
-    exit 1
+    SUBJECT="Merge upstream can1357/oh-my-pi main ($BEHIND commits, $K unresolved conflicts) into main"
   fi
+  git commit -q -m "$SUBJECT" "${TRAILERS[@]}"
 fi
+
+# auto-merged files both sides touched: silent semantic-conflict candidates
+comm -12 \
+  <(git -c core.quotePath=false diff --name-only "$MB" "$BASE_REF" | sort) \
+  <(git -c core.quotePath=false diff --name-only "$MB" upstream/main | sort) \
+  | grep -vxF -f <(cut -d' ' -f2- "$REPORT_DIR/conflicts.txt"; echo README.md) \
+  > "$REPORT_DIR/overlap.txt" || true
 
 # --- refresh vendored upstream README (docs/UPSTREAM.md) ---------------------
 UP_SHA=$(git rev-parse --short upstream/main)
@@ -72,8 +118,10 @@ perl -pi -e 's/\Q**Staying in sync with upstream** (synced to upstream `main` \E
 grep -qF "(synced to upstream \`main\` $UP_SHA, $UP_DATE):" README.md \
   || fail "sync-note update did not land"
 
-# --- fork test gate ----------------------------------------------------------
-bash research/tests/run.sh
+# --- fork test gate (markers in the tree would make it meaningless) ----------
+if [ "$K" -eq 0 ]; then
+  bash research/tests/run.sh
+fi
 
 # --- commit doc updates ------------------------------------------------------
 git add docs/UPSTREAM.md README.md
@@ -83,9 +131,11 @@ fi
 
 # --- ship --------------------------------------------------------------------
 if [ "$DRY_RUN" = "1" ]; then
-  echo "DRY-RUN-OK branch=$SYNC_BRANCH ahead_of_base=$(git rev-list --count "${BASE_REF}..HEAD")"
+  echo "DRY-RUN-OK branch=$SYNC_BRANCH conflicts=$K ahead_of_base=$(git rev-list --count "${BASE_REF}..HEAD")"
   exit 0
 fi
 
-git push -q origin "$SYNC_BRANCH" 2>/dev/null || git push -q origin "$SYNC_BRANCH" --force
-echo "SYNCED branch=$SYNC_BRANCH"
+# fresh tracking ref so the lease compares against what origin really has
+git fetch -q origin "$SYNC_BRANCH" 2>/dev/null || true
+git push -q --force-with-lease origin "$SYNC_BRANCH" || fail "push of $SYNC_BRANCH failed"
+echo "SYNCED branch=$SYNC_BRANCH conflicts=$K"
