@@ -773,9 +773,7 @@ describe("OpenAI reasoning effort fallback retry", () => {
 			{ preconnect: fetch.preconnect },
 		);
 		const providerSessionState = new Map<string, ProviderSessionState>();
-		// lm-studio is the local provider still on the `qwen` twin dialect
-		// (classes/qwen.kdl); llama.cpp rides kwargs alone and is covered below.
-		const model = createLocalQwenModel("lm-studio", "http://127.0.0.1:1234/v1");
+		const model = createLocalQwenModel("llama.cpp", "http://127.0.0.1:8080/v1");
 
 		const first = await streamOpenAICompletions(model, testContext, {
 			apiKey: "test-key",
@@ -847,7 +845,7 @@ describe("OpenAI reasoning effort fallback retry", () => {
 			},
 			{ preconnect: fetch.preconnect },
 		);
-		const model = createLocalQwenModel("lm-studio", "http://127.0.0.1:1234/v1");
+		const model = createLocalQwenModel("llama.cpp", "http://127.0.0.1:8080/v1");
 
 		const result = await streamOpenAICompletions(model, testContext, {
 			apiKey: "test-key",

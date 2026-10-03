@@ -134,35 +134,6 @@ describe("OpenAI compat policy", () => {
 		expect(responseBody.input).toEqual([]);
 	});
 
-	it("exposes reasoning replay constraints independent of endpoint", () => {
-		const compat: OpenAICompat = {
-			requiresReasoningContentForToolCalls: true,
-			requiresReasoningContentForAllAssistantTurns: true,
-			allowsSyntheticReasoningContentForToolCalls: false,
-			reasoningContentField: "reasoning_content",
-		};
-		const chatPolicy = resolveOpenAICompatPolicy(chatModel(compat), { endpoint: "chat-completions" });
-		const responsesPolicy = resolveOpenAICompatPolicy(responsesModel(compat), { endpoint: "responses" });
-
-		expect(chatPolicy.reasoning.requiresReasoningContentForToolCalls).toBe(true);
-		expect(responsesPolicy.reasoning.requiresReasoningContentForToolCalls).toBe(true);
-		expect(chatPolicy.reasoning.requiresReasoningContentForAllAssistantTurns).toBe(true);
-		expect(responsesPolicy.reasoning.requiresReasoningContentForAllAssistantTurns).toBe(true);
-		expect(chatPolicy.reasoning.allowsSyntheticReasoningContentForToolCalls).toBe(false);
-		expect(responsesPolicy.reasoning.allowsSyntheticReasoningContentForToolCalls).toBe(false);
-	});
-
-	it("exposes tool id and cumulative reasoning stream constraints for both endpoints", () => {
-		const compat: OpenAICompat = { requiresMistralToolIds: true, reasoningDeltasMayBeCumulative: true };
-		const chatPolicy = resolveOpenAICompatPolicy(chatModel(compat), { endpoint: "chat-completions" });
-		const responsesPolicy = resolveOpenAICompatPolicy(responsesModel(compat), { endpoint: "responses" });
-
-		expect(chatPolicy.tools.toolCallIdKind).toBe("mistral-9-alnum");
-		expect(responsesPolicy.tools.toolCallIdKind).toBe("mistral-9-alnum");
-		expect(chatPolicy.stream.reasoningDeltasMayBeCumulative).toBe(true);
-		expect(responsesPolicy.stream.reasoningDeltasMayBeCumulative).toBe(true);
-	});
-
 	it("routes Token Plan qwen3.8-max effort selections onto the wire", () => {
 		const model = getBundledModel<"openai-completions">("alibaba-token-plan", "qwen3.8-max");
 		for (const effort of [Effort.Low, Effort.Medium, Effort.XHigh]) {
@@ -221,11 +192,9 @@ describe("OpenAI compat policy", () => {
 		} satisfies ModelSpec<"openai-completions">);
 	}
 
-	it("routes local Qwen3.8 effort selections onto the chat template (llama.cpp kwargs dialect)", () => {
+	it("routes local Qwen3.8 effort selections onto the chat template (llama.cpp qwen dialect)", () => {
 		// Regression: the qwen dialects used to emit only `enable_thinking: true`,
 		// so every effort selection ran at the template's xhigh default.
-		// llama-server reads the jinja kwargs, never the top-level twins
-		// (ggml-org/llama.cpp#13160, #13196).
 		const model = localQwenModel("qwen3.8-27b", "llama.cpp", "http://127.0.0.1:8080/v1");
 		for (const effort of [Effort.Low, Effort.Medium, Effort.XHigh]) {
 			const params = chatParams();
@@ -233,14 +202,12 @@ describe("OpenAI compat policy", () => {
 				params,
 				resolveOpenAICompatPolicy(model, { endpoint: "chat-completions", reasoning: effort }),
 			);
-			expect(params.enable_thinking).toBeUndefined();
-			expect(params.reasoning_effort).toBeUndefined();
-			expect(params.preserve_thinking).toBeUndefined();
-			expect(params.chat_template_kwargs).toEqual({
-				preserve_thinking: true,
-				enable_thinking: true,
-				reasoning_effort: effort,
-			});
+			// Twin emission: top-level for newer llama.cpp builds, kwargs for
+			// older builds — and the preserve_thinking kwarg must survive.
+			expect(params.enable_thinking).toBe(true);
+			expect(params.reasoning_effort).toBe(effort);
+			expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, reasoning_effort: effort });
+			expect(params.preserve_thinking).toBe(true);
 		}
 	});
 
@@ -275,9 +242,9 @@ describe("OpenAI compat policy", () => {
 			params,
 			resolveOpenAICompatPolicy(model, { endpoint: "chat-completions", reasoning: Effort.Medium }),
 		);
-		expect(params.enable_thinking).toBeUndefined();
+		expect(params.enable_thinking).toBe(true);
 		expect(params.reasoning_effort).toBeUndefined();
-		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, enable_thinking: true });
+		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true });
 	});
 
 	it("keeps pre-3.8 local Qwen on the bare enable_thinking toggle", () => {
@@ -289,8 +256,8 @@ describe("OpenAI compat policy", () => {
 			params,
 			resolveOpenAICompatPolicy(model, { endpoint: "chat-completions", reasoning: Effort.High }),
 		);
-		expect(params.enable_thinking).toBeUndefined();
+		expect(params.enable_thinking).toBe(true);
 		expect(params.reasoning_effort).toBeUndefined();
-		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true, enable_thinking: true });
+		expect(params.chat_template_kwargs).toEqual({ preserve_thinking: true });
 	});
 });

@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, describe, expect, it } from "bun:test";
+import { afterEach, beforeAll, describe, expect, it, vi } from "bun:test";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -13,6 +13,7 @@ beforeAll(async () => {
 });
 
 afterEach(() => {
+	vi.restoreAllMocks();
 	for (const key of ENV_KEYS) {
 		const value = saved.get(key);
 		if (value === undefined) delete process.env[key];
@@ -34,48 +35,54 @@ function tmpFile(name: string, content: string): string {
 	return file;
 }
 
-/** The border line of the welcome box carrying "<name> vX.Y.Z". */
-function titleLine(component: WelcomeComponent): string {
-	const lines = component.render(100);
-	return lines.find(line => line.includes(" v1.2.3 ")) ?? "";
+/** Plain-text rows of the terminal banner at `columns`. */
+function rows(component: WelcomeComponent, columns = 100): string[] {
+	return component.render(columns).map(row => Bun.stripANSI(row));
 }
 
 describe("WelcomeComponent branding", () => {
-	it("keeps the stock omp title when brand env is unset", () => {
+	it("keeps the stock omp wordmark when brand env is unset", () => {
 		setEnv("RESEARCHHARNESS_BRAND_NAME", undefined);
-		const component = new WelcomeComponent("1.2.3", "model", "provider");
-		expect(titleLine(component)).toContain("omp v1.2.3");
+		const text = rows(new WelcomeComponent("1.2.3")).join("\n");
+		expect(text).toContain("▄▀▀▄");
+		expect(text).not.toContain("Research Harness");
 	});
 
-	it("renders the brand name in the border title when set", () => {
+	it("sets the brand name in place of the wordmark with the version under it", () => {
 		setEnv("RESEARCHHARNESS_BRAND_NAME", "Research Harness");
-		const component = new WelcomeComponent("1.2.3", "model", "provider");
-		expect(titleLine(component)).toContain("Research Harness v1.2.3");
-		expect(titleLine(component)).not.toContain("omp v1.2.3");
+		const component = new WelcomeComponent("1.2.3");
+		const banner = rows(component);
+		const name = banner.find(row => row.includes("Research Harness"));
+		const version = banner.find(row => row.includes("v1.2.3"));
+		expect(banner.join("\n")).not.toContain("▄▀▀▄");
+		expect(version?.indexOf("v1.2.3")).toBe(name?.indexOf("Research Harness"));
+
+		expect(component.describe({} as never).c?.[0]).toMatchObject({
+			c: [{ k: "image" }, { c: [{ p: { spans: [{ t: "Research Harness" }] } }, {}] }],
+		});
 	});
 
-	it("renders the brand logo rows in place of the stock mark", () => {
-		setEnv("RESEARCHHARNESS_BRAND_NAME", undefined);
+	it("keeps the name and version beside a brand logo shorter than the lockup", () => {
+		setEnv("RESEARCHHARNESS_BRAND_NAME", "Research Harness");
 		setEnv("RESEARCHHARNESS_BRAND_LOGO", tmpFile("logo.txt", "▓▓▓▓▓▓\n"));
-		const component = new WelcomeComponent("1.2.3", "model", "provider");
-		// Each glyph is wrapped in its own gradient SGR pair, so compare on plain text.
-		const rendered = component
-			.render(100)
-			.join("\n")
-			.replace(/\x1b\[[0-9;]*m/g, "");
-		expect(rendered).toContain("▓▓▓▓▓▓");
-		expect(rendered).not.toContain("████████████");
+		const text = rows(new WelcomeComponent("1.2.3")).join("\n");
+		expect(text).toContain("▓▓▓▓▓▓");
+		expect(text).not.toContain("████████████");
+		expect(text).toContain("Research Harness");
+		expect(text).toContain("v1.2.3");
 	});
 
 	it("picks tips from the brand tips file when set", () => {
 		setEnv("RESEARCHHARNESS_BRAND_TIPS", tmpFile("tips.txt", "only-brand-tip\n"));
-		const component = new WelcomeComponent("1.2.3", "model", "provider");
-		expect(component.tip).toBe("only-brand-tip");
+		vi.spyOn(Math, "random").mockReturnValue(0.5);
+		expect(new WelcomeComponent("1.2.3").tip).toBe("only-brand-tip");
 	});
 
 	it("falls back to stock tips when the brand tips file is missing", () => {
+		vi.spyOn(Math, "random").mockReturnValue(0.5);
+		setEnv("RESEARCHHARNESS_BRAND_TIPS", undefined);
+		const stock = new WelcomeComponent("1.2.3").tip;
 		setEnv("RESEARCHHARNESS_BRAND_TIPS", "/nonexistent/branding/tips.txt");
-		const component = new WelcomeComponent("1.2.3", "model", "provider");
-		expect(component.tip).toBeDefined();
+		expect(new WelcomeComponent("1.2.3").tip).toBe(stock);
 	});
 });
