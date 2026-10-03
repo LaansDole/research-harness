@@ -135,7 +135,7 @@ and is read read-only from the project's `review.db`. With no active project the
 ### Welcome-screen branding
 
 The banner at the top of the session is branded for this harness, not for omp: `Research Harness`
-sits beside the block mark with the version under it, the mark is a beaker, and the tips are about
+sits beside the block mark with the version under it, the mark is a stack of papers, and the tips are about
 `/find`, `/import` and `/screen` instead of coding-agent jokes.
 
 Three environment variables drive it, all read by `packages/utils/src/branding.ts` at render
