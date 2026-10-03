@@ -1,3 +1,13 @@
+<div align="center">
+<pre>
+   ▄▄▄▄▄▄▄▄ 
+ ▄▄█▀▀▀▀▀▀█ 
+ █▀█▀▀▀▀▀▀█ 
+ █ █▀▀▀▀  █ 
+ █▄█▄▄▄▄▄▄█ 
+</pre>
+</div>
+
 <p align="center"><strong>research-harness</strong></p>
 
 <p align="center">
@@ -82,7 +92,7 @@ git clone https://github.com/LaansDole/research-harness
 cd research-harness
 ./setup.sh        # registers the plugin, agents, prompts and launcher — idempotent
 research doctor   # checks omp, plugin, agents, prompts, corpus, and paper-graph db
-research          # starts omp with the research mode prompt appended
+research          # starts omp with the research mode prompt and the Research Harness welcome banner
 ```
 
 Then type `/help` to see every command in plain words. To test-drive it on your own review — every step with the numbers you should see and what a different one means — follow [docs/RUNBOOK.md](docs/RUNBOOK.md); the capture above walks its first half. Re-run `./setup.sh` after pulling: new commands only reach omp when it runs.
@@ -91,7 +101,7 @@ Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (s
 
 ## Under the hood
 
-This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is purely additive — it only adds paths (`research/`, `assets/research/`, `setup.sh`, `bin/research`, `docs/`) and reaches stock omp through its plugin, prompt and agent extension points, so upstream merges stay clean. Design doc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); upstream's own README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
+This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is additive — it adds paths (`research/`, `assets/research/`, `setup.sh`, `bin/research`, `docs/`) and reaches stock omp through its plugin, prompt and agent extension points, so upstream merges stay clean. The one exception is a small env-driven branding seam (`packages/utils/src/branding.ts` plus three fallbacks in the TUI welcome screen) that puts the paper-stack mark, the name and researcher tips on the welcome banner; with its variables unset omp renders stock ([docs/ARCHITECTURE.md §2.1](docs/ARCHITECTURE.md#21-branding-seam)). Design doc: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); upstream's own README is preserved at [docs/UPSTREAM.md](docs/UPSTREAM.md).
 
 **Staying in sync with upstream** (synced to upstream `main` 9348320cc4, 2026-10-03):
 a weekly GitHub Action merges upstream and opens a pull request; the manual procedure is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#11-staying-in-sync-with-upstream).
