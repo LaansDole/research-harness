@@ -90,6 +90,12 @@ PAPER_GRAPH_DB="${PAPER_GRAPH_DB:-$RH_HOME/papers.db}"
 	fi
 } >"$CONFIG"
 note "config   $CONFIG"
+# Brand name: append-if-absent only. Step 6 rewrites config.env on every run, so
+# today this always re-adds the default and a customized name does not survive a rerun.
+if [ -f "$CONFIG" ] && ! grep -q '^RESEARCHHARNESS_BRAND_NAME=' "$CONFIG"; then
+	printf '\n# Welcome-screen branding (read by bin/research)\nRESEARCHHARNESS_BRAND_NAME="Research Harness"\n' >>"$CONFIG"
+	note "brand    Research Harness (RESEARCHHARNESS_BRAND_NAME in config.env)"
+fi
 
 # 7. Launcher on PATH.
 mkdir -p "$HOME/.local/bin"
