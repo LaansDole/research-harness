@@ -128,23 +128,25 @@ jobs:
           if [ -z "$PR" ]; then
             if [ "$K" -gt 0 ]; then DRAFT=--draft; else DRAFT=; fi
             # shellcheck disable=SC2086 # DRAFT is intentionally empty or one flag
-            gh pr create --base main --head sync/upstream --title "$TITLE" --body-file "$BODY" $DRAFT
+            URL=$(gh pr create --base main --head sync/upstream --title "$TITLE" --body-file "$BODY" $DRAFT)
+            PR=${URL##*/}
           else
-            gh pr edit "$PR" --title "$TITLE" --body-file "$BODY"
+            # REST, never `gh pr edit`: its GraphQL read of team reviewers needs read:org,
+            # which a repo+workflow PAT lacks, so every update of an existing PR failed.
+            gh api -X PATCH "repos/$GH_REPO/pulls/$PR" -f title="$TITLE" -F body=@"$BODY" --silent
             if [ "$K" -gt 0 ]; then gh pr ready "$PR" --undo || true; else gh pr ready "$PR" || true; fi
           fi
           gh label create sync-conflicts --color B60205 --description "Upstream sync has conflicts to review" --force
           gh label create ai-resolved --color 5319E7 --description "Conflicts resolved by the Command Code model" --force
-          if [ "$K" -gt 0 ]; then
-            gh pr edit sync/upstream --add-label sync-conflicts
-          else
-            gh pr edit sync/upstream --remove-label sync-conflicts || true
-          fi
-          if [ "$R" -gt 0 ]; then
-            gh pr edit sync/upstream --add-label ai-resolved
-          else
-            gh pr edit sync/upstream --remove-label ai-resolved || true
-          fi
+          label() { # <count> <name>: the label is on the PR iff count > 0
+            if [ "$1" -gt 0 ]; then
+              gh api "repos/$GH_REPO/issues/$PR/labels" -f "labels[]=$2" --silent
+            else
+              gh api -X DELETE "repos/$GH_REPO/issues/$PR/labels/$2" --silent 2>/dev/null || true
+            fi
+          }
+          label "$K" sync-conflicts
+          label "$R" ai-resolved
 
       - name: Upload sync report
         if: always() && steps.merge.outcome != 'skipped'
