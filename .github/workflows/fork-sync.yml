@@ -1,12 +1,12 @@
 name: Fork sync
 
-# Weekly merge of can1357/oh-my-pi:main into this fork + PR. Conflicts never stop the run:
+# Twice-weekly merge of can1357/oh-my-pi:main into this fork + PR. Conflicts never stop the run:
 # they are committed with markers (draft PR), optionally AI-resolved, and listed in the body.
 # Spec: docs/superpowers/specs/2026-09-27-fork-sync-conflict-capture-design.md
 # Scheduled workflows only run from the default branch; keep this on main.
 on:
   schedule:
-    - cron: '17 3 * * 1' # Mon 03:17 UTC = Mon 10:17 +07
+    - cron: '17 3 * * 3,6' # Wed+Sat 03:17 UTC = 10:17 +07
   workflow_dispatch:
     inputs:
       ai:
