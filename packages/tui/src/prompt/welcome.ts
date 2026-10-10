@@ -221,11 +221,7 @@ export class WelcomeComponent implements Component {
 		if (theme.getSymbolPreset() === "unicode" && this.#nagRoll < 0.1) {
 			return "Please use nerdfont 😭.";
 		}
-<<<<<<< HEAD
-		return pickWeightedTip(getBrandTips() ?? TIPS, this.#tipRoll) || undefined;
-=======
-		return pickWeightedTip(isNativeRendering() ? TSP_TIPS : TIPS, this.#tipRoll) || undefined;
->>>>>>> upstream/main
+		return pickWeightedTip(getBrandTips() ?? (isNativeRendering() ? TSP_TIPS : TIPS), this.#tipRoll) || undefined;
 	}
 
 	invalidate(): void {
