@@ -136,6 +136,8 @@ import {
 	cfgAdvisorEvictStaleResults,
 	cfgAdvisorImmuneTurns,
 	cfgAdvisorJudgeGate,
+	cfgAdvisorJudgeGateMaxHoldMs,
+	cfgAdvisorJudgeGateMaxHolds,
 	cfgAdvisorMaxNotesPerUpdate,
 	cfgAdvisorReviewInterval,
 	cfgAdvisorReviewMode,
@@ -1801,6 +1803,10 @@ export class SessionAdvisors {
 								signal: AbortSignal.timeout(ADVISOR_REVIEW_GATE_TIMEOUT_MS),
 							})
 						: undefined,
+				gateLimits: () => ({
+					maxHolds: Math.max(1, Math.trunc(cfgAdvisorJudgeGateMaxHolds.get(this.#host.settings))),
+					maxHoldMs: cfgAdvisorJudgeGateMaxHoldMs.get(this.#host.settings),
+				}),
 			});
 
 			const advisorRef: ActiveAdvisor = {
