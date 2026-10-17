@@ -162,6 +162,7 @@ const panelBody = document.getElementById("panel-body");
 function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
 function showPanel(n) {
   selected = n;
+  if (window.parent !== window) window.parent.postMessage({type: "paper-graph:select", id: n.id, title: n.title}, "*");
   let doi = n.doi || "";
   if (doi && !doi.startsWith("http")) doi = "https://doi.org/" + doi;
   const link = doi || n.url || "";
