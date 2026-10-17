@@ -122,6 +122,8 @@ export function App(): ReactNode {
 	const prefill = useCallback((text: string): void => {
 		setDraft(text);
 		setTab("chat");
+		// Focus once the chat panel is unhidden so Enter sends the reviewed prompt.
+		requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>(".rw-chat textarea")?.focus());
 	}, []);
 
 	const send = (message: string, images: ImageContent[]): void => {
@@ -162,8 +164,11 @@ export function App(): ReactNode {
 				</nav>
 				{exit && (
 					<div className="rw-banner">
-						<span>agent exited (code {exit.code})</span>
-						{exit.stderr && <pre>{exit.stderr}</pre>}
+						<span>
+							{exit.reason === "agent"
+								? "The research agent stopped unexpectedly. Your sessions are saved; reconnecting starts it again."
+								: "Lost the connection to research web. If you closed it, run `research web` in a terminal, then reconnect."}
+						</span>
 						<button type="button" onClick={() => setGeneration(g => g + 1)}>
 							Reconnect
 						</button>

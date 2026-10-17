@@ -126,10 +126,12 @@ export interface ModelRef {
 	id: string;
 }
 
+/** Why the chat stopped: the agent process died, or the browser lost the research web server. */
 export interface ExitInfo {
-	code: number;
-	stderr: string;
+	reason: "agent" | "connection";
 }
+
+const NOT_RUNNING = "The research agent isn't running. Press Reconnect to start it again.";
 
 /** One WebSocket = one omp child. Reconnect by constructing a new instance. */
 export class AgentConnection {
@@ -146,14 +148,14 @@ export class AgentConnection {
 		this.#ws = new WebSocket(url);
 		this.#ws.onopen = () => this.#open.resolve();
 		this.#ws.onmessage = msg => this.#onFrame(JSON.parse(String(msg.data)) as BridgeFrame);
-		this.#ws.onclose = () => this.#exit({ code: -1, stderr: "connection closed" });
+		this.#ws.onclose = () => this.#exit({ reason: "connection" });
 		// Avoid an unhandled rejection when nobody is awaiting the open.
 		this.#open.promise.catch(() => {});
 	}
 
 	async request<T>(body: CommandBody): Promise<T> {
 		await this.#open.promise;
-		if (this.#exited) throw new Error("agent is not running");
+		if (this.#exited) throw new Error(NOT_RUNNING);
 		const id = ++this.#seq;
 		const pending = Promise.withResolvers<unknown>();
 		this.#pending.set(id, pending);
@@ -198,7 +200,7 @@ export class AgentConnection {
 				for (const listener of this.#settledListeners) listener();
 				return;
 			case "exit":
-				this.#exit({ code: frame.code, stderr: frame.stderr });
+				this.#exit({ reason: "agent" });
 				return;
 		}
 	}
@@ -206,8 +208,8 @@ export class AgentConnection {
 	#exit(info: ExitInfo): void {
 		if (this.#exited) return;
 		this.#exited = true;
-		this.#open.reject(new Error("agent is not running"));
-		for (const pending of this.#pending.values()) pending.reject(new Error("agent exited"));
+		this.#open.reject(new Error(NOT_RUNNING));
+		for (const pending of this.#pending.values()) pending.reject(new Error(NOT_RUNNING));
 		this.#pending.clear();
 		for (const listener of this.#exitListeners) listener(info);
 	}

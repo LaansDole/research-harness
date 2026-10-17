@@ -109,9 +109,13 @@
 	font-size: 12px;
 }
 
+/* Real failures (server 5xx, unreachable); empty states use .rw-notice. */
 .rw-error {
 	color: var(--err);
-	white-space: pre-wrap;
+}
+
+.rw-notice {
+	color: var(--fg-faint);
 }
 
 .rw-model {

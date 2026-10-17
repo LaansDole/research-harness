@@ -26,7 +26,8 @@ export type BridgeFrame =
 	/** Every agent session event; the wire union covers the variants the client renders. */
 	| { t: "event"; event: AgentEvent }
 	| { t: "settled" }
-	| { t: "exit"; code: number; stderr: string };
+	/** The omp child stopped; its exit code and stderr stay in the server's omp log. */
+	| { t: "exit" };
 
 export interface SessionListItem {
 	path: string;

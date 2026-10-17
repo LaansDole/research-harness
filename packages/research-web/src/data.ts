@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { logger } from "@oh-my-pi/pi-utils";
 import type { ResearchConfig } from "./config";
 
 /** The nine PRISMA-ScR states from research/skills/literature-search/scripts/review.py. */
@@ -52,6 +53,7 @@ export type DataHandler = (req: Bun.BunRequest) => Response | Promise<Response>;
 const SLUG_RE = /^[\w.-]+$/;
 const REVIEW_FILE_RE = /^review-[\w.-]+\.md$/;
 
+/** An error whose message is written for researchers; it is shown in the UI as-is. */
 class HttpError extends Error {
 	constructor(
 		readonly status: number,
@@ -61,15 +63,37 @@ class HttpError extends Error {
 	}
 }
 
+const UNEXPECTED =
+	"Something went wrong while loading this. Try again; if it keeps happening, the details are in the omp log.";
+
+/** A browser navigation (e.g. a PDF link opened in a new tab) gets a readable page instead of JSON. */
+function errorResponse(req: Request, status: number, message: string): Response {
+	if (req.headers.get("accept")?.includes("text/html")) {
+		const page = `<!doctype html><meta charset="utf-8"><title>research web</title><body style="font:16px system-ui;max-width:40em;margin:4em auto;padding:0 1em"><p>${Bun.escapeHTML(message)}</p></body>`;
+		return new Response(page, { status, headers: { "content-type": "text/html; charset=utf-8" } });
+	}
+	return Response.json({ error: message }, { status });
+}
+
 function guarded(fn: DataHandler): DataHandler {
 	return async req => {
 		try {
 			return await fn(req);
 		} catch (err) {
-			if (err instanceof HttpError) return Response.json({ error: err.message }, { status: err.status });
-			return Response.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+			if (err instanceof HttpError) return errorResponse(req, err.status, err.message);
+			logger.error("research-web: data route failed", {
+				url: req.url,
+				error: err instanceof Error ? err.stack : String(err),
+			});
+			return errorResponse(req, 500, UNEXPECTED);
 		}
 	};
+}
+
+/** Logs a failed helper script's stderr and surfaces `message` instead. */
+function scriptFailed(script: string, out: { code: number; stderr: string }, message: string): HttpError {
+	logger.error("research-web: script failed", { script, code: out.code, stderr: out.stderr.trim() });
+	return new HttpError(500, message);
 }
 
 async function isDir(p: string): Promise<boolean> {
@@ -81,9 +105,12 @@ async function isDir(p: string): Promise<boolean> {
 }
 
 async function projectDir(config: ResearchConfig, slug: string | undefined): Promise<string> {
-	if (!slug || !SLUG_RE.test(slug) || slug === "." || slug === "..") throw new HttpError(400, "invalid project slug");
+	if (!slug || !SLUG_RE.test(slug) || slug === "." || slug === "..") {
+		throw new HttpError(400, "That project name isn't valid.");
+	}
 	const dir = path.join(config.projectsDir, slug);
-	if (!(await isDir(dir))) throw new HttpError(404, `no project ${slug}`);
+	if (!(await isDir(dir)))
+		throw new HttpError(404, `The project "${slug}" no longer exists. It may have been renamed or deleted.`);
 	return dir;
 }
 
@@ -162,9 +189,10 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 		"/api/projects/:slug/reviews/:file": async req => {
 			const dir = await projectDir(config, req.params.slug);
 			const name = req.params.file;
-			if (!name || !REVIEW_FILE_RE.test(name)) throw new HttpError(400, "invalid review file name");
+			if (!name || !REVIEW_FILE_RE.test(name)) throw new HttpError(400, "That review file name isn't valid.");
 			const file = Bun.file(path.join(dir, name));
-			if (!(await file.exists())) throw new HttpError(404, `no review ${name}`);
+			if (!(await file.exists()))
+				throw new HttpError(404, "This review no longer exists. It may have been renamed or deleted.");
 			return new Response(file, { headers: { "content-type": "text/markdown; charset=utf-8" } });
 		},
 
@@ -172,20 +200,25 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 			const dir = await projectDir(config, req.params.slug);
 			const state = new URL(req.url).searchParams.get("state") || null;
 			if (state !== null && !(REVIEW_STATES as readonly string[]).includes(state)) {
-				throw new HttpError(400, `unknown state ${state}`);
+				throw new HttpError(400, "That screening-stage filter isn't recognised.");
 			}
-			const rows = await withReviewDb(dir, [] as RecordRow[], db =>
+			const rows = await withReviewDb(dir, [], db =>
 				db
-					.query<Omit<RecordRow, "has_pdf"> & { has_pdf: number }, [string | null]>(
+					.query<Omit<RecordRow, "has_pdf"> & { pdf_path: string | null }, [string | null]>(
 						`SELECT id, title, authors, year, venue, doi, url, state, ta_verdict, ta_rationale,
-							ft_verdict, ft_rationale, exclusion_reason, oa_status,
-							(pdf_path IS NOT NULL AND pdf_path != '') AS has_pdf
+							ft_verdict, ft_rationale, exclusion_reason, oa_status, pdf_path
 						FROM records WHERE ?1 IS NULL OR state = ?1 ORDER BY created_at, id`,
 					)
-					.all(state)
-					.map(r => ({ ...r, has_pdf: r.has_pdf === 1 })),
+					.all(state),
 			);
-			return Response.json(rows);
+			// A stale pdf_path (file deleted or never written) must not render an "open" link that 404s.
+			const records: RecordRow[] = await Promise.all(
+				rows.map(async ({ pdf_path, ...r }) => ({
+					...r,
+					has_pdf: pdf_path ? await Bun.file(path.resolve(dir, pdf_path)).exists() : false,
+				})),
+			);
+			return Response.json(records);
 		},
 
 		"/api/projects/:slug/pdf/:recordId": async req => {
@@ -195,18 +228,32 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 					.query<{ pdf_path: string | null }, [string]>("SELECT pdf_path FROM records WHERE id = ?")
 					.get(req.params.recordId ?? ""),
 			);
-			if (!stored?.pdf_path) throw new HttpError(404, "no pdf for record");
+			if (!stored?.pdf_path) throw new HttpError(404, "No PDF has been downloaded for this paper yet.");
 			const real = await realpathOrNull(path.resolve(dir, stored.pdf_path));
-			if (!real) throw new HttpError(404, "pdf file missing");
+			if (!real)
+				throw new HttpError(
+					404,
+					"The PDF for this paper is missing from the project folder. It may have been moved or deleted.",
+				);
 			const roots = [await realpathOrNull(dir), config.corpusDir ? await realpathOrNull(config.corpusDir) : null];
 			if (!roots.some(root => root !== null && (real === root || real.startsWith(root + path.sep)))) {
-				throw new HttpError(403, "pdf path outside allowed roots");
+				throw new HttpError(
+					403,
+					"This PDF is stored outside the project and corpus folders, so it can't be opened here.",
+				);
 			}
 			return new Response(Bun.file(real), { headers: { "content-type": "application/pdf" } });
 		},
 
 		"/api/projects/:slug/prisma.svg": async req => {
 			const dir = await projectDir(config, req.params.slug);
+			// No records yet is an empty project, not a failure: say what to do next.
+			if (!(await Bun.file(path.join(dir, "review.db")).exists())) {
+				throw new HttpError(
+					404,
+					"No screening records in this project yet. Ask the agent to find or import papers, and the PRISMA diagram will appear here.",
+				);
+			}
 			// ponytail: pass the project dir (not the slug) so prisma_scr.py resolves it independent of HOME/cwd.
 			const out = await runPython(path.join(scripts, "literature-search", "scripts", "prisma_scr.py"), [
 				"--project",
@@ -214,7 +261,8 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 				"--format",
 				"svg",
 			]);
-			if (out.code !== 0) throw new HttpError(404, out.stderr.trim() || `prisma_scr.py exited ${out.code}`);
+			if (out.code !== 0)
+				throw scriptFailed("prisma_scr.py", out, "The PRISMA diagram couldn't be drawn for this project.");
 			return new Response(out.stdout, { headers: { "content-type": "image/svg+xml; charset=utf-8" } });
 		},
 
@@ -235,7 +283,7 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 					"--out",
 					tmp,
 				]);
-				if (out.code !== 0) throw new HttpError(500, out.stderr.trim() || `graph_viz.py exited ${out.code}`);
+				if (out.code !== 0) throw scriptFailed("graph_viz.py", out, "The paper graph couldn't be drawn.");
 				const html = await Bun.file(tmp).bytes();
 				return new Response(html, { headers: { "content-type": "text/html; charset=utf-8" } });
 			} finally {

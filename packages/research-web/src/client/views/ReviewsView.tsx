@@ -2,7 +2,7 @@ import { Markdown } from "@oh-my-pi/collab-web/src/components/transcript/Markdow
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReviewFile } from "../../data";
-import { useFetch } from "../api";
+import { problemClass, useFetch } from "../api";
 
 interface Section {
 	heading: string | null;
@@ -54,9 +54,12 @@ export function ReviewsView({
 		});
 	}, [parts]);
 
-	if (list.error) return <p className="rw-error">{list.error}</p>;
+	if (list.error) return <p className={problemClass(list)}>{list.error}</p>;
 	if (list.data === null) return <p className="rw-faint">loading…</p>;
-	if (list.data.length === 0 || file === null) return <p className="rw-faint">No review-*.md files in {slug}.</p>;
+	if (list.data.length === 0 || file === null)
+		return (
+			<p className="rw-notice">No literature review written for this project yet. Ask the agent to run /review.</p>
+		);
 
 	return (
 		<div className="rw-reviews">
@@ -71,13 +74,15 @@ export function ReviewsView({
 				{selection !== "" && (
 					<button
 						type="button"
-						onClick={() => prefill(`Check this claim against the cited papers: "${selection}"`)}
+						onClick={() =>
+							prefill(`Check this claim in ${file} (project ${slug}) against the cited papers: "${selection}"`)
+						}
 					>
 						Check claim
 					</button>
 				)}
 			</div>
-			{review.error && <p className="rw-error">{review.error}</p>}
+			{review.error && <p className={problemClass(review)}>{review.error}</p>}
 			<div
 				ref={bodyRef}
 				className="rw-doc"
@@ -95,7 +100,7 @@ export function ReviewsView({
 							<button
 								type="button"
 								className="rw-revise"
-								onClick={() => prefill(`Revise the section "${part.heading}" in ${file}`)}
+								onClick={() => prefill(`Revise the section "${part.heading}" in ${file} of project ${slug}`)}
 							>
 								Revise
 							</button>

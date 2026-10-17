@@ -9,8 +9,16 @@ import { type DataHandler, dataRoutes, type RecordRow } from "../src/data";
 let tmp: string;
 let routes: Record<string, DataHandler>;
 
-function call(route: string, params: Record<string, string>, query = ""): Promise<Response> {
-	const req = Object.assign(new Request(`http://127.0.0.1/x${query}`), { params, cookies: new Bun.CookieMap() });
+function call(
+	route: string,
+	params: Record<string, string>,
+	query = "",
+	headers?: Record<string, string>,
+): Promise<Response> {
+	const req = Object.assign(new Request(`http://127.0.0.1/x${query}`, { headers }), {
+		params,
+		cookies: new Bun.CookieMap(),
+	});
 	return Promise.resolve(routes[route](req as Bun.BunRequest));
 }
 
@@ -24,6 +32,7 @@ beforeAll(async () => {
 	await fs.symlink(path.join(tmp, "outside.pdf"), path.join(proj, "papers", "link.pdf"));
 	await Bun.write(path.join(proj, "review-x.md"), "# Review");
 	await Bun.write(path.join(home, "active-project"), "p1\n");
+	await fs.mkdir(path.join(home, "projects", "empty"));
 
 	const db = new Database(path.join(proj, "review.db"));
 	db.run(`CREATE TABLE records (
@@ -40,6 +49,7 @@ beforeAll(async () => {
 	ins.run("r-dotdot", "k2", "Dotdot", "identified", "../../../outside.pdf");
 	ins.run("r-abs", "k3", "Absolute", "identified", path.join(tmp, "outside.pdf"));
 	ins.run("r-link", "k4", "Symlink", "identified", "papers/link.pdf");
+	ins.run("r-stale", "k5", "Stale", "fulltext_retrieved", "papers/deleted.pdf");
 	db.close();
 
 	const config: ResearchConfig = {
@@ -102,5 +112,29 @@ describe("validation", () => {
 		const res = await call("/api/projects/:slug/records", { slug: "p1" }, "?state=included");
 		const rows = (await res.json()) as RecordRow[];
 		expect(rows.map(r => [r.id, r.has_pdf])).toEqual([["r-in", true]]);
+	});
+
+	test("stale pdf_path (file missing) reports has_pdf false", async () => {
+		const res = await call("/api/projects/:slug/records", { slug: "p1" }, "?state=fulltext_retrieved");
+		const rows = (await res.json()) as RecordRow[];
+		expect(rows.map(r => [r.id, r.has_pdf])).toEqual([["r-stale", false]]);
+	});
+});
+
+describe("readable errors", () => {
+	test("PRISMA for a project without review.db is a 404 empty state, not a script error", async () => {
+		const res = await call("/api/projects/:slug/prisma.svg", { slug: "empty" });
+		expect(res.status).toBe(404);
+		const { error } = (await res.json()) as { error: string };
+		expect(error).toStartWith("No screening records in this project yet.");
+	});
+
+	test("a PDF link opened in a browser tab gets an HTML page, not JSON", async () => {
+		const res = await call("/api/projects/:slug/pdf/:recordId", { slug: "p1", recordId: "r-stale" }, "", {
+			accept: "text/html",
+		});
+		expect(res.status).toBe(404);
+		expect(res.headers.get("content-type")).toBe("text/html; charset=utf-8");
+		expect(await res.text()).toContain("The PDF for this paper is missing");
 	});
 });

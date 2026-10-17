@@ -35,7 +35,8 @@ Views are read-only. Action buttons only **prefill** the chat composer; nothing 
 
 ## Known limitations
 
-- An omp extension that writes to stdout in RPC mode corrupts the JSONL stream and the UI shows "agent exited". Example: `pi-warp` 1.0.1 `console.log`s on `session_start`; disable it (`omp plugin disable pi-warp`) to use the web UI.
+- An omp extension that writes to stdout in RPC mode corrupts the JSONL stream and the UI shows "The research agent stopped unexpectedly". Example: `pi-warp` 1.0.1 `console.log`s on `session_start`; disable it (`omp plugin disable pi-warp`) to use the web UI.
+- The UI shows plain-language errors only; technical detail (stderr, exit codes, stacks) goes to `~/.omp/logs/omp.YYYY-MM-DD.log` under `research-web:`.
 - Reloading the page starts a fresh agent process (new session); resume earlier ones from the sidebar.
 
 ## Development

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 import { RpcClient } from "@oh-my-pi/pi-coding-agent/modes/rpc/rpc-client";
-import { ptree } from "@oh-my-pi/pi-utils";
+import { logger, ptree } from "@oh-my-pi/pi-utils";
 import { Bridge } from "./bridge";
 import index from "./client/index.html";
 import { loadConfig, type ResearchConfig } from "./config";
@@ -81,7 +81,8 @@ export async function startServer(config: ResearchConfig, deps: ServerDeps): Pro
 				const exit = (code: number, stderr: string) => {
 					if (ws.data.exited) return;
 					ws.data.exited = true;
-					send({ t: "exit", code, stderr });
+					logger.error("research-web: agent process stopped", { code, stderr });
+					send({ t: "exit" });
 				};
 				// A child that dies during startup is reported by start()'s rejection,
 				// which carries the real reason (stderr, bad stdout); hold the watcher's

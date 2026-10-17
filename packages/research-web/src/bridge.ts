@@ -8,6 +8,7 @@ import {
 	sessionDisplayName,
 } from "@oh-my-pi/pi-coding-agent/session/session-listing";
 import { FileSessionStorage } from "@oh-my-pi/pi-coding-agent/session/session-storage";
+import { logger } from "@oh-my-pi/pi-utils";
 import type { AgentEvent as WireAgentEvent } from "@oh-my-pi/pi-wire";
 import type { BridgeCommand, BridgeFrame, SessionListItem } from "./protocol";
 
@@ -30,6 +31,21 @@ export type BridgeRpc = Pick<
 
 /** Raw frame after JSON.parse; fields are checked before use. */
 type RawCommand = Record<string, unknown>;
+
+/** What the researcher was trying to do, per command; failures are reported as "Couldn't <action>." */
+const ACTION_BY_CMD: Record<string, string> = {
+	prompt: "send your message",
+	abort: "stop the agent",
+	new_session: "start a new session",
+	switch_session: "open that session",
+	fork: "fork this session",
+	get_state: "load the session details",
+	get_messages: "load the conversation",
+	get_available_models: "load the model list",
+	set_model: "switch the model",
+	set_thinking_level: "change the thinking level",
+	list_sessions: "load your sessions",
+};
 
 function str(cmd: RawCommand, key: string): string {
 	const value = cmd[key];
@@ -62,6 +78,7 @@ export class Bridge {
 
 	async handle(raw: string): Promise<void> {
 		let id = -1;
+		let action: string | undefined;
 		try {
 			const parsed: unknown = JSON.parse(raw);
 			if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
@@ -70,10 +87,18 @@ export class Bridge {
 			const cmd = parsed as RawCommand;
 			if (typeof cmd.id !== "number") throw new Error("id must be a number");
 			id = cmd.id;
+			action = ACTION_BY_CMD[String(cmd.cmd)];
 			const data = await this.#dispatch(cmd);
 			this.#send({ t: "reply", id, ok: true, data });
 		} catch (error) {
-			this.#send({ t: "reply", id, ok: false, error: error instanceof Error ? error.message : String(error) });
+			logger.warn("research-web: bridge command failed", {
+				action: action ?? "unsupported",
+				error: error instanceof Error ? error.message : String(error),
+			});
+			const message = action
+				? `Couldn't ${action}. Try again; if it keeps happening, the details are in the omp log.`
+				: "That action isn't supported.";
+			this.#send({ t: "reply", id, ok: false, error: message });
 		}
 	}
 

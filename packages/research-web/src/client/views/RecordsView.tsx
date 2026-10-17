@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import type { RecordRow } from "../../data";
-import { useFetch } from "../api";
+import { problemClass, useFetch } from "../api";
 
 /** review.py STATES (the server validates the same list). */
 const STATES = [
@@ -15,6 +15,14 @@ const STATES = [
 	"fulltext_excluded",
 	"included",
 ];
+
+/** States where a missing full text blocks the next screening step. */
+const NEEDS_FULLTEXT: Record<string, true> = {
+	screened_included: true,
+	fulltext_sought: true,
+	fulltext_not_retrieved: true,
+	fulltext_retrieved: true,
+};
 
 export function RecordsView({
 	slug,
@@ -42,7 +50,7 @@ export function RecordsView({
 				</select>
 				{records.data && <span className="rw-faint">{records.data.length} records</span>}
 			</div>
-			{records.error && <p className="rw-error">{records.error}</p>}
+			{records.error && <p className={problemClass(records)}>{records.error}</p>}
 			<table className="rw-table">
 				<thead>
 					<tr>
@@ -72,19 +80,27 @@ export function RecordsView({
 								)}
 							</td>
 							<td className="rw-row-actions">
-								<button type="button" onClick={() => prefill(`Screen record ${r.id} ("${r.title}")`)}>
-									Screen
-								</button>
-								{!r.has_pdf && (
+								{r.state !== "duplicate" && r.state !== "included" && (
 									<button
 										type="button"
-										onClick={() => prefill(`Retry full-text retrieval for record ${r.id}`)}
+										onClick={() => prefill(`Screen record ${r.id} ("${r.title}") in project ${slug}`)}
+									>
+										Screen
+									</button>
+								)}
+								{!r.has_pdf && NEEDS_FULLTEXT[r.state] && (
+									<button
+										type="button"
+										onClick={() => prefill(`Retry full-text retrieval for record ${r.id} in project ${slug}`)}
 									>
 										Retry PDF
 									</button>
 								)}
 								{r.state.endsWith("_excluded") && (
-									<button type="button" onClick={() => prefill(`Explain why record ${r.id} was excluded`)}>
+									<button
+										type="button"
+										onClick={() => prefill(`Explain why record ${r.id} in project ${slug} was excluded`)}
+									>
 										Why excluded
 									</button>
 								)}

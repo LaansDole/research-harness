@@ -51,7 +51,7 @@ describe("Bridge", () => {
 	it("rejects unknown commands without reaching the RPC client", async () => {
 		const { bridge, frames, calls } = setup();
 		await bridge.handle(JSON.stringify({ id: 1, cmd: "rm_rf" }));
-		expect(frames).toEqual([{ t: "reply", id: 1, ok: false, error: "unknown cmd: rm_rf" }]);
+		expect(frames).toEqual([{ t: "reply", id: 1, ok: false, error: "That action isn't supported." }]);
 		expect(calls).toEqual([]);
 	});
 

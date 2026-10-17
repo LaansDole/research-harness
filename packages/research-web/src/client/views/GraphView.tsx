@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { useFetch } from "../api";
+import { problemClass, useFetch } from "../api";
 
 interface Selected {
 	id: string;
@@ -24,9 +24,10 @@ export function GraphView({ tick, prefill }: { tick: number; prefill(text: strin
 		return () => window.removeEventListener("message", onMessage);
 	}, []);
 
-	if (graph.error) return <p className="rw-error">{graph.error}</p>;
+	if (graph.error) return <p className={problemClass(graph)}>{graph.error}</p>;
 	if (graph.data === null) return <p className="rw-faint">loading…</p>;
-	if (graph.data.mtime === 0) return <p className="rw-faint">No paper graph yet (papers.db missing).</p>;
+	if (graph.data.mtime === 0)
+		return <p className="rw-notice">No papers in the graph yet. Ask the agent to add some (try /graph).</p>;
 
 	return (
 		<div className="rw-graph">
