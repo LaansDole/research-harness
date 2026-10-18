@@ -68,8 +68,13 @@ window.addEventListener("message", e => {
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let W = 0, H = 0;
+// View transform (pan/zoom). The layout lives around the world origin, which stays at the centre of
+// the frame: an embedded graph is often first laid out while hidden (0x0) and only later shown.
+let scale = 1, tx = 0, ty = 0;
 function resize() {
-  W = window.innerWidth; H = window.innerHeight;
+  const w = window.innerWidth, h = window.innerHeight;
+  tx += (w - W) / 2; ty += (h - H) / 2;
+  W = w; H = h;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + "px"; canvas.style.height = H + "px";
@@ -81,8 +86,8 @@ resize();
 // Build nodes with degree-based radius.
 const nodes = DATA.papers.map((p, i) => ({
   ...p, deg: 0,
-  x: W / 2 + 220 * Math.cos(2 * Math.PI * i / DATA.papers.length),
-  y: H / 2 + 220 * Math.sin(2 * Math.PI * i / DATA.papers.length),
+  x: 220 * Math.cos(2 * Math.PI * i / DATA.papers.length),
+  y: 220 * Math.sin(2 * Math.PI * i / DATA.papers.length),
   vx: 0, vy: 0,
 }));
 const byId = new Map(nodes.map(n => [n.id, n]));
@@ -93,8 +98,7 @@ for (const n of nodes) n.nbrs = new Set();
 for (const l of links) { l.a.deg++; l.b.deg++; l.a.nbrs.add(l.b); l.b.nbrs.add(l.a); }
 for (const n of nodes) n.r = 6 + 3 * Math.sqrt(n.deg);
 
-// View transform (pan/zoom) and interaction state.
-let scale = 1, tx = 0, ty = 0;
+// Interaction state.
 let alpha = 1, dragNode = null, panning = false, lastX = 0, lastY = 0;
 let selected = null, hovered = null, query = "";
 
@@ -128,8 +132,8 @@ function step() {
     l.b.vx -= dx * f; l.b.vy -= dy * f;
   }
   for (const n of nodes) {
-    n.vx += (W / 2 - n.x) * 0.002 * alpha;
-    n.vy += (H / 2 - n.y) * 0.002 * alpha;
+    n.vx -= n.x * 0.002 * alpha;
+    n.vy -= n.y * 0.002 * alpha;
     if (n !== dragNode) { n.x += n.vx; n.y += n.vy; }
     n.vx *= 0.6; n.vy *= 0.6;
   }

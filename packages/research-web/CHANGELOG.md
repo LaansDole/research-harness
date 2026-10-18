@@ -20,3 +20,4 @@
 - Opening PRISMA on a project without records no longer creates an empty `review.db`, and an empty `review.db` no longer breaks the project list.
 - Long PRISMA exclusion reasons wrap inside their boxes instead of being clipped.
 - Losing the connection no longer stacks duplicate error toasts over the Reconnect button.
+- Opening the Graph tab no longer shows the papers piled into the top-left corner; the graph stays centred when its frame is shown or resized.

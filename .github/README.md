@@ -20,9 +20,9 @@
   <img src="https://img.shields.io/badge/APIs-arXiv%20%2B%20OpenAlex%20(keyless)-ffa94d?style=flat&colorA=222222" alt="keyless APIs">
 </p>
 
-![omp TUI: the PRISMA-ScR flow diagram the harness derives from its own record store at the end of the capture. The lower half of the diagram is on screen — "Records screened (n=50)" branching to "Records excluded (n=4)" with the four exclusion reasons spelled out one per line (sequential pipeline, no mutual agent conditioning; not a diagnostic task; no inter-agent communication; no abstract), then "Reports sought for retrieval (n=1)", "Reports not retrieved (n=0)", ELIGIBILITY with "Reports assessed for eligibility (n=0)", and INCLUDED with "Studies included in review (n=0)". Below it two NOTE lines for the pending work (45 awaiting title/abstract screening, 1 awaiting full-text retrieval) and the arithmetic line that has to balance: "50 - 0 duplicates = 50 screened; 50 - 4 excluded - 45 pending = 1 sought; 1 - 0 not retrieved - 1 pending = 0 assessed; 0 - 0 excluded = 0 included". The status bar at the bottom reads "active: llm-agent-teams-hospital-diagnosis · 5/50 screened · type /help for commands".](../assets/research/guided-review-poster.png)
+![research web in light mode, Graph tab: the paper graph zoomed onto TriageAgent, selected and ringed, with its neighbours labelled — MedAgents above it, the Korean triage-scale system below — and coloured edges for cites, related and same-topic links. A side panel shows TriageAgent's title, authors (Lu M; Ho B; Ren D; Wang X), venue (Findings of EMNLP 2024), degree and DOI; above the graph, agent actions Find citing papers, Auto-edges and Explain neighbors. The sidebar lists five review projects with screening progress (demo-web-ui, 9 of 12 screened) and recent sessions; the header shows the viewed project, a Make active button, a Ready status and the model.](../assets/research/research-web-poster.png)
 
-_[Watch the capture ↗](https://laansdole.github.io/research-harness/#guided-review)_ — 13 min 24 seconds, unedited, eleven typed lines. It follows this repo's own testing runbook, [docs/RUNBOOK.md](../docs/RUNBOOK.md): both Part 0 environment gates, then Part 1 as far as the first screening pass — a real 50-record PubMed export imported, deduped, abstract-filled, screened, confirmed, and counted. It stops at the PRISMA diagram; full-text retrieval, synthesis, the paper graph and export are documented in the runbook but not on camera.
+_[Watch the demo ↗](https://laansdole.github.io/research-harness/#research-web)_ — 1 min 40 s, real data, nothing sent to the agent. A researcher picks up her scoping review on multi-agent LLMs for clinical decision support: checks where it stands, triages the reading list, reads the review and checks one claim against its sources, explores how her papers connect in the graph, and ends on the PRISMA diagram. Every action button only fills in the chat box; nothing runs until she presses Enter.
 
 ## What it does
 
@@ -68,10 +68,6 @@ Hands-on walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md), "Optional: a cheap 
 
 ## Second-brain paper graph
 
-![omp TUI: the librarian agent answering "what connects them" for the five papers it just added — citation edges verified in the papers' own reference lists rather than inferred, same-topic clusters grouped by architecture, the one trial-prediction paper called out as the outlier, and the next steps it can run.](../assets/research/paper-graph-poster.png)
-
-_[Watch the capture ↗](https://laansdole.github.io/research-harness/#paper-graph)_ — six and a half minutes, unedited: the folder, the adds, the connection answer, and the export.
-
 Point the `librarian` agent at a folder of papers and ask what connects them. Every reviewed paper lands in a local SQLite graph (`~/.research-harness/papers.db`) with typed edges — `cites`, `related`, `same-topic` — and `auto-edges` adds citation links verified against OpenAlex rather than inferred. The same operations are scriptable:
 
 ```sh
@@ -86,10 +82,6 @@ $pg export --format html     # one-file interactive viz
 The export is ONE self-contained HTML file — node size by degree, edge colors by type, search, drag/zoom/pan, click for metadata. No external assets; it works from `file://` on a plane.
 
 ## Browser UI
-
-![research web: the Reading list for a 14-record review. State chips with counts across the top (All 14 · Duplicate 2 · Excluded T/A 5 · Passed T/A 1 · Full text ready 1 · Full text not found 1 · Included 4), a "1 full text ready · Screen full texts" next-step bar, the record table with coloured state badges, and a detail panel open on CARE-AD showing its DOI, Open PDF and Re-screen actions, both screening verdicts with their rationale, and the abstract. The sidebar lists projects with screening progress and recent sessions; the header shows the viewed project, a Make active button, a Ready status and the model.](../assets/research/research-web-poster.png)
-
-_[Watch the capture ↗](https://laansdole.github.io/research-harness/#research-web)_ — 53 seconds, real data, nothing sent to the agent.
 
 `research web` opens the same agent in your browser on `127.0.0.1`, next to everything it has written: the reading list with state filters, search and keyboard triage (↑/↓, Enter, Esc) over each record's verdicts, rationale and abstract; the review with a contents list and citations that jump to their reference; the paper graph; and the PRISMA diagram with SVG download. The header always shows which project you are viewing and which one the agent is working on.
 
@@ -106,7 +98,7 @@ research          # starts omp with the research mode prompt and the Research Ha
 research web      # or: the same agent in your browser, with the reading list, review, graph and PRISMA alongside
 ```
 
-Then type `/help` to see every command in plain words. To test-drive it on your own review — every step with the numbers you should see and what a different one means — follow [docs/RUNBOOK.md](../docs/RUNBOOK.md); the capture above walks its first half. Re-run `./setup.sh` after pulling: new commands only reach omp when it runs.
+Then type `/help` to see every command in plain words. To test-drive it on your own review — every step with the numbers you should see and what a different one means — follow [docs/RUNBOOK.md](../docs/RUNBOOK.md). Re-run `./setup.sh` after pulling: new commands only reach omp when it runs.
 
 Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (stdlib only — no pip installs), and network access for arXiv/OpenAlex (a local folder of PDFs works fully offline). `research web` also needs [bun](https://bun.sh) and `bun install` run once in the checkout.
 
@@ -120,5 +112,5 @@ This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so th
 
 - Fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), itself a fork of [badlogic/pi-mono](https://github.com/badlogic/pi-mono) by [@mariozechner](https://github.com/mariozechner).
 - Literature data: [arXiv](https://arxiv.org) export API and [OpenAlex](https://openalex.org) (both keyless), plus [Unpaywall](https://unpaywall.org) for OA locations when a contact email is configured — honest User-Agent; open-access sources only.
-- Terminal demos rendered with [charmbracelet/vhs](https://github.com/charmbracelet/vhs); the browser UI demo is recorded live from Chrome with Puppeteer's `page.screencast()` ([assets/research/tapes/research-web.ts](../assets/research/tapes/research-web.ts)), which takes exactly as long as the take instead of VHS's frame-by-frame render. The captures play at full quality on [GitHub Pages](https://laansdole.github.io/research-harness/). GitHub will not render a committed MP4 above about 1 MB and serves repository blobs as downloads, so a repo-committed video cannot be watched in place — the page exists for that reason.
+- The demo is recorded live from Chrome with Puppeteer's `page.screencast()` ([assets/research/tapes/research-web.ts](../assets/research/tapes/research-web.ts)), so a take renders in its own running time rather than VHS's frame-by-frame terminal render. It plays at full quality on [GitHub Pages](https://laansdole.github.io/research-harness/): GitHub will not render a committed MP4 above about 1 MB and serves repository blobs as downloads, so a repo-committed video cannot be watched in place.
 
