@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>research-harness — live captures</title>
+    <title>research-harness — the research web demo</title>
     <meta
       name="description"
-      content="Unedited captures of research-harness: a researcher working a real 50-record PubMed export down to a PRISMA diagram in the oh-my-pi TUI, the librarian agent growing the paper graph, and the research web browser UI over a review's records, synthesis, graph and PRISMA diagram."
+      content="An unedited demo of research-harness in the browser: a researcher picks up a scoping review on multi-agent LLMs for clinical decision support, triages the reading list, checks a claim in the review, explores the paper graph, and ends on the PRISMA diagram."
     />
     <style>
       :root {
@@ -68,95 +68,45 @@
   <body>
     <div class="wrap">
       <header>
-        <h1>research-harness — live captures</h1>
+        <h1>research-harness — the review, in your browser</h1>
         <p>
-          Unedited recordings of <a href="https://github.com/LaansDole/research-harness">research-harness</a>
-          driving oh-my-pi, in the terminal and in the browser. Real agent turns, real output, no staged replay — every
-          command typed here is a sentence a researcher would actually write.
+          An unedited demo of <a href="https://github.com/LaansDole/research-harness">research-harness</a>'s browser UI,
+          <code>research web</code>, over a real scoping review. Real data, real views, no staged replay — and nothing is
+          sent to the agent: every action button only fills the chat box.
         </p>
-        <span class="pill">1x playback · real data · open-access sources only</span>
+        <span class="pill">1440x900 · 1x playback · light mode · open-access sources only</span>
       </header>
 
-      <section id="guided-review">
-        <h2>1 · A scoping review, by the repo's own runbook</h2>
-        <p class="sub">
-          This capture is <a href="https://github.com/LaansDole/research-harness/blob/main/docs/RUNBOOK.md">docs/RUNBOOK.md</a>
-          performed live: both Part 0 environment gates, then Part 1 as far as the first screening pass. A researcher
-          opens with one plain sentence — <em>"I'm starting a scoping review on whether teams of LLM agents that talk to
-          each other make hospital diagnosis better than a single model. Where do I start?"</em> — then imports a real
-          50-record PubMed export and works it down to a PRISMA diagram. Every number on screen is computed during the
-          take, out of the review store as it fills up.
-        </p>
-        <video controls preload="metadata" poster="posters/guided-review-poster.png">
-          <source src="guided-review.mp4" type="video/mp4" />
-          Your browser cannot play this capture.
-          <a href="guided-review.mp4">Download the MP4</a>.
-        </video>
-        <p class="meta">
-          13 min 24 s · 1600x1000 · eleven typed lines, unedited, trimmed only at the tail. Each pause is sized to that
-          turn's measured headless runtime, so a finished turn does not stretch the video — but the agent's real work
-          and your own reading time are still on screen. Scrub the player rather than watching every second.
-        </p>
-        <ul>
-          <li><span class="turn">Part 0</span> — <code>research doctor</code> and the 109-test suite, the two gates the runbook makes you pass before starting.</li>
-          <li><span class="turn">Scope</span> — the question in plain words becomes a PCC framing and a written <code>scope.md</code>, with the inclusion gate the reviewer will be held to.</li>
-          <li><span class="turn"><code>/help</code></span> — the capability guide: every command, what it does, when you would reach for it. The bar at the bottom tracks the active project and screening progress all the way through.</li>
-          <li><span class="turn">Import + dedupe</span> — 50 PubMed records in, <code>0 duplicate(s) marked</code> out (correct for a single-database export).</li>
-          <li><span class="turn">The abstract problem</span> — record 1 shows what a PubMed CSV does not carry, and the fix: OpenAlex lookups that bring the abstracts back.</li>
-          <li><span class="turn">Screening</span> — five records judged against the researcher's own criteria, each with an evidence sentence, a first-failed dimension and a confidence; one left as <code>maybe</code> for full text, and a genuine tension between <code>scope.md</code> and <code>SCREENING.md</code> raised rather than papered over. Nothing is written until the researcher confirms.</li>
-          <li><span class="turn"><code>/prisma</code></span> — the flow diagram derived from record state, with the arithmetic line that has to balance.</li>
-        </ul>
-      </section>
-
-      <section id="paper-graph">
-        <h2>2 · The librarian agent grows the paper graph</h2>
-        <p class="sub">
-          The same plain-language posture, aimed at the second brain: <em>"here's my folder of papers on multi-agent
-          medical AI — add the most relevant ones to my paper graph and tell me what connects them"</em>, then
-          <em>"export that view so I can explore it myself"</em>.
-        </p>
-        <video controls preload="metadata" poster="posters/paper-graph-poster.png">
-          <source src="paper-graph.mp4" type="video/mp4" />
-          Your browser cannot play this capture.
-          <a href="paper-graph.mp4">Download the MP4</a>.
-        </video>
-        <p class="meta">
-          1600x1000 · 1x playback. The corpus is a six-paper folder for this topic; the real library is larger and the
-          full scan does not fit a capture.
-        </p>
-      </section>
-
       <section id="research-web">
-        <h2>3 · The review in your browser: <code>research web</code></h2>
+        <h2>1 · A researcher picks up her scoping review</h2>
         <p class="sub">
-          One command opens the agent in your browser on <code>127.0.0.1</code>, beside everything it has written for
-          the project. This take walks the <code>demo-web-ui</code> review: a starter command from the empty chat, the
-          reading list filtered by state, searched, and triaged from the keyboard with each record's verdicts,
-          rationale and abstract in the side panel; the review's contents and a citation jumping to its reference; a
-          paper found in the graph and handed to the agent; and the PRISMA diagram the counts come from.
+          She is reviewing how teams of LLM agents support clinical decisions. One command opens the agent in her
+          browser on <code>127.0.0.1</code>, beside everything it has written for the review: she checks where things
+          stand, triages the reading list, reads the synthesis and checks one claim against its sources, explores how
+          her papers connect in the graph, and ends on the PRISMA diagram for her methods section.
         </p>
         <video controls preload="metadata" poster="posters/research-web-poster.png">
           <source src="research-web.mp4" type="video/mp4" />
-          Your browser cannot play this capture.
+          Your browser cannot play this demo.
           <a href="research-web.mp4">Download the MP4</a>.
         </video>
         <p class="meta">
-          53 s · 1440x900 · recorded live from Chrome with Puppeteer's <code>page.screencast()</code>
-          (<a href="research-web.ts">script</a>), so the take renders in its own running time. Nothing is sent: every
-          action button only fills the chat box, and nothing runs until the researcher presses Enter — the agent stays
-          the only writer of the review.
+          1 min 40 s · recorded live from Chrome with Puppeteer's <code>page.screencast()</code>
+          (<a href="research-web.ts">script</a>), so a take renders in its own running time. Nothing runs until the
+          researcher presses Enter, so the agent stays the only writer of the review.
         </p>
         <ul>
-          <li><span class="turn">Header</span> — the project you are viewing beside the one the agent works on, a <code>Make active</code> button, the agent's status and model.</li>
-          <li><span class="turn">Reading list</span> — state chips with counts, search across title, author and DOI, ↑/↓ to move, Enter to open, Esc to close; a next-step bar such as <code>1 full text ready · Screen full texts</code>.</li>
-          <li><span class="turn">Reviews</span> — a contents list, <code>[n]</code> citations that preview on hover and jump to their reference, and Revise / Check per section.</li>
-          <li><span class="turn">Graph</span> — search a paper and press Enter; <em>Find citing papers</em>, <em>Auto-edges</em> and <em>Explain neighbors</em> prefill the agent.</li>
-          <li><span class="turn">PRISMA</span> — the flow diagram derived from record state, with SVG download.</li>
+          <li><span class="turn">Where was I?</span> — the header shows the review she is viewing beside the one the agent works on, the agent's status and model; the empty chat offers the next commands. <code>Make active</code> fills in the switch, and <em>Restore previous draft</em> brings back the plan she had half-typed.</li>
+          <li><span class="turn">Her workspace</span> — projects with screening progress, recent sessions, model, thinking level and appearance in the sidebar; <code>Ctrl/⌘+B</code> folds it away.</li>
+          <li><span class="turn">Reading list</span> — a next-step bar (<code>1 full text ready · Screen full texts</code>), state chips with counts, the five title/abstract exclusions with their rationale, ↑/↓ through records, search, and an included paper's verdicts, abstract and PDF.</li>
+          <li><span class="turn">The review</span> — jump by contents, follow a <code>[n]</code> citation to its reference and back, then select one sentence and <em>Check claim</em> hands it to the agent with the file and project named.</li>
+          <li><span class="turn">Paper graph</span> — hovering a paper labels it and its neighbours; clicking TriageAgent opens its record and the agent actions; zoom, clear, search <em>galatea</em> + Enter, and <em>Find citing papers</em> for TriageAgent.</li>
+          <li><span class="turn">PRISMA</span> — the flow diagram derived from record state, every number counted from the review store, with SVG download.</li>
         </ul>
       </section>
 
       <section id="viz">
-        <h2>4 · The exported paper graph</h2>
+        <h2>2 · The exported paper graph</h2>
         <p class="sub">
           One self-contained HTML file: vanilla-JS force-directed canvas, node size by degree, edge colours by type,
           search, drag/zoom/pan, click for metadata. No external assets — it works from <code>file://</code>.
@@ -165,17 +115,16 @@
       </section>
 
       <div class="note">
-        Why these live here: GitHub refuses to render repository blobs larger than about 1 MB in its file view and
+        Why the video lives here: GitHub refuses to render repository blobs larger than about 1 MB in its file view and
         serves repository blobs as <code>application/octet-stream</code>, so a committed MP4 cannot be watched in place.
-        GitHub Pages serves them as real <code>video/mp4</code>, so they play here at full quality.
+        GitHub Pages serves it as real <code>video/mp4</code>, so it plays here at full quality.
       </div>
 
       <footer>
         Fork of <a href="https://github.com/can1357/oh-my-pi">can1357/oh-my-pi</a> ·
         <a href="https://github.com/LaansDole/research-harness">repository</a> ·
         <a href="https://github.com/LaansDole/research-harness/blob/main/docs/ARCHITECTURE.md">architecture</a> ·
-        terminal captures rendered with <a href="https://github.com/charmbracelet/vhs">charmbracelet/vhs</a>, the
-        browser capture with <a href="https://pptr.dev/api/puppeteer.page.screencast">Puppeteer</a>.
+        recorded with <a href="https://pptr.dev/api/puppeteer.page.screencast">Puppeteer</a>.
       </footer>
     </div>
   </body>
