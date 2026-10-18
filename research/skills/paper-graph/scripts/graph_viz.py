@@ -11,22 +11,27 @@ TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <title>Paper Graph</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1117; color: #c9d1d9;
+  :root { --bg: #0d1117; --panel: #161b22; --legend-bg: #161b22cc; --fg: #c9d1d9; --fg-strong: #e6edf3;
+    --muted: #8b949e; --border: #30363d; --accent: #58a6ff; }
+  /* Light palette: set by an embedding page (research web) via the paper-graph:theme message. */
+  :root[data-theme="light"] { --bg: #ffffff; --panel: #f6f8fa; --legend-bg: #f6f8facc; --fg: #1f2328;
+    --fg-strong: #1f2328; --muted: #59636e; --border: #d1d9e0; --accent: #0969da; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg);
     font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
   #canvas { display: block; cursor: grab; }
   #search { position: fixed; top: 12px; left: 12px; z-index: 2; width: 260px; padding: 7px 10px;
-    background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; outline: none; }
-  #search:focus { border-color: #58a6ff; }
+    background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; outline: none; }
+  #search:focus { border-color: var(--accent); }
   #panel { position: fixed; top: 0; right: 0; width: 320px; height: 100%; box-sizing: border-box;
-    padding: 16px; background: #161b22; border-left: 1px solid #30363d; overflow-y: auto;
+    padding: 16px; background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto;
     transform: translateX(100%); transition: transform .15s ease; z-index: 2; }
   #panel.open { transform: none; }
-  #panel h2 { margin: 0 0 8px; font-size: 15px; color: #e6edf3; }
-  #panel .meta { color: #8b949e; margin: 4px 0; }
-  #panel a { color: #58a6ff; text-decoration: none; word-break: break-all; }
-  #panel .close { position: absolute; top: 10px; right: 12px; cursor: pointer; color: #8b949e; }
-  #legend { position: fixed; bottom: 12px; left: 12px; z-index: 2; background: #161b22cc;
-    border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+  #panel h2 { margin: 0 0 8px; font-size: 15px; color: var(--fg-strong); }
+  #panel .meta { color: var(--muted); margin: 4px 0; }
+  #panel a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  #panel .close { position: absolute; top: 10px; right: 12px; cursor: pointer; color: var(--muted); }
+  #legend { position: fixed; bottom: 12px; left: 12px; z-index: 2; background: var(--legend-bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; }
   #legend span { display: inline-block; margin-right: 12px; }
   #legend i { display: inline-block; width: 10px; height: 3px; margin-right: 5px; vertical-align: middle; }
 </style>
@@ -43,6 +48,18 @@ TEMPLATE = """<!DOCTYPE html>
 <script>
 const DATA = __DATA__;
 const EDGE_COLOR = { "cites": "#4d9fff", "related": "#3fb950", "same-topic": "#ffa94d" };
+// Canvas colours follow the CSS palette; re-read only when the theme changes, not every frame.
+const PAL = {};
+function readPalette() {
+  const s = getComputedStyle(document.documentElement);
+  for (const k of ["bg", "fg", "muted", "accent"]) PAL[k] = s.getPropertyValue("--" + k).trim();
+}
+readPalette();
+window.addEventListener("message", e => {
+  if (e.source !== window.parent || !e.data || e.data.type !== "paper-graph:theme") return;
+  document.documentElement.dataset.theme = e.data.theme === "light" ? "light" : "dark";
+  readPalette();
+});
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
@@ -121,7 +138,7 @@ function draw() {
   for (const l of links) {
     const dim = query && !(matches(l.a) && matches(l.b));
     ctx.globalAlpha = dim ? 0.08 : 0.55;
-    ctx.strokeStyle = EDGE_COLOR[l.type] || "#8b949e";
+    ctx.strokeStyle = EDGE_COLOR[l.type] || PAL.muted;
     ctx.lineWidth = 1.4 / scale;
     ctx.beginPath(); ctx.moveTo(l.a.x, l.a.y); ctx.lineTo(l.b.x, l.b.y); ctx.stroke();
   }
@@ -129,11 +146,11 @@ function draw() {
     const dim = !matches(n);
     ctx.globalAlpha = dim ? 0.15 : 1;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 2 * Math.PI);
-    ctx.fillStyle = n === selected ? "#e3b341" : "#58a6ff";
+    ctx.fillStyle = n === selected ? "#e3b341" : PAL.accent;
     ctx.fill();
-    ctx.strokeStyle = "#0d1117"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.strokeStyle = PAL.bg; ctx.lineWidth = 1.5; ctx.stroke();
     if (!dim) {
-      ctx.fillStyle = "#c9d1d9";
+      ctx.fillStyle = PAL.fg;
       ctx.font = (12 / scale) + "px sans-serif";
       const label = n.title.length > 42 ? n.title.slice(0, 40) + "\\u2026" : n.title;
       ctx.fillText(label, n.x + n.r + 4 / scale, n.y + 4 / scale);

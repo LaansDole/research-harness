@@ -1,3 +1,4 @@
+import { type ThemePreference, useThemePreference } from "@oh-my-pi/collab-web/src/lib/theme";
 import { GitFork, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ProjectSummary } from "../data";
@@ -127,6 +128,21 @@ export function Sidebar(props: SidebarProps): ReactNode {
 					))}
 				</select>
 			</section>
+			<section className="rw-model">
+				<h3>Appearance</h3>
+				<ThemeSelect />
+			</section>
 		</aside>
+	);
+}
+
+function ThemeSelect(): ReactNode {
+	const { preference, setPreference } = useThemePreference();
+	return (
+		<select aria-label="Theme" value={preference} onChange={e => setPreference(e.target.value as ThemePreference)}>
+			<option value="system">Match my computer</option>
+			<option value="light">Light</option>
+			<option value="dark">Dark</option>
+		</select>
 	);
 }

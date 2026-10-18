@@ -1,5 +1,6 @@
+import { useSystemTheme } from "@oh-my-pi/collab-web/src/lib/theme";
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { problemClass, useFetch } from "../api";
 
 interface Selected {
@@ -11,6 +12,12 @@ export function GraphView({ tick, prefill }: { tick: number; prefill(text: strin
 	const graph = useFetch<{ mtime: number }>("/api/graph", tick);
 	const frameRef = useRef<HTMLIFrameElement | null>(null);
 	const [selected, setSelected] = useState<Selected | null>(null);
+	const theme = useSystemTheme();
+	// The iframe is sandboxed (opaque origin), so the theme travels by message, on load and on change.
+	const sendTheme = useCallback(() => {
+		frameRef.current?.contentWindow?.postMessage({ type: "paper-graph:theme", theme }, "*");
+	}, [theme]);
+	useEffect(sendTheme, [sendTheme]);
 
 	useEffect(() => {
 		const onMessage = (e: MessageEvent): void => {
@@ -37,6 +44,7 @@ export function GraphView({ tick, prefill }: { tick: number; prefill(text: strin
 				title="Paper graph"
 				sandbox="allow-scripts"
 				src={`/api/graph.html?v=${graph.data.mtime}`}
+				onLoad={sendTheme}
 			/>
 			{selected && (
 				<div className="rw-actions">

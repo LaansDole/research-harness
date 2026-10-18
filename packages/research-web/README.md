@@ -13,7 +13,7 @@ Requires `bun` and the repo's `node_modules` (run from the checkout, like the de
 ## What you get
 
 - **Chat**: streaming transcript and tool cards (collab-web renderers), image attach, Stop, steering/follow-up while the agent works.
-- **Sidebar**: projects with screening progress, sessions (resume, new, fork), model and thinking level.
+- **Sidebar**: projects with screening progress, sessions (resume, new, fork), model and thinking level, and Appearance (light / dark / match my computer, remembered in the browser; the graph iframe follows it via a `paper-graph:theme` message).
 - **Graph**: the `paper_graph.py` interactive graph; clicking a paper offers agent actions.
 - **Reviews**: `review-*.md` rendered; `[n]` citations jump to the reference list; per-section Revise and selection Check-claim actions.
 - **Reading list**: `review.db` records with verdicts and rationales, state filter, PDF open, per-record actions.

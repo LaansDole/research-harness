@@ -14,7 +14,7 @@ PRs go to the **fork** (`LaansDole/research-harness`, base `main`), never upstre
 
 | What | How started | Notes |
 |---|---|---|
-| research web server on `http://127.0.0.1:7788/` (PIDs seen: 3139, 25707) | `RESEARCH_WEB_NO_OPEN=1 RESEARCH_WEB_PORT=7788 research web`, detached | Serves a production bundle built **at startup**: it does NOT have the uncommitted error-handling changes. Restart to pick them up (commands below). |
+| research web server on `http://127.0.0.1:7788/` | `RESEARCH_WEB_NO_OPEN=1 RESEARCH_WEB_PORT=7788 research web`, detached | Bundle is built at startup; restarted after the theme setting, so it serves current code. Restart again after any client change. |
 
 Environment changes made for the user:
 - `omp plugin disable pi-warp`. pi-warp 1.0.1 `console.log`s to stdout in RPC mode and breaks chat. The user runs Ghostty, where pi-warp is a no-op. Re-enable with `omp plugin enable pi-warp`.
