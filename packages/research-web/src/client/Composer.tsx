@@ -6,8 +6,13 @@ import { useRef, useState } from "react";
 
 export interface ComposerProps {
 	draft: string;
-	setDraft(text: string): void;
+	/** User edits. */
+	onEdit(text: string): void;
 	working: boolean;
+	/** The draft came from a view action and hasn't been edited yet. */
+	prefilled: boolean;
+	/** Set when a prefill replaced a different draft: restores it. */
+	onRestore: (() => void) | null;
 	onSend(message: string, images: ImageContent[]): void;
 	onStop(): void;
 }
@@ -17,10 +22,11 @@ async function toImage(file: File): Promise<ImageContent> {
 	return { type: "image", data: bytes.toBase64(), mimeType: file.type };
 }
 
-export function Composer({ draft, setDraft, working, onSend, onStop }: ComposerProps): ReactNode {
+export function Composer({ draft, onEdit, working, prefilled, onRestore, onSend, onStop }: ComposerProps): ReactNode {
 	const [images, setImages] = useState<ImageContent[]>([]);
 	const composingRef = useRef(false);
 	const fileRef = useRef<HTMLInputElement | null>(null);
+	const empty = draft.trim() === "" && images.length === 0;
 
 	const addFiles = async (files: Iterable<File>): Promise<void> => {
 		const picked = [...files].filter(file => file.type.startsWith("image/"));
@@ -30,14 +36,33 @@ export function Composer({ draft, setDraft, working, onSend, onStop }: ComposerP
 	};
 
 	const send = (): void => {
-		if (draft.trim() === "" && images.length === 0) return;
+		if (empty) return;
 		onSend(draft, images);
-		setDraft("");
 		setImages([]);
 	};
 
 	return (
-		<div className="rw-composer">
+		<div
+			className="rw-composer"
+			onDragOver={e => {
+				if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+			}}
+			onDrop={e => {
+				if (e.dataTransfer.files.length === 0) return;
+				e.preventDefault();
+				void addFiles(e.dataTransfer.files);
+			}}
+		>
+			{(prefilled || onRestore) && (
+				<div className="rw-composer-note">
+					{prefilled && <span className="rw-faint">Prefilled. Review, then press Enter.</span>}
+					{onRestore && (
+						<button type="button" className="rw-link" onClick={onRestore}>
+							Restore previous draft
+						</button>
+					)}
+				</div>
+			)}
 			{images.length > 0 && (
 				<div className="rw-thumbs">
 					{images.map((image, i) => (
@@ -59,6 +84,7 @@ export function Composer({ draft, setDraft, working, onSend, onStop }: ComposerP
 					type="button"
 					className="rw-icon"
 					aria-label="Attach image"
+					title="Attach image"
 					onClick={() => fileRef.current?.click()}
 				>
 					<ImagePlus size={16} />
@@ -76,9 +102,10 @@ export function Composer({ draft, setDraft, working, onSend, onStop }: ComposerP
 				/>
 				<textarea
 					value={draft}
-					rows={3}
-					placeholder="Message the research agent… (Enter sends, Shift+Enter newline)"
-					onChange={e => setDraft(e.target.value)}
+					rows={2}
+					aria-label="Message"
+					placeholder="Ask the research agent…"
+					onChange={e => onEdit(e.target.value)}
 					onCompositionStart={() => {
 						composingRef.current = true;
 					}}
@@ -89,6 +116,11 @@ export function Composer({ draft, setDraft, working, onSend, onStop }: ComposerP
 						}, 0);
 					}}
 					onKeyDown={e => {
+						if (e.key === "Escape" && working) {
+							e.preventDefault();
+							onStop();
+							return;
+						}
 						if (!shouldSubmitOnEnter(e, composingRef.current)) return;
 						e.preventDefault();
 						send();
@@ -102,14 +134,23 @@ export function Composer({ draft, setDraft, working, onSend, onStop }: ComposerP
 					}}
 				/>
 				{working && (
-					<button type="button" className="rw-icon rw-stop" aria-label="Stop" onClick={onStop}>
-						<Square size={16} />
+					<button type="button" className="rw-stop" title="Stop (Esc)" onClick={onStop}>
+						<Square size={14} />
+						Stop
 					</button>
 				)}
-				<button type="button" className="rw-icon rw-send" aria-label="Send" onClick={send}>
+				<button
+					type="button"
+					className="rw-icon rw-send"
+					aria-label="Send"
+					title="Send"
+					aria-disabled={empty}
+					onClick={send}
+				>
 					<SendHorizontal size={16} />
 				</button>
 			</div>
+			<p className="rw-hint rw-faint">Enter send · Shift+Enter newline · type / for research commands</p>
 		</div>
 	);
 }

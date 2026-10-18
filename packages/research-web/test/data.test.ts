@@ -33,6 +33,8 @@ beforeAll(async () => {
 	await Bun.write(path.join(proj, "review-x.md"), "# Review");
 	await Bun.write(path.join(home, "active-project"), "p1\n");
 	await fs.mkdir(path.join(home, "projects", "empty"));
+	await fs.mkdir(path.join(home, "projects", "zero"));
+	await Bun.write(path.join(home, "projects", "zero", "review.db"), "");
 
 	const db = new Database(path.join(proj, "review.db"));
 	db.run(`CREATE TABLE records (
@@ -127,6 +129,14 @@ describe("readable errors", () => {
 		expect(res.status).toBe(404);
 		const { error } = (await res.json()) as { error: string };
 		expect(error).toStartWith("No screening records in this project yet.");
+	});
+
+	test("a 0-byte review.db reads as an empty project, not a 500", async () => {
+		const projects = (await (await call("/api/projects", {})).json()) as { slug: string; counts: object }[];
+		expect(Object.values(projects.find(p => p.slug === "zero")?.counts ?? { missing: 1 })).toEqual(Array(9).fill(0));
+		expect(await (await call("/api/projects/:slug/records", { slug: "zero" })).json()).toEqual([]);
+		expect((await call("/api/projects/:slug/prisma.svg", { slug: "zero" })).status).toBe(404);
+		expect(await Bun.file(path.join(tmp, "home", "projects", "zero", "review.db")).size).toBe(0);
 	});
 
 	test("a PDF link opened in a browser tab gets an HTML page, not JSON", async () => {

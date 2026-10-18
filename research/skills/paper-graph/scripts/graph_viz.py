@@ -56,9 +56,13 @@ function readPalette() {
 }
 readPalette();
 window.addEventListener("message", e => {
-  if (e.source !== window.parent || !e.data || e.data.type !== "paper-graph:theme") return;
-  document.documentElement.dataset.theme = e.data.theme === "light" ? "light" : "dark";
-  readPalette();
+  if (e.source !== window.parent || !e.data) return;
+  if (e.data.type === "paper-graph:theme") {
+    document.documentElement.dataset.theme = e.data.theme === "light" ? "light" : "dark";
+    readPalette();
+  } else if (e.data.type === "paper-graph:select" && e.data.id == null) {
+    clearSelection(false);  // parent dismissed its selection; don't echo it back
+  }
 });
 
 const canvas = document.getElementById("canvas");
@@ -85,13 +89,14 @@ const byId = new Map(nodes.map(n => [n.id, n]));
 const links = DATA.edges
   .filter(e => byId.has(e.src) && byId.has(e.dst))
   .map(e => ({ a: byId.get(e.src), b: byId.get(e.dst), type: e.type }));
-for (const l of links) { l.a.deg++; l.b.deg++; }
+for (const n of nodes) n.nbrs = new Set();
+for (const l of links) { l.a.deg++; l.b.deg++; l.a.nbrs.add(l.b); l.b.nbrs.add(l.a); }
 for (const n of nodes) n.r = 6 + 3 * Math.sqrt(n.deg);
 
 // View transform (pan/zoom) and interaction state.
 let scale = 1, tx = 0, ty = 0;
 let alpha = 1, dragNode = null, panning = false, lastX = 0, lastY = 0;
-let selected = null, query = "";
+let selected = null, hovered = null, query = "";
 
 function matches(n) {
   if (!query) return true;
@@ -128,7 +133,9 @@ function step() {
     if (n !== dragNode) { n.x += n.vx; n.y += n.vy; }
     n.vx *= 0.6; n.vy *= 0.6;
   }
-  alpha *= 0.995;
+  alpha *= 0.97;
+  // Settled: freeze so nodes stop drifting; dragging re-heats alpha.
+  if (alpha < 0.005) for (const n of nodes) { n.vx = 0; n.vy = 0; }
 }
 
 function draw() {
@@ -142,6 +149,11 @@ function draw() {
     ctx.lineWidth = 1.4 / scale;
     ctx.beginPath(); ctx.moveTo(l.a.x, l.a.y); ctx.lineTo(l.b.x, l.b.y); ctx.stroke();
   }
+  // Labels only for the focused (hovered/selected) node and its neighbours, or a
+  // narrow search, so titles never pile on top of each other.
+  const focus = hovered || selected;
+  const nMatch = query ? nodes.filter(matches).length : 0;
+  const labels = [];
   for (const n of nodes) {
     const dim = !matches(n);
     ctx.globalAlpha = dim ? 0.15 : 1;
@@ -149,16 +161,22 @@ function draw() {
     ctx.fillStyle = n === selected ? "#e3b341" : PAL.accent;
     ctx.fill();
     ctx.strokeStyle = PAL.bg; ctx.lineWidth = 1.5; ctx.stroke();
-    if (!dim) {
-      ctx.fillStyle = PAL.fg;
-      ctx.font = (12 / scale) + "px sans-serif";
-      const label = n.title.length > 42 ? n.title.slice(0, 40) + "\\u2026" : n.title;
-      ctx.fillText(label, n.x + n.r + 4 / scale, n.y + 4 / scale);
-    }
+    if (n === focus) labels.push([n, n.title]);
+    else if ((focus && focus.nbrs.has(n)) || (query && !dim && nMatch <= 12))
+      labels.push([n, n.title.length > 30 ? n.title.slice(0, 28) + "\\u2026" : n.title]);
+  }
+  ctx.globalAlpha = 1;
+  ctx.font = (12 / scale) + "px sans-serif";
+  ctx.lineJoin = "round";
+  for (const [n, label] of labels) {
+    const lx = n.x + n.r + 4 / scale, ly = n.y + 4 / scale;
+    ctx.strokeStyle = PAL.bg; ctx.lineWidth = 3 / scale; ctx.strokeText(label, lx, ly);
+    ctx.fillStyle = n === focus ? PAL.fg : PAL.muted; ctx.fillText(label, lx, ly);
   }
   ctx.restore();
-  ctx.globalAlpha = 1;
 }
+
+while (alpha > 0.05) step();  // pre-settle off-screen so the first frame is already laid out
 
 function loop() { step(); draw(); requestAnimationFrame(loop); }
 loop();
@@ -192,18 +210,25 @@ function showPanel(n) {
     (n.abstract ? "<p>" + esc(n.abstract) + "</p>" : "");
   panel.classList.add("open");
 }
-panel.querySelector(".close").onclick = () => { panel.classList.remove("open"); selected = null; };
+function clearSelection(notify) {
+  panel.classList.remove("open");
+  selected = null;
+  if (notify && window.parent !== window) window.parent.postMessage({type: "paper-graph:select", id: null}, "*");
+}
+panel.querySelector(".close").onclick = () => clearSelection(true);
 
 canvas.addEventListener("mousedown", e => {
   const n = nodeAt(e.clientX, e.clientY);
-  if (n) { dragNode = n; alpha = Math.max(alpha, 0.3); }
+  if (n) dragNode = n;  // physics re-heats on actual movement (mousemove), so a click doesn't shake the graph
   else { panning = true; canvas.style.cursor = "grabbing"; }
   lastX = e.clientX; lastY = e.clientY;
 });
 window.addEventListener("mousemove", e => {
   const dx = e.clientX - lastX, dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
-  if (dragNode) {
+  hovered = e.target === canvas && !panning ? nodeAt(e.clientX, e.clientY) : null;
+  if (!dragNode && !panning) canvas.style.cursor = hovered ? "pointer" : "grab";
+  if (dragNode && (dx || dy)) {
     dragNode.x += dx / scale; dragNode.y += dy / scale;
     alpha = Math.max(alpha, 0.3);
   } else if (panning) { tx += dx; ty += dy; }
@@ -226,8 +251,17 @@ canvas.addEventListener("wheel", e => {
   scale = ns;
 }, { passive: false });
 
-document.getElementById("search").addEventListener("input", e => {
+const search = document.getElementById("search");
+search.addEventListener("input", e => {
   query = e.target.value.trim().toLowerCase();
+});
+// Enter selects the best (highest-degree) hit, same path as a click, and centres it.
+search.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !query) return;
+  const hit = nodes.filter(matches).sort((a, b) => b.deg - a.deg)[0];
+  if (!hit) return;
+  showPanel(hit);
+  tx = (W - 320) / 2 - hit.x * scale; ty = H / 2 - hit.y * scale;
 });
 </script>
 </body>

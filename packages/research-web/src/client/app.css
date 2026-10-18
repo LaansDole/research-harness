@@ -5,12 +5,18 @@
 
 .rw-app {
 	display: grid;
-	grid-template-columns: 280px 1fr;
+	grid-template-columns: 280px minmax(0, 1fr);
 	height: 100%;
 	background: var(--bg);
 	color: var(--fg);
 	font-family: var(--font-ui);
 	font-size: 14px;
+}
+
+/* Inset ring so scroll containers never clip it; accent clears 3:1 in both themes. */
+.rw-app :focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
 }
 
 .rw-sidebar {
@@ -23,10 +29,58 @@
 	border-right: 1px solid var(--border);
 }
 
-.rw-sidebar h3 {
+@media (min-width: 900px) {
+	.rw-collapsed {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.rw-collapsed .rw-sidebar {
+		display: none;
+	}
+}
+
+/* Below 900px the sidebar is an off-canvas drawer over the content. */
+@media (max-width: 899px) {
+	.rw-app {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.rw-sidebar {
+		position: fixed;
+		inset: 0 auto 0 0;
+		z-index: 30;
+		width: min(300px, 85vw);
+		box-shadow: var(--shadow-overlay);
+		/* Closed, it is off-canvas and `inert` (App), so it takes no focus. */
+		transform: translateX(-100%);
+		transition: transform 0.2s var(--ease-out);
+	}
+
+	.rw-drawer-open .rw-sidebar {
+		transform: none;
+	}
+}
+
+/* The sidebar scrolls as a whole; its sections must not shrink (the sessions list would collapse to 0). */
+.rw-sidebar > * {
+	flex-shrink: 0;
+}
+
+.rw-scrim {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	background: var(--backdrop);
+}
+
+.rw-section-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	margin-bottom: 8px;
+}
+
+.rw-sidebar h3 {
 	margin-bottom: 8px;
 	font-size: 11px;
 	font-weight: 600;
@@ -35,17 +89,16 @@
 	color: var(--fg-muted);
 }
 
+.rw-section-head h3 {
+	margin-bottom: 0;
+}
+
 .rw-list {
 	list-style: none;
 	padding: 0;
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-}
-
-.rw-sessions {
-	max-height: 40vh;
-	overflow-y: auto;
 }
 
 .rw-list li {
@@ -58,6 +111,7 @@
 
 .rw-list li.rw-selected {
 	background: var(--selected);
+	box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .rw-row {
@@ -65,63 +119,112 @@
 	flex-direction: column;
 	gap: 4px;
 	width: 100%;
+	min-height: 32px;
 	padding: 6px 8px;
 	text-align: left;
 	background: none;
 	border: 0;
+	border-radius: var(--radius);
 	color: inherit;
 }
 
-.rw-row-title {
+.rw-row-head {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 6px;
+}
+
+.rw-clamp {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
 	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	overflow-wrap: anywhere;
 }
 
 .rw-row progress {
+	appearance: none;
 	width: 100%;
 	height: 4px;
-	accent-color: var(--accent);
+	border: 0;
+	border-radius: 2px;
+	background: var(--selected);
+	overflow: hidden;
+}
+
+.rw-row progress::-webkit-progress-bar {
+	background: var(--selected);
+}
+
+.rw-row progress::-webkit-progress-value {
+	background: var(--accent);
+}
+
+.rw-row progress::-moz-progress-bar {
+	background: var(--accent);
 }
 
 .rw-chip {
+	flex: none;
 	padding: 0 6px;
 	border-radius: var(--radius-sm);
 	background: var(--accent-muted);
-	color: var(--accent);
+	/* Plain --accent on --accent-muted is ~4:1 in light; the mix clears 4.5:1 in both themes. */
+	color: color-mix(in srgb, var(--accent) 80%, var(--fg));
 	font-size: 11px;
+	white-space: nowrap;
 }
 
 .rw-link {
-	margin: 0 8px 6px;
 	padding: 0;
 	background: none;
 	border: 0;
 	color: var(--accent);
 	font-size: 12px;
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .rw-faint {
-	color: var(--fg-faint);
+	color: var(--fg-muted);
 	font-size: 12px;
 }
 
 /* Real failures (server 5xx, unreachable); empty states use .rw-notice. */
 .rw-error {
-	color: var(--err);
+	color: color-mix(in srgb, var(--err) 75%, var(--fg));
 }
 
 .rw-notice {
-	color: var(--fg-faint);
+	color: var(--fg-muted);
 }
 
-.rw-model {
+.rw-settings {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 8px;
+	margin-top: auto;
+	padding-top: 12px;
+	border-top: 1px solid var(--border);
+}
+
+.rw-settings summary {
+	padding: 4px 0;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--fg-muted);
+	cursor: pointer;
+}
+
+.rw-settings label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 8px;
+	color: var(--fg-muted);
+	font-size: 12px;
 }
 
 .rw-app select,
@@ -141,6 +244,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	min-width: 28px;
+	min-height: 28px;
 	padding: 6px;
 	border: 0;
 	border-radius: var(--radius);
@@ -160,16 +265,126 @@
 	min-height: 0;
 }
 
-.rw-tabs {
+.rw-header {
 	display: flex;
-	gap: 4px;
-	padding: 8px 12px;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	padding: 6px 12px;
 	border-bottom: 1px solid var(--border);
 }
 
-.rw-tabs button[aria-pressed="true"] {
+.rw-tabs {
+	display: flex;
+	/* Full tab width when it fits (the context cluster wraps below); scrolls only when the header itself is too narrow. */
+	flex: 1 0 auto;
+	max-width: calc(100% - 40px);
+	gap: 4px;
+	min-width: 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+
+/* Below 600px the tab strip always overflows: fade its end so it reads as scrollable; the end padding lets the last tab scroll clear of the fade. */
+@media (max-width: 599px) {
+	.rw-tabs {
+		padding-right: 32px;
+		mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+	}
+}
+
+.rw-app .rw-tabs button {
+	flex: none;
+	border-color: transparent;
+	background: none;
+	color: var(--fg-muted);
+}
+
+.rw-app .rw-tabs button[aria-selected="true"] {
 	background: var(--selected);
 	border-color: var(--accent);
+	color: var(--fg);
+}
+
+.rw-context {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	margin-left: auto;
+	font-size: 12px;
+}
+
+.rw-viewed {
+	overflow: hidden;
+	max-width: 24ch;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 500;
+}
+
+.rw-app .rw-context button:not(.rw-link) {
+	padding: 2px 8px;
+	font-size: 12px;
+}
+
+.rw-status {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	gap: 6px;
+	color: var(--fg-muted);
+}
+
+.rw-status::before {
+	content: "";
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--ok);
+}
+
+.rw-status-busy::before {
+	background: var(--accent);
+	animation: rw-pulse 1.2s ease-in-out infinite;
+}
+
+.rw-status-down {
+	color: color-mix(in srgb, var(--err) 75%, var(--fg));
+}
+
+.rw-status-down::before {
+	background: var(--err);
+}
+
+@keyframes rw-pulse {
+	50% {
+		opacity: 0.3;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rw-status-busy::before {
+		animation: none;
+	}
+
+	.rw-sidebar {
+		transition: none;
+	}
+}
+
+.rw-model-name {
+	overflow: hidden;
+	max-width: 20ch;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--fg-muted);
+}
+
+@media (max-width: 599px) {
+	.rw-model-name {
+		display: none;
+	}
 }
 
 .rw-panel {
@@ -199,20 +414,71 @@
 	overflow-y: auto;
 }
 
+.rw-chat-empty {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	max-width: 640px;
+	margin: auto;
+	padding: 24px 16px;
+	overflow-y: auto;
+}
+
+.rw-chat-empty h2 {
+	font-size: 20px;
+	font-weight: 600;
+}
+
+.rw-starters {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 8px;
+	margin-top: 8px;
+	padding: 0;
+	list-style: none;
+}
+
+.rw-app .rw-starters button {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	width: 100%;
+	height: 100%;
+	padding: 10px 12px;
+	text-align: left;
+}
+
+.rw-starters code {
+	color: var(--accent);
+	font-weight: 600;
+}
+
 .rw-composer {
-	padding: 8px 12px 12px;
+	padding: 8px;
 	border-top: 1px solid var(--border);
+}
+
+.rw-composer-note {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 6px;
 }
 
 .rw-composer-row {
 	display: flex;
 	align-items: flex-end;
-	gap: 6px;
+	gap: 4px;
 }
 
 .rw-composer textarea {
 	flex: 1;
-	resize: vertical;
+	min-width: 0;
+	field-sizing: content;
+	min-height: calc(2lh + 18px);
+	max-height: 40vh;
+	resize: none;
 	padding: 8px 10px;
 	border: 1px solid var(--border-strong);
 	border-radius: var(--radius-lg);
@@ -221,12 +487,25 @@
 	font: inherit;
 }
 
+.rw-hint {
+	margin-top: 4px;
+	font-size: 11px;
+}
+
 .rw-send {
 	color: var(--accent);
 }
 
-.rw-stop {
-	color: var(--err);
+.rw-send[aria-disabled="true"] {
+	opacity: 0.45;
+	cursor: default;
+}
+
+.rw-app .rw-stop {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: color-mix(in srgb, var(--err) 75%, var(--fg));
 }
 
 .rw-thumbs {
@@ -258,9 +537,10 @@
 	align-items: center;
 	gap: 8px;
 	padding: 8px 16px;
-	background: var(--accent-muted);
+	background: var(--bg-raised);
 	border-bottom: 1px solid var(--border);
-	color: var(--err);
+	border-left: 3px solid var(--err);
+	color: var(--fg);
 }
 
 .rw-banner pre {
@@ -273,17 +553,29 @@
 
 .rw-toasts {
 	position: fixed;
+	top: 56px;
 	right: 16px;
-	bottom: 16px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	z-index: 10;
+	max-width: calc(100vw - 32px);
+	z-index: 40;
+}
+
+/* Narrow headers wrap to two rows; sit above the composer instead. */
+@media (max-width: 599px) {
+	.rw-toasts {
+		top: auto;
+		bottom: 88px;
+	}
 }
 
 .rw-toast {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
 	max-width: 360px;
-	padding: 8px 12px;
+	padding: 8px 8px 8px 12px;
 	border: 1px solid var(--border-strong);
 	border-left: 3px solid var(--err);
 	border-radius: var(--radius);
@@ -291,76 +583,8 @@
 	box-shadow: var(--shadow-overlay);
 }
 
-.rw-toolbar,
-.rw-actions {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px;
-	margin-bottom: 12px;
-}
-
-.rw-graph {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-}
-
-.rw-graph iframe {
+.rw-toast > span {
 	flex: 1;
-	width: 100%;
-	border: 1px solid var(--border);
-	border-radius: var(--radius-lg);
-	background: var(--panel);
-}
-
-.rw-actions {
-	margin: 8px 0 0;
-}
-
-.rw-doc {
-	max-width: 860px;
-	line-height: 1.6;
-}
-
-.rw-doc section {
-	position: relative;
-}
-
-.rw-revise {
-	position: absolute;
-	top: 0;
-	right: 0;
-	font-size: 12px;
-}
-
-.rw-table {
-	width: 100%;
-	border-collapse: collapse;
-}
-
-.rw-table th,
-.rw-table td {
-	padding: 6px 8px;
-	border-bottom: 1px solid var(--border);
-	text-align: left;
-	vertical-align: top;
-}
-
-.rw-table th {
-	color: var(--fg-muted);
-	font-weight: 500;
-}
-
-.rw-row-actions {
-	white-space: nowrap;
-}
-
-.rw-row-actions button {
-	margin-right: 4px;
-	font-size: 12px;
-}
-
-.rw-prisma img {
-	max-width: 100%;
+	min-width: 0;
+	overflow-wrap: anywhere;
 }

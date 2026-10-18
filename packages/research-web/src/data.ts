@@ -38,6 +38,7 @@ export interface RecordRow {
 	venue: string | null;
 	doi: string | null;
 	url: string | null;
+	abstract: string | null;
 	state: ReviewState;
 	ta_verdict: string | null;
 	ta_rationale: string | null;
@@ -120,6 +121,9 @@ async function withReviewDb<T>(dir: string, fallback: T, fn: (db: Database) => T
 	if (!(await Bun.file(file).exists())) return fallback;
 	const db = new Database(file, { readonly: true });
 	try {
+		// A 0-byte or half-initialized review.db has no records yet: same as no review.db.
+		if (db.query("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'records'").get() === null)
+			return fallback;
 		return fn(db);
 	} finally {
 		db.close();
@@ -205,7 +209,7 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 			const rows = await withReviewDb(dir, [], db =>
 				db
 					.query<Omit<RecordRow, "has_pdf"> & { pdf_path: string | null }, [string | null]>(
-						`SELECT id, title, authors, year, venue, doi, url, state, ta_verdict, ta_rationale,
+						`SELECT id, title, authors, year, venue, doi, url, abstract, state, ta_verdict, ta_rationale,
 							ft_verdict, ft_rationale, exclusion_reason, oa_status, pdf_path
 						FROM records WHERE ?1 IS NULL OR state = ?1 ORDER BY created_at, id`,
 					)
@@ -247,8 +251,9 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 
 		"/api/projects/:slug/prisma.svg": async req => {
 			const dir = await projectDir(config, req.params.slug);
-			// No records yet is an empty project, not a failure: say what to do next.
-			if (!(await Bun.file(path.join(dir, "review.db")).exists())) {
+			// No records yet is an empty project, not a failure: say what to do next. A 0-byte review.db counts as
+			// none too, and never reaches prisma_scr.py (which would initialize its schema: a write from a GET).
+			if (!(await withReviewDb(dir, false, db => db.query("SELECT 1 FROM records LIMIT 1").get() !== null))) {
 				throw new HttpError(
 					404,
 					"No screening records in this project yet. Ask the agent to find or import papers, and the PRISMA diagram will appear here.",
