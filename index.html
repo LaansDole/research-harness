@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>research-harness — live TUI captures</title>
+    <title>research-harness — live captures</title>
     <meta
       name="description"
-      content="Unedited terminal captures of research-harness running in the oh-my-pi TUI: a researcher working a real 50-record PubMed export down to a PRISMA diagram by the repo's own testing runbook, and the librarian agent growing the paper graph."
+      content="Unedited captures of research-harness: a researcher working a real 50-record PubMed export down to a PRISMA diagram in the oh-my-pi TUI, the librarian agent growing the paper graph, and the research web browser UI over a review's records, synthesis, graph and PRISMA diagram."
     />
     <style>
       :root {
@@ -60,7 +60,7 @@
       }
       ul { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 0.9rem; }
       footer { margin-top: 44px; color: var(--muted); font-size: 0.88rem; }
-      footer a { color: var(--accent); }
+      footer a, section a { color: var(--accent); }
       .note { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); font-size: 0.88rem; margin-top: 18px; }
       .turn { color: var(--text); }
     </style>
@@ -68,13 +68,13 @@
   <body>
     <div class="wrap">
       <header>
-        <h1>research-harness — live TUI captures</h1>
+        <h1>research-harness — live captures</h1>
         <p>
-          Unedited terminal recordings of <a href="https://github.com/LaansDole/research-harness">research-harness</a>
-          driving oh-my-pi. Real agent turns, real output, no staged replay — every command typed here is a sentence a
-          researcher would actually write.
+          Unedited recordings of <a href="https://github.com/LaansDole/research-harness">research-harness</a>
+          driving oh-my-pi, in the terminal and in the browser. Real agent turns, real output, no staged replay — every
+          command typed here is a sentence a researcher would actually write.
         </p>
-        <span class="pill">1600x1000 · 1x playback · open-access sources only</span>
+        <span class="pill">1x playback · real data · open-access sources only</span>
       </header>
 
       <section id="guided-review">
@@ -126,8 +126,37 @@
         </p>
       </section>
 
+      <section id="research-web">
+        <h2>3 · The review in your browser: <code>research web</code></h2>
+        <p class="sub">
+          One command opens the agent in your browser on <code>127.0.0.1</code>, beside everything it has written for
+          the project. This take walks the <code>demo-web-ui</code> review: a starter command from the empty chat, the
+          reading list filtered by state, searched, and triaged from the keyboard with each record's verdicts,
+          rationale and abstract in the side panel; the review's contents and a citation jumping to its reference; a
+          paper found in the graph and handed to the agent; and the PRISMA diagram the counts come from.
+        </p>
+        <video controls preload="metadata" poster="posters/research-web-poster.png">
+          <source src="research-web.mp4" type="video/mp4" />
+          Your browser cannot play this capture.
+          <a href="research-web.mp4">Download the MP4</a>.
+        </video>
+        <p class="meta">
+          53 s · 1440x900 · recorded live from Chrome with Puppeteer's <code>page.screencast()</code>
+          (<a href="research-web.ts">script</a>), so the take renders in its own running time. Nothing is sent: every
+          action button only fills the chat box, and nothing runs until the researcher presses Enter — the agent stays
+          the only writer of the review.
+        </p>
+        <ul>
+          <li><span class="turn">Header</span> — the project you are viewing beside the one the agent works on, a <code>Make active</code> button, the agent's status and model.</li>
+          <li><span class="turn">Reading list</span> — state chips with counts, search across title, author and DOI, ↑/↓ to move, Enter to open, Esc to close; a next-step bar such as <code>1 full text ready · Screen full texts</code>.</li>
+          <li><span class="turn">Reviews</span> — a contents list, <code>[n]</code> citations that preview on hover and jump to their reference, and Revise / Check per section.</li>
+          <li><span class="turn">Graph</span> — search a paper and press Enter; <em>Find citing papers</em>, <em>Auto-edges</em> and <em>Explain neighbors</em> prefill the agent.</li>
+          <li><span class="turn">PRISMA</span> — the flow diagram derived from record state, with SVG download.</li>
+        </ul>
+      </section>
+
       <section id="viz">
-        <h2>3 · The exported paper graph</h2>
+        <h2>4 · The exported paper graph</h2>
         <p class="sub">
           One self-contained HTML file: vanilla-JS force-directed canvas, node size by degree, edge colours by type,
           search, drag/zoom/pan, click for metadata. No external assets — it works from <code>file://</code>.
@@ -145,7 +174,8 @@
         Fork of <a href="https://github.com/can1357/oh-my-pi">can1357/oh-my-pi</a> ·
         <a href="https://github.com/LaansDole/research-harness">repository</a> ·
         <a href="https://github.com/LaansDole/research-harness/blob/main/docs/ARCHITECTURE.md">architecture</a> ·
-        captures rendered with <a href="https://github.com/charmbracelet/vhs">charmbracelet/vhs</a>.
+        terminal captures rendered with <a href="https://github.com/charmbracelet/vhs">charmbracelet/vhs</a>, the
+        browser capture with <a href="https://pptr.dev/api/puppeteer.page.screencast">Puppeteer</a>.
       </footer>
     </div>
   </body>
