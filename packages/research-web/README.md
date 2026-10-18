@@ -12,12 +12,14 @@ Requires `bun` and the repo's `node_modules` (run from the checkout, like the de
 
 ## What you get
 
-- **Chat**: streaming transcript and tool cards (collab-web renderers), image attach, Stop, steering/follow-up while the agent works.
-- **Sidebar**: projects with screening progress, sessions (resume, new, fork), model and thinking level, and Appearance (light / dark / match my computer, remembered in the browser; the graph iframe follows it via a `paper-graph:theme` message).
-- **Graph**: the `paper_graph.py` interactive graph; clicking a paper offers agent actions.
-- **Reviews**: `review-*.md` rendered; `[n]` citations jump to the reference list; per-section Revise and selection Check-claim actions.
-- **Reading list**: `review.db` records with verdicts and rationales, state filter, PDF open, per-record actions.
-- **PRISMA**: the `prisma_scr.py` SVG.
+- **Header**: the project you are viewing next to the project the agent works on (slash commands target the latter), a one-click "Make active" prefill, agent status (Connecting / Ready / Working / Disconnected) and the current model. The view and project live in the URL (`#records/<slug>`), so reloads and links keep your place.
+- **Chat**: streaming transcript and tool cards (collab-web renderers); an empty chat offers starter commands picked from the agent project's progress. The composer grows with the text, takes pasted or dropped images, stops a turn with Esc, and lets you restore the draft a prefill replaced.
+- **Sidebar**: projects with screening progress, sessions (resume, new, fork), and a "Model & appearance" section (model, thinking level, light / dark / match my computer). ⌘/Ctrl+B collapses it; below 900 px it becomes a drawer.
+- **Reading list**: `review.db` records with state chips and counts, search by title/author/DOI, and keyboard triage (↑/↓, Enter opens the record, Esc closes). The record panel shows the abstract, both screening verdicts with their rationale, DOI and PDF links, and the next action for that record; on phones it opens as a full-screen sheet with Prev/Next.
+- **Reviews**: `review-*.md` rendered with a contents list, `[n]` citations that preview on hover and jump to the reference (browser Back returns), linked DOIs, per-section Revise and Check, and a Check-claim action on selected text.
+- **Graph**: the `paper_graph.py` interactive graph; click or search a paper (Enter selects the top hit) for agent actions. Labels show for the focused paper and its neighbours.
+- **PRISMA**: the `prisma_scr.py` SVG with Fit / 100 % (when it doesn't fit) and SVG download.
+- **Empty states** say what to do next, with a button that prefills it.
 
 Views are read-only. Action buttons only **prefill** the chat composer; nothing runs until you press send, so the agent remains the only writer of research state. Views refresh after every agent turn.
 
