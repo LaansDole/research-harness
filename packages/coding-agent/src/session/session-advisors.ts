@@ -1410,7 +1410,14 @@ export class SessionAdvisors {
 				() => cfgAdvisorWipDelivery.get(this.#host.settings),
 			);
 
-			const systemPrompt = [prompt.render(advisorSystemPrompt, { max_notes_per_update: budgetPerUpdate })];
+			// `#advisorWatchdogPrompt` already carries WATCHDOG.md + YAML shared
+			// instructions; `config.instructions` adds this advisor's specialization.
+			const systemPrompt = [
+				prompt.render(advisorSystemPrompt, {
+					max_notes_per_update: budgetPerUpdate,
+					wip_aside: cfgAdvisorWipDelivery.get(this.#host.settings) === "aside",
+				}),
+			];
 			if (this.#advisorContextPrompt) systemPrompt.push(this.#advisorContextPrompt);
 			if (this.#advisorMemoryPrompt) systemPrompt.push(this.#advisorMemoryPrompt);
 			if (this.#advisorWatchdogPrompt) systemPrompt.push(this.#advisorWatchdogPrompt);
