@@ -7,7 +7,7 @@
 # This script never pushes: it leaves the rebased stack on SYNC_BRANCH and writes
 # $SYNC_REPORT_DIR/result.env for sync-push.sh, which runs in a credentialed step.
 #
-# Conflicts: ai-resolve.sh (if COMMAND_CODE_API_KEY is set) resolves them in place;
+# Conflicts: ai-resolve.sh (if OPENCODE_API_KEY is set) resolves them in place;
 # whatever it cannot resolve is committed WITH markers so the rebase can finish.
 #
 # Env: UPSTREAM_URL    (default https://github.com/can1357/oh-my-pi.git)
