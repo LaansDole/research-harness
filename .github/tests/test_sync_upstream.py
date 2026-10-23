@@ -52,7 +52,7 @@ class Fixture:
 
     def env(self, *extra):
         env = dict(os.environ)
-        env.pop("COMMAND_CODE_API_KEY", None)  # the developer's shell may export a real key
+        env.pop("OPENCODE_API_KEY", None)  # the developer's shell may export a real key
         env.update(
             IDENTITY,
             UPSTREAM_URL=self.upstream,
