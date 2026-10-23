@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# ai-resolve.sh <path>... — let a Command Code model (headless omp) resolve the conflicted
+# ai-resolve.sh <path>... — let an OpenCode Go model (headless omp) resolve the conflicted
 # files of a stopped rebase in place, then keep only what passes the guard.
 # Spec: docs/superpowers/specs/2026-10-17-fork-rebase-stack-design.md §2
 #
 # Never stages, commits or pushes: sync-upstream.sh stages the result. The agent runs in
 # a step without write credentials. The index (which holds the conflict stages) and every
 # target file are snapshotted first, so anything the agent breaks is restored exactly.
-# Env: COMMAND_CODE_API_KEY (required; unset -> AI-SKIPPED)
-#      SYNC_AI_MODEL   (default commandcode/z-ai/glm-5.3-flash)
+# Env: OPENCODE_API_KEY (required; unset -> AI-SKIPPED)
+#      SYNC_AI_MODEL   (default opencode-go/deepseek-v4.1-flash)
 #      SYNC_REPORT_DIR (default <git-dir>/sync-report)
 # Output (last line): AI-SKIPPED <why> | AI-FAILED <why> | AI-RESOLVED <R>/<C>
 # Exit: 0 unless git itself breaks — the marker files are always the fallback.
@@ -15,7 +15,7 @@ set -euo pipefail
 export GIT_LITERAL_PATHSPECS=1
 
 HERE=$(cd "$(dirname "$0")" && pwd)
-MODEL="${SYNC_AI_MODEL:-commandcode/z-ai/glm-5.3-flash}"
+MODEL="${SYNC_AI_MODEL:-opencode-go/deepseek-v4.1-flash}"
 GITDIR=$(git rev-parse --absolute-git-dir)
 export SYNC_REPORT_DIR="${SYNC_REPORT_DIR:-$GITDIR/sync-report}"
 mkdir -p "$SYNC_REPORT_DIR"
@@ -23,7 +23,7 @@ mkdir -p "$SYNC_REPORT_DIR"
 TARGETS=("$@")
 C=${#TARGETS[@]}
 [ "$C" -gt 0 ] || { echo "AI-SKIPPED no conflicted paths"; exit 0; }
-[ -n "${COMMAND_CODE_API_KEY:-}" ] || { echo "AI-SKIPPED COMMAND_CODE_API_KEY unset"; exit 0; }
+[ -n "${OPENCODE_API_KEY:-}" ] || { echo "AI-SKIPPED OPENCODE_API_KEY unset"; exit 0; }
 command -v omp >/dev/null || { echo "AI-SKIPPED omp not installed"; exit 0; }
 
 START=$(git rev-parse HEAD)
@@ -63,7 +63,7 @@ drop_new_untracked() {
       done
 }
 redact() { # keep the key out of anything that may be uploaded as an artifact
-  [ -f "$1" ] && KEY="$COMMAND_CODE_API_KEY" perl -pi -e 's/\Q$ENV{KEY}\E/[REDACTED]/g' "$1"
+  [ -f "$1" ] && KEY="$OPENCODE_API_KEY" perl -pi -e 's/\Q$ENV{KEY}\E/[REDACTED]/g' "$1"
   return 0
 }
 
@@ -102,7 +102,7 @@ for ((i = 0; i < C; i++)); do
   p=${TARGETS[$i]}
   same_as_snapshot "$i" && continue # untouched: markers stay
   if [ -f "$p" ] && bash "$HERE/check-sync-markers.sh" "$p" >/dev/null \
-    && ! grep -qF -- "$COMMAND_CODE_API_KEY" "$p"; then
+    && ! grep -qF -- "$OPENCODE_API_KEY" "$p"; then
     echo "$p" >> "$SYNC_REPORT_DIR/ai-resolved.txt"
     R=$((R + 1))
   else
