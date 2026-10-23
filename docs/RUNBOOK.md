@@ -193,7 +193,6 @@ PRISMA diagram will appear here.* on the PRISMA tab. Red text means something ac
 failed; the UI never shows code or error dumps, and the technical detail goes to
 `~/.omp/logs/omp.<date>.log`. It runs only on your own machine (`127.0.0.1`) and needs the
 checkout's dependencies installed (`bun install` in the harness folder).
-
 ---
 
 ## Part 1 — The worked pass on a real review

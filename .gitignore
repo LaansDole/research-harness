@@ -95,6 +95,3 @@ packages/coding-agent/bench/boot-baseline.json
 
 .parity/
 research/tests/__pycache__/
-
-# local design notes (plans/specs)
-docs/superpowers/

@@ -184,7 +184,6 @@ elif [ -x "$DEV_OMP" ] && [ -d "$RESEARCH_HARNESS_HOME/node_modules" ] && comman
 else
 	OMP_BIN="omp"
 fi
-
 case "${1:-}" in
 doctor)
 	doctor
@@ -215,4 +214,5 @@ args=(--append-system-prompt "$SYSTEM_PROMPT")
 if [ "$PWD" = "$HOME" ]; then
 	args+=(--cwd "$HOME/.research-harness")
 fi
+
 exec "$OMP_BIN" "${args[@]}" "$@"
