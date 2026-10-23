@@ -35,7 +35,7 @@ STUB_OMP = textwrap.dedent(
         if mode == "partial":
             put(p, "agent note\\n" + open(p).read())  # markers survive
         elif mode == "leak":
-            put(p, "resolved " + os.environ["COMMAND_CODE_API_KEY"] + "\\n")
+            put(p, "resolved " + os.environ["OPENCODE_API_KEY"] + "\\n")
         else:
             put(p, "resolved " + p + "\\n")
     if mode == "stray":
@@ -72,8 +72,8 @@ class AiTests(unittest.TestCase):
             f"PATH={self.bin}:{os.environ['PATH']}",
             f"STUB_MODE={mode}",
             f"STUB_LOG={self.log}",
-            "SYNC_AI_MODEL=commandcode/stub-model",
-            f"COMMAND_CODE_API_KEY={key}",
+            "SYNC_AI_MODEL=opencode-go/stub-model",
+            f"OPENCODE_API_KEY={key}",
         )
 
     def tip(self, path):
