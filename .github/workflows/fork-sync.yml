@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       ai:
-        description: Let the Command Code model try to resolve rebase conflicts
+        description: Let the OpenCode Go model try to resolve rebase conflicts
         type: boolean
         default: true
 
@@ -66,7 +66,7 @@ jobs:
       - name: Install omp
         if: steps.preflight.outputs.skip != 'true'
         env:
-          HAS_KEY: ${{ secrets.COMMAND_CODE_API_KEY != '' }}
+          HAS_KEY: ${{ secrets.OPENCODE_API_KEY != '' }}
           # Not `inputs.ai != false`: on schedule inputs.ai is null, and null == false in
           # Actions' loose comparison, which would silently disable AI on every scheduled run.
           WANT: ${{ github.event_name == 'schedule' || inputs.ai }}
@@ -83,7 +83,7 @@ jobs:
         if: steps.preflight.outputs.skip != 'true'
         timeout-minutes: 45
         env:
-          COMMAND_CODE_API_KEY: ${{ env.AI == 'on' && secrets.COMMAND_CODE_API_KEY || '' }}
+          OPENCODE_API_KEY: ${{ env.AI == 'on' && secrets.OPENCODE_API_KEY || '' }}
           SYNC_AI_MODEL: ${{ vars.SYNC_AI_MODEL }}
         run: bash .github/scripts/sync-upstream.sh
 
@@ -121,7 +121,7 @@ jobs:
           fi
           AI_R=$(wc -l < "$(git rev-parse --absolute-git-dir)/sync-report/ai-resolved.txt" 2>/dev/null || echo 0)
           gh label create sync-conflicts --color B60205 --description "Fork rebase needs review" --force
-          gh label create ai-resolved --color 5319E7 --description "Conflicts resolved by the Command Code model" --force
+          gh label create ai-resolved --color 5319E7 --description "Conflicts resolved by the OpenCode Go model" --force
           gh label create promote --color 0E8A16 --description "Force-push this sync/rebase to main" --force
           label() { # <count> <name>: the label is on the PR iff count > 0
             if [ "$1" -gt 0 ]; then
