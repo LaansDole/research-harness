@@ -337,6 +337,8 @@ export class AdviseTool implements AgentTool<typeof adviseSchema, AdviseDetails>
 				}
 				const decision = this.#guard.admit(args.note, { rank, pending: false });
 				if (!decision.accepted) return this.#suppressed(args, decision.reason);
+				// A defer-mode reservation this note displaced must not flush later too.
+				this.#dropDisplaced(decision.displacedKey);
 				this.onAdvice(args.note, args.severity, this.#coveredTurn, { wip: true });
 				return this.#result(ADVISOR_ACK_ASIDE, args);
 			}
@@ -358,10 +360,7 @@ export class AdviseTool implements AgentTool<typeof adviseSchema, AdviseDetails>
 			// The guard centrally names the still-pending note displaced by this
 			// strictly-higher-severity admission; only same-update pending notes
 			// can be displaced, so the backlog lookup is a drop, not a policy.
-			if (decision.displacedKey !== undefined) {
-				const displacedIndex = this.#deferredNotes.findIndex(item => item.key === decision.displacedKey);
-				if (displacedIndex !== -1) this.#deferredNotes.splice(displacedIndex, 1);
-			}
+			this.#dropDisplaced(decision.displacedKey);
 			this.#deferredNotes.push({ key, note: args.note, severity: args.severity, turn: this.#coveredTurn });
 			return this.#result(ADVISOR_ACK_DEFERRED, args);
 		}
@@ -389,6 +388,13 @@ export class AdviseTool implements AgentTool<typeof adviseSchema, AdviseDetails>
 			this.#guard.markRouted(note);
 			this.onAdvice(note, severity, turn ?? this.#coveredTurn);
 		}
+	}
+
+	/** Drop the reservation the guard displaced to admit a higher-rank note, so it never flushes. */
+	#dropDisplaced(key: string | undefined): void {
+		if (key === undefined) return;
+		const index = this.#deferredNotes.findIndex(item => item.key === key);
+		if (index !== -1) this.#deferredNotes.splice(index, 1);
 	}
 
 	/** Truthful suppression acknowledgment keyed by the guard's reason: a
