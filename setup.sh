@@ -79,14 +79,8 @@ else
 	note "corpus   not set — web-only (set RESEARCH_CORPUS_DIR in $CONFIG later)"
 fi
 
-# 6. Persist settings. Only the keys below are managed: every other line of an
-#    existing config.env (hand-added keys, comments, blanks) is kept verbatim.
+# 6. Persist settings.
 PAPER_GRAPH_DB="${PAPER_GRAPH_DB:-$RH_HOME/papers.db}"
-MANAGED='^(# research-harness settings|RESEARCH_HARNESS_HOME=|PAPER_GRAPH_DB=|RESEARCH_CORPUS_DIR=)'
-PRESERVED=""
-if [ -f "$CONFIG" ]; then
-	PRESERVED="$(grep -vE "$MANAGED" "$CONFIG" || true)"
-fi
 {
 	echo "# research-harness settings — sourced by bin/research. Edit freely."
 	echo "RESEARCH_HARNESS_HOME=\"$REPO\""
@@ -94,12 +88,10 @@ fi
 	if [ -n "${RESEARCH_CORPUS_DIR:-}" ]; then
 		echo "RESEARCH_CORPUS_DIR=\"$RESEARCH_CORPUS_DIR\""
 	fi
-	if [ -n "$PRESERVED" ]; then
-		printf '%s\n' "$PRESERVED"
-	fi
 } >"$CONFIG"
 note "config   $CONFIG"
-# Brand name: append-if-absent only; step 6 preserves a customized one.
+# Brand name: append-if-absent only. Step 6 rewrites config.env on every run, so
+# today this always re-adds the default and a customized name does not survive a rerun.
 if [ -f "$CONFIG" ] && ! grep -q '^RESEARCHHARNESS_BRAND_NAME=' "$CONFIG"; then
 	printf '\n# Welcome-screen branding (read by bin/research)\nRESEARCHHARNESS_BRAND_NAME="Research Harness"\n' >>"$CONFIG"
 	note "brand    Research Harness (RESEARCHHARNESS_BRAND_NAME in config.env)"
