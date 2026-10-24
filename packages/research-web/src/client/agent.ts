@@ -71,6 +71,8 @@ export function appendMessage(entries: readonly SessionEntry[], message: WireMes
 		const prev = entries[i];
 		if (prev?.type === "message" && prev.message.role === "assistant") {
 			const next = [...entries];
+			// Stop reason, error and usage come from the newest message: a turn that recovered (auto-retry)
+			// after an earlier failure shows its outcome, not the stale error.
 			next[i] = { ...prev, message: { ...message, content: [...prev.message.content, ...message.content] } };
 			return next;
 		}

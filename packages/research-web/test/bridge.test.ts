@@ -105,9 +105,25 @@ describe("Bridge", () => {
 					: [],
 		);
 		expect(shown).toEqual([
-			"You've hit the model provider's usage limit. Wait a while, or pick another model in the sidebar.",
+			"You've hit the model provider's usage limit. Wait a while, or pick another model in the message box.",
 			"This conversation has grown too long for the model. Start a new session, or pick a model with a larger context.",
 			"The model provider is busy or unreachable right now. Try again in a moment.",
+		]);
+	});
+
+	it("replaces warning notices (paths, errno) with a plain sentence and leaves info notices alone", () => {
+		const { frames, emitRaw } = setup();
+		emitRaw({
+			type: "notice",
+			level: "error",
+			source: "session-persistence",
+			message: "EACCES: permission denied, open '/Users/x/.omp/agent/sessions/a.jsonl'",
+		});
+		emitRaw({ type: "notice", level: "info", message: "Context compacted" });
+		const notices = frames.flatMap(f => (f.t === "event" && f.event.type === "notice" ? [f.event.message] : []));
+		expect(notices).toEqual([
+			"Couldn't save this session to disk, so recent messages may not be kept. The details are in the omp log.",
+			"Context compacted",
 		]);
 	});
 });
