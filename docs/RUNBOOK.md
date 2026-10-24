@@ -373,6 +373,104 @@ Guidance on when this kind of model fits at all is in `research/skills/jev-decid
 short version: calibrated over many calls is not the same as right on any one call, which is why
 the bands are wide and the uncertain middle still reaches you.
 
+### Optional: relevance ordering (experimental, local model)
+
+Screening order is import order. That means you read whatever the database exported first: on
+this 50-record set the five records the model rates highest sit at import positions 34, 8, 11,
+47 and 5, so reading top-down you meet most of them late. A local cross-encoder
+(Qwen3-Reranker-0.6B, ~600 MB, Apache-2.0) can score each unscreened record against your own
+PCC criteria so the queue starts with the records most likely to matter. **It decides nothing**:
+no verdict, no state, no exclusion reason ever comes from it, and every record still gets
+screened. It is off until you start the server and put `RERANK_URL` in `config.env`.
+
+```bash
+brew install llama.cpp          # once
+research rerank start           # downloads the model the first time, then serves 127.0.0.1:8091
+research rerank status
+```
+
+Add the line it prints to `~/.research-harness/config.env` (a setup.sh re-run keeps it now):
+
+```bash
+RERANK_URL="http://127.0.0.1:8091"
+```
+
+Then score once per project and pull the queue in relevance order:
+
+```bash
+. ~/.research-harness/config.env
+S="$RESEARCH_HARNESS_HOME/research/skills/literature-search/scripts"
+python3 "$S/rerank_screen.py" score --project <slug>              # --mode joint for one query
+python3 "$S/review.py" --project <slug> next --stage ta --n 5 --order relevance
+```
+
+Measured on 2026-10-24 on this Mac (M4 Pro, llama-server b7790) against a scratch copy of the
+`multi-agent-llm-clinical-decision-support` project — 50 records, 45 of them unscreened with an
+abstract:
+
+```text
+$ python3 "$S/rerank_screen.py" score --project $SCRATCH
+{"scored": 45, "skipped_no_abstract": 5, "truncated": 0,
+ "model": "ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF", "mode": "min",
+ "criteria_hash": "afe15953…", "seconds": 18.0}
+
+$ python3 "$S/rerank_screen.py" score --project $SCRATCH --mode joint
+{"scored": 45, …, "mode": "joint", "criteria_hash": "adf9b24a…", "seconds": 7.2}
+```
+
+`min` scores each PCC criterion separately and keeps the weakest (all criteria must hold, the
+same rule the Jev pass uses), which is why it costs three passes — 18.0 s against 7.2 s for one
+joined query. Top 5 under each, with the score the model gave:
+
+```text
+--order relevance, mode min                       --order relevance, mode joint
+0.8071 From non-agentic LLMs to multi-agent …     0.9963 Orchestrated multi agents sustain …
+0.7883 LLM-based multi-agent system for neuro…    0.9962 From non-agentic LLMs to multi-agent …
+0.1580 EvoMDT: a self-evolving multi-agent …      0.9945 Enhancing diagnostic capability with …
+0.1195 Independent and collaborative perfor…      0.9944 Independent and collaborative perfor…
+0.1166 CARE-AD: a multi-agent LLM framework …     0.9925 LLM-based multi-agent system for neuro…
+```
+
+`next --order relevance` uses whichever mode was scored **last** — there is no flag on `next`.
+Re-run `rerank_screen.py score --mode <min|joint> --force` to switch which ordering is live;
+`rerank_eval.py` reports both at once.
+
+The bottom of the `min` list is the useful part: `0.00000` for an automated credibility pipeline,
+`0.00001` for a dual-arm nursing robot and for a mental-health education chatbot — real records
+from this set that are not clinical multi-agent decision support. Note how differently the two
+modes spread: `joint` puts almost everything near 1.0 (one blurred question), `min` separates
+hard because one failed criterion sinks the record. Which one actually saves work is an open
+question until there are gold labels — see below.
+
+Reading the output: each line of `next --order relevance` gains a `rerank_score` field; records
+with no score (no abstract, or scored under older criteria) still appear, after the scored ones.
+Editing `criteria.json` changes the criteria hash, so the old scores are ignored and the queue
+falls back to import order with a stderr notice until you re-score. Default `next` is unchanged
+and carries no `rerank_score` field at all.
+
+**Did it help?** `rerank_eval.py` answers that against your own verdicts, not a vibe:
+
+```text
+$ python3 "$S/rerank_eval.py" --project $SCRATCH
+rerank_eval: not enough labels to evaluate (0 relevant, need 3) - screen more records or pass --labels
+```
+
+That is the expected answer on an unscreened project (exit 1). Once title/abstract verdicts
+exist — or you pass a Covidence export with `--labels labels.csv` (`id_or_doi,label`) — it prints
+recall at 10/20/50% of the list, WSS@95 (work saved over random screening at 95% recall) and the
+rank of the last relevant record, for import order and each scored mode side by side. Until that
+number exists, treat the ordering as a convenience, not evidence.
+
+Verified in the same run: scoring never touches your records. The `records` and `history` tables
+of the scored copy hashed identical to the untouched original (50 records, 50 history rows), and
+`research rerank stop` leaves port 8091 free. With the server down, `rerank_screen.py` prints a
+notice and exits 0 without writing, and `research doctor` reports
+`warn  Rerank (experimental) OFF - optional; run 'research rerank start'` in under 3 seconds.
+
+One limit worth knowing: llama-server b7790 ignores a custom `instruction` field on
+`/v1/rerank` (probed 2026-10-24 — scores were byte-identical to a request with a nonsense field),
+so the criteria text is the whole prompt. Nothing in the harness depends on that field.
+
 ### Step 5 — Get the full texts
 
 Type:

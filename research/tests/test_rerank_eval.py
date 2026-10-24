@@ -111,10 +111,11 @@ class GoldTest(EvalCase):
             fh.write("id_or_doi,label\n")
             for i in range(1, 11):
                 fh.write(f"10.1/r{i},{'include' if i <= 3 else 'exclude'}\n")
-        _, report, _ = self.run_eval(["--labels", path])
+        _, report, err = self.run_eval(["--labels", path])
         self.assertEqual(report["n"], 10)
         self.assertEqual(report["relevant"], 3)
         self.assertAlmostEqual(report["orderings"]["rowid"]["recall@50%"], 1.0)
+        self.assertNotIn("matched no record", err)  # the header row is not a bad label
 
     def test_refuses_to_report_on_fewer_than_three_relevant(self):
         self.seed()
