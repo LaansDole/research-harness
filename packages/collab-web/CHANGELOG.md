@@ -7,6 +7,9 @@
 ### Changed
 
 - Updated Bun engine requirement to ≥1.4.4
+### Added
+
+- Added an opt-in `foldActivity` option to `Transcript` that collapses each run of thinking and tool calls into one "thinking · N steps" disclosure.
 
 ## [18.8.0] - 2026-10-07
 
