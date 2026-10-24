@@ -66,6 +66,8 @@ Each review lives in its own project folder under `~/.research-harness/projects/
 
 Hands-on walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md), "Optional: a cheap first pass with Jev". Design — band rule, provenance, key resolution: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
+**Relevance ordering (experimental).** `research rerank start` runs a 600 MB local cross-encoder (Qwen3-Reranker-0.6B, Apache-2.0, nothing leaves the machine) that scores your unscreened records against your own criteria, so `/screen` can start with the ones most likely to matter — 45 records in 7 seconds on an M4 Pro. It decides nothing: no verdict, state or exclusion reason ever comes from it, every record is still screened, and it stays off until `RERANK_URL` is in `config.env`. Whether it actually saves work is measured by `rerank_eval.py` (recall@k, WSS@95), not assumed. Walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md), "Optional: relevance ordering".
+
 ## Second-brain paper graph
 
 ![omp TUI: the librarian agent answering "what connects them" for the five papers it just added — citation edges verified in the papers' own reference lists rather than inferred, same-topic clusters grouped by architecture, the one trial-prediction paper called out as the outlier, and the next steps it can run.](../assets/research/paper-graph-poster.png)
