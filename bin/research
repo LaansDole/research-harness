@@ -2,7 +2,7 @@
 # Research-mode launcher: loads persisted settings, exports the research env,
 # and starts omp (the fork's dev wrapper when runnable, else the installed omp)
 # with the research system prompt.
-# Usage: research [omp args...] | research doctor
+# Usage: research [omp args...] | research doctor | research web
 set -euo pipefail
 
 CONFIG="$HOME/.research-harness/config.env"
@@ -173,10 +173,34 @@ except sqlite3.Error:
 	echo "        type /help in the TUI to see every command"
 }
 
+# Prefer the fork's dev wrapper (runs src/ through bun) so fork-level features,
+# including branding, are live; RESEARCH_HARNESS_OMP overrides; without bun or
+# the repo's node_modules the wrapper cannot start, so use the installed omp.
+DEV_OMP="$RESEARCH_HARNESS_HOME/packages/coding-agent/scripts/omp"
+if [ -n "${RESEARCH_HARNESS_OMP:-}" ]; then
+	OMP_BIN="$RESEARCH_HARNESS_OMP"
+elif [ -x "$DEV_OMP" ] && [ -d "$RESEARCH_HARNESS_HOME/node_modules" ] && command -v bun >/dev/null 2>&1; then
+	OMP_BIN="$DEV_OMP"
+else
+	OMP_BIN="omp"
+fi
 case "${1:-}" in
 doctor)
 	doctor
 	exit $?
+	;;
+web)
+	if ! command -v bun >/dev/null 2>&1 || [ ! -d "$RESEARCH_HARNESS_HOME/node_modules" ]; then
+		echo "research web: needs bun and the repo's node_modules (run 'bun install' in $RESEARCH_HARNESS_HOME)" >&2
+		exit 1
+	fi
+	if [ ! -f "$SYSTEM_PROMPT" ]; then
+		echo "research: mode system prompt not found at $SYSTEM_PROMPT — run setup.sh" >&2
+		exit 1
+	fi
+	export RESEARCH_WEB_OMP="$OMP_BIN"
+	export RESEARCH_SYSTEM_PROMPT="$SYSTEM_PROMPT"
+	exec bun "$RESEARCH_HARNESS_HOME/packages/research-web/src/server.ts"
 	;;
 esac
 
@@ -190,15 +214,5 @@ args=(--append-system-prompt "$SYSTEM_PROMPT")
 if [ "$PWD" = "$HOME" ]; then
 	args+=(--cwd "$HOME/.research-harness")
 fi
-# Prefer the fork's dev wrapper (runs src/ through bun) so fork-level features,
-# including branding, are live; RESEARCH_HARNESS_OMP overrides; without bun or
-# the repo's node_modules the wrapper cannot start, so use the installed omp.
-DEV_OMP="$RESEARCH_HARNESS_HOME/packages/coding-agent/scripts/omp"
-if [ -n "${RESEARCH_HARNESS_OMP:-}" ]; then
-	OMP_BIN="$RESEARCH_HARNESS_OMP"
-elif [ -x "$DEV_OMP" ] && [ -d "$RESEARCH_HARNESS_HOME/node_modules" ] && command -v bun >/dev/null 2>&1; then
-	OMP_BIN="$DEV_OMP"
-else
-	OMP_BIN="omp"
-fi
+
 exec "$OMP_BIN" "${args[@]}" "$@"
