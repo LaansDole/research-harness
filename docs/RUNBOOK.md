@@ -39,7 +39,7 @@ research-harness is wired:
   launcher research -> ~/Projects/research-harness/bin/research
 ```
 
-**If you don't see 13 prompts**, the install is partial — run the command again and read the error. `setup.sh` is safe to re-run: it never overwrites your own agent files, and it keeps the settings it manages. It does **not** keep anything else you put in `config.env`, including a changed brand name — see the Jev subsection in Part 1 for what that costs you.
+**If you don't see 13 prompts**, the install is partial — run the command again and read the error. `setup.sh` is safe to re-run: it never overwrites your own agent files, it keeps the settings it manages, and since 2026-10-24 it also keeps every other line you put in `config.env` (API keys, `RERANK_URL`, a changed brand name, comments).
 
 ### Step 0.2 — Health check
 
@@ -156,9 +156,9 @@ is missing.
 
 To change the name, edit the `RESEARCHHARNESS_BRAND_NAME="Research Harness"` line that
 `setup.sh` adds to `~/.research-harness/config.env` (with no such line, `bin/research` still
-uses `Research Harness`). **Re-running `bash setup.sh` puts the default name back**: step 6
-rewrites `config.env` from scratch (see the Jev subsection in Part 1), so re-apply a custom
-name after every setup run.
+uses `Research Harness`). Since 2026-10-24 a custom name survives `bash setup.sh`: step 6
+rewrites only the keys it manages (`RESEARCH_HARNESS_HOME`, `PAPER_GRAPH_DB`,
+`RESEARCH_CORPUS_DIR`) and copies every other line through unchanged.
 
 The brand lives in the fork's source, so the launcher runs the fork: `bin/research` prefers
 `packages/coding-agent/scripts/omp` (the dev wrapper, which runs `packages/coding-agent/src/cli.ts`
@@ -355,12 +355,12 @@ To enable it, add one line to `~/.research-harness/config.env`:
 TYPESAFE_API_KEY="your-key-here"
 ```
 
-**Re-running `bash setup.sh` deletes that line.** Step 6 of the script rewrites `config.env` from
-scratch with only the three settings it manages (plus the default brand line), so the key silently disappears and the first pass
-goes quiet again. This is not specific to Jev — the same run drops `UNPAYWALL_EMAIL` and
-`OPENALEX_MAILTO` too (both reproduced on 2026-09-19 against a scratch `HOME`), even though the
-file's own header invites you to edit it freely. Re-add your lines after any setup run, or export
-`TYPESAFE_API_KEY` from your shell profile instead, which the resolver checks first.
+**Since 2026-10-24 re-running `bash setup.sh` keeps that line.** Step 6 rewrites only the three
+settings it manages and preserves every other line of `config.env` verbatim, so `TYPESAFE_API_KEY`,
+`UNPAYWALL_EMAIL`, `OPENALEX_MAILTO` and a customized brand name all survive a re-run
+(regression test: `research/tests/test_setup_config.py`). Before that fix the step rewrote the file
+from scratch and silently dropped all of them. Exporting `TYPESAFE_API_KEY` from your shell profile
+still works and is checked first.
 
 With a working key `doctor` lists the models it can see (`ok    Jev first-pass enabled (models: ...)`);
 that branch was not exercised here — no real key was used. What was exercised is the other one:
