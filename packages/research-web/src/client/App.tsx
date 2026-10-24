@@ -331,6 +331,11 @@ export function App(): ReactNode {
 		() => (chat.stream === null ? chat.entries : appendMessage(chat.entries, chat.stream)),
 		[chat.entries, chat.stream],
 	);
+	// That entry is the turn's last assistant row; it renders as streaming (incremental Markdown, running tools).
+	const liveEntryId =
+		chat.stream === null
+			? undefined
+			: shownEntries.findLast(e => e.type === "message" && e.message.role === "assistant")?.id;
 	const chatEmpty = chat.entries.length === 0 && chat.stream === null && !chat.working;
 	const connecting = agentState === null && !exit;
 	const status = exit ? "Disconnected" : connecting ? "Connecting…" : chat.working ? "Working…" : "Ready";
@@ -405,7 +410,7 @@ export function App(): ReactNode {
 						<span className={`rw-status${statusClass}`} role="status" aria-live="polite">
 							{status}
 						</span>
-						<ThemeToggle />
+						<ThemeToggle onSaveFailed={toast} />
 					</div>
 				</header>
 				{exit && (
@@ -441,6 +446,7 @@ export function App(): ReactNode {
 									// The live reply is already in shownEntries; no "thinking…" placeholder under it.
 									working={chat.working && chat.stream === null}
 									foldActivity
+									pendingEntryId={liveEntryId}
 								/>
 							)}
 						</div>
@@ -506,7 +512,9 @@ export function App(): ReactNode {
 	);
 }
 
-function ThemeToggle(): ReactNode {
+const THEME_NOT_SAVED = "Couldn't save your theme choice; it will go back to light next time research web starts.";
+
+function ThemeToggle({ onSaveFailed }: { onSaveFailed(text: string): void }): ReactNode {
 	const { resolved, setPreference } = useThemePreference();
 	const next = resolved === "dark" ? "light" : "dark";
 	const label = `Switch to ${next} mode`;
@@ -518,7 +526,12 @@ function ThemeToggle(): ReactNode {
 			title={label}
 			onClick={() => {
 				setPreference(next);
-				void fetch("/api/theme", { method: "POST", body: next }).catch(() => {});
+				fetch("/api/theme", { method: "POST", body: next }).then(
+					res => {
+						if (!res.ok) onSaveFailed(THEME_NOT_SAVED);
+					},
+					() => onSaveFailed(THEME_NOT_SAVED),
+				);
 			}}
 		>
 			{resolved === "dark" ? <Sun size={16} /> : <Moon size={16} />}
