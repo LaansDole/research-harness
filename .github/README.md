@@ -71,7 +71,6 @@ Hands-on walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md), "Optional: a cheap 
 ![omp TUI: the librarian agent answering "what connects them" for the five papers it just added — citation edges verified in the papers' own reference lists rather than inferred, same-topic clusters grouped by architecture, the one trial-prediction paper called out as the outlier, and the next steps it can run.](../assets/research/paper-graph-poster.png)
 
 _[Watch the capture ↗](https://laansdole.github.io/research-harness/#paper-graph)_ — six and a half minutes, unedited: the folder, the adds, the connection answer, and the export.
-
 Point the `librarian` agent at a folder of papers and ask what connects them. Every reviewed paper lands in a local SQLite graph (`~/.research-harness/papers.db`) with typed edges — `cites`, `related`, `same-topic` — and `auto-edges` adds citation links verified against OpenAlex rather than inferred. The same operations are scriptable:
 
 ```sh
@@ -85,6 +84,15 @@ $pg export --format html     # one-file interactive viz
 
 The export is ONE self-contained HTML file — node size by degree, edge colors by type, search, drag/zoom/pan, click for metadata. No external assets; it works from `file://` on a plane.
 
+## Browser UI
+
+![research web in light mode, Graph tab: the paper graph zoomed onto TriageAgent, selected and ringed, with its neighbours labelled — MedAgents above it, the Korean triage-scale system below — and coloured edges for cites, related and same-topic links. A side panel shows TriageAgent's title, authors (Lu M; Ho B; Ren D; Wang X), venue (Findings of EMNLP 2024), degree and DOI; above the graph, agent actions Find citing papers, Auto-edges and Explain neighbors. The sidebar lists five review projects with screening progress (demo-web-ui, 9 of 12 screened) and recent sessions; the header shows the viewed project, a Make active button, a Ready status and the model.](../assets/research/research-web-poster.png)
+
+_[Watch the demo ↗](https://laansdole.github.io/research-harness/#research-web)_ — 1 min 40 s, real data, nothing sent to the agent. A researcher picks up her scoping review on multi-agent LLMs for clinical decision support: checks where it stands, triages the reading list, reads the review and checks one claim against its sources, explores how her papers connect in the graph, and ends on the PRISMA diagram. Every action button only fills in the chat box; nothing runs until she presses Enter.
+
+`research web` opens the same agent in your browser on `127.0.0.1`, next to everything it has written: the reading list with state filters, search and keyboard triage (↑/↓, Enter, Esc) over each record's verdicts, rationale and abstract; the review with a contents list and citations that jump to their reference; the paper graph; and the PRISMA diagram with SVG download. The header always shows which project you are viewing and which one the agent is working on.
+
+The views are read-only. Every action button — *Screen full texts*, *Re-screen*, *Explain neighbors*, *Check the claims in this section* — only fills in the chat box; nothing runs until you press Enter, so the agent stays the only writer of your research state. It works on a phone-width window too, and ⌘/Ctrl+B hides the sidebar. Details: [packages/research-web/README.md](../packages/research-web/README.md).
 ## Quickstart
 
 ```sh
@@ -93,15 +101,16 @@ cd research-harness
 ./setup.sh        # registers the plugin, agents, prompts and launcher — idempotent
 research doctor   # checks omp, plugin, agents, prompts, corpus, and paper-graph db
 research          # starts omp with the research mode prompt and the Research Harness welcome banner
+research web      # or: the same agent in your browser, with the reading list, review, graph and PRISMA alongside
 ```
 
 Then type `/help` to see every command in plain words. To test-drive it on your own review — every step with the numbers you should see and what a different one means — follow [docs/RUNBOOK.md](../docs/RUNBOOK.md); the capture above walks its first half. Re-run `./setup.sh` after pulling: new commands only reach omp when it runs.
 
-Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (stdlib only — no pip installs), and network access for arXiv/OpenAlex (a local folder of PDFs works fully offline).
+Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (stdlib only — no pip installs), and network access for arXiv/OpenAlex (a local folder of PDFs works fully offline). `research web` also needs [bun](https://bun.sh) and `bun install` run once in the checkout.
 
 ## Under the hood
 
-This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is additive — it adds paths (`research/`, `assets/research/`, `setup.sh`, `bin/research`, `docs/`) and reaches stock omp through its plugin, prompt and agent extension points, so upstream changes rebase under it cleanly. The one exception is a small env-driven branding seam (`packages/utils/src/branding.ts` plus three fallbacks in the TUI welcome screen) that puts the paper-stack mark, the name and researcher tips on the welcome banner; with its variables unset omp renders stock ([docs/ARCHITECTURE.md §2.1](../docs/ARCHITECTURE.md#21-branding-seam)). Design doc: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md); upstream's own README is the repository-root [README.md](../README.md), untouched.
+This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is additive — it adds paths (`research/`, `assets/research/`, `setup.sh`, `bin/research`, `packages/research-web/`, `docs/`) and reaches stock omp through its plugin, prompt and agent extension points (the browser UI drives omp's published RPC mode), so upstream changes rebase under it cleanly. The one exception is a small env-driven branding seam (`packages/utils/src/branding.ts` plus three fallbacks in the TUI welcome screen) that puts the paper-stack mark, the name and researcher tips on the welcome banner; with its variables unset omp renders stock ([docs/ARCHITECTURE.md §2.1](../docs/ARCHITECTURE.md#21-branding-seam)). Design doc: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md); upstream's own README is the repository-root [README.md](../README.md), untouched.
 
 **Staying in sync with upstream:** `main` is upstream's `main` plus a short stack of fork commits. A GitHub Action rebases that stack onto upstream every day and force-pushes `main` when the rebase is clean and the tests pass (the previous `main` is kept as `main-prev`); a conflict or a red test opens a `sync/rebase` pull request instead, landed with the `promote` label. Details: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md#11-staying-in-sync-with-upstream).
 
@@ -109,5 +118,5 @@ This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so th
 
 - Fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), itself a fork of [badlogic/pi-mono](https://github.com/badlogic/pi-mono) by [@mariozechner](https://github.com/mariozechner).
 - Literature data: [arXiv](https://arxiv.org) export API and [OpenAlex](https://openalex.org) (both keyless), plus [Unpaywall](https://unpaywall.org) for OA locations when a contact email is configured — honest User-Agent; open-access sources only.
-- Terminal demos rendered with [charmbracelet/vhs](https://github.com/charmbracelet/vhs); the captures play at full quality on [GitHub Pages](https://laansdole.github.io/research-harness/). GitHub will not render a committed MP4 above about 1 MB and serves repository blobs as downloads, so a repo-committed video cannot be watched in place — the page exists for that reason.
+- Terminal demos rendered with [charmbracelet/vhs](https://github.com/charmbracelet/vhs); the browser demo is recorded live from Chrome with Puppeteer's `page.screencast()` ([assets/research/tapes/research-web.ts](../assets/research/tapes/research-web.ts)), so a take renders in its own running time rather than VHS's frame-by-frame terminal render. The captures play at full quality on [GitHub Pages](https://laansdole.github.io/research-harness/). GitHub will not render a committed MP4 above about 1 MB and serves repository blobs as downloads, so a repo-committed video cannot be watched in place — the page exists for that reason.
 

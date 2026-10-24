@@ -1,0 +1,5 @@
+{
+	"extends": "../tsconfig.workspace.json",
+	"include": ["src", "test"],
+	"exclude": ["src/client", "test/reducer.test.ts", "node_modules"]
+}
