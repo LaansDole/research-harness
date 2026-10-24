@@ -1,0 +1,529 @@
+/* Research views (Reading list, Reviews, Graph, PRISMA) on collab-web tokens. Shared utilities stay in app.css. */
+
+:is(.rw-records, .rw-reviews, .rw-graph, .rw-prisma, .rw-empty) :focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: -2px;
+}
+
+.rw-sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+.rw-toolbar,
+.rw-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+/* A link that does a button's job (Open PDF, Download SVG). */
+.rw-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+	color: var(--fg);
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+.rw-button:hover {
+	background: var(--hover);
+}
+
+/* Empty state: icon, heading, one sentence, prefill CTAs. */
+.rw-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	max-width: 420px;
+	margin: 48px auto;
+	text-align: center;
+	color: var(--fg-muted);
+}
+
+.rw-empty h2 {
+	color: var(--fg);
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.rw-empty-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.rw-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	border-radius: var(--radius-lg);
+	background: var(--panel);
+	color: var(--fg-muted);
+}
+
+/* Reading list */
+.rw-records {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.rw-next {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+	padding: 8px 12px;
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent);
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+}
+
+.rw-app .rw-next button {
+	border-color: var(--accent);
+	background: var(--accent-muted);
+	font-weight: 500;
+}
+
+.rw-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.rw-app .rw-chips button[role="radio"] {
+	min-height: 32px;
+	border-radius: 999px;
+	font-size: 13px;
+}
+
+.rw-app .rw-chips button[aria-checked="true"],
+.rw-app .rw-segmented button[aria-pressed="true"] {
+	border-color: var(--accent);
+	background: var(--selected);
+}
+
+.rw-count {
+	margin-left: 2px;
+	color: var(--fg-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.rw-search {
+	flex: 1 1 200px;
+	min-width: 0;
+	max-width: 360px;
+	min-height: 32px;
+	padding: 4px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-inset);
+	color: var(--fg);
+	font: inherit;
+}
+
+.rw-records-body {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+	gap: 16px;
+}
+
+.rw-records-list {
+	flex: 1;
+	min-width: 0;
+	overflow: auto;
+}
+
+.rw-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.rw-table th,
+.rw-table td {
+	padding: 6px 8px;
+	border-bottom: 1px solid var(--border);
+	text-align: left;
+	vertical-align: top;
+}
+
+.rw-table th {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	background: var(--bg);
+	color: var(--fg-muted);
+	font-weight: 500;
+}
+
+.rw-table td:first-child {
+	overflow-wrap: anywhere;
+}
+
+/* With the drawer open the PDF/action columns repeat what the drawer shows. */
+.rw-records-body:has(.rw-drawer) .rw-wide {
+	display: none;
+}
+
+.rw-table tbody tr {
+	cursor: pointer;
+}
+
+.rw-table tbody tr:hover {
+	background: var(--hover);
+}
+
+.rw-table tbody tr[aria-selected="true"] {
+	background: var(--selected);
+}
+
+.rw-title {
+	margin-bottom: 2px;
+}
+
+.rw-row-actions {
+	white-space: nowrap;
+}
+
+.rw-row-actions button,
+.rw-table .rw-button {
+	font-size: 12px;
+}
+
+.rw-pad {
+	padding: 12px 8px;
+}
+
+.rw-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: var(--radius-sm);
+	font-size: 12px;
+	white-space: nowrap;
+}
+
+/* Text mixed toward --fg so every badge clears 4.5:1 in both themes. */
+.rw-badge-ok {
+	background: color-mix(in srgb, var(--ok) 14%, transparent);
+	color: color-mix(in srgb, var(--ok) 55%, var(--fg));
+}
+
+.rw-badge-err {
+	background: color-mix(in srgb, var(--err) 14%, transparent);
+	color: color-mix(in srgb, var(--err) 55%, var(--fg));
+}
+
+.rw-badge-accent {
+	background: var(--accent-muted);
+	color: color-mix(in srgb, var(--accent) 70%, var(--fg));
+}
+
+.rw-badge-muted {
+	background: var(--selected);
+	color: var(--fg-muted);
+}
+
+.rw-drawer {
+	flex: 0 0 min(380px, 42%);
+	overflow: auto;
+	padding: 0 4px 16px 16px;
+	border-left: 1px solid var(--border);
+	line-height: 1.5;
+}
+
+.rw-drawer-head {
+	position: sticky;
+	top: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 0;
+	background: var(--bg);
+}
+
+.rw-drawer-head .rw-icon {
+	min-width: 32px;
+	min-height: 32px;
+}
+
+.rw-drawer h2 {
+	margin: 8px 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.rw-drawer p {
+	margin: 0 0 6px;
+	overflow-wrap: anywhere;
+}
+
+.rw-drawer-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.rw-drawer dt {
+	margin-top: 12px;
+	font-weight: 600;
+}
+
+.rw-drawer dd {
+	margin: 2px 0 0;
+	color: var(--fg-muted);
+}
+
+/* Below 900px: a native modal dialog, full screen over the list (RecordsView NARROW). */
+dialog.rw-drawer {
+	width: 100%;
+	max-width: none;
+	height: 100%;
+	max-height: none;
+	margin: 0;
+	padding: 8px 16px 24px;
+	border: 0;
+	background: var(--bg);
+	color: var(--fg);
+}
+
+.rw-drawer-nav {
+	display: flex;
+	gap: 4px;
+}
+
+.rw-drawer-nav .rw-icon:disabled {
+	opacity: 0.4;
+}
+
+@media (max-width: 639px) {
+	.rw-wide {
+		display: none;
+	}
+}
+
+/* Reviews */
+.rw-reviews-body {
+	display: flex;
+	align-items: flex-start;
+	gap: 32px;
+}
+
+.rw-toc {
+	position: sticky;
+	top: 44px; /* below the sticky toolbar */
+	flex: 0 0 180px;
+	max-height: calc(100vh - 140px);
+	overflow: auto;
+	font-size: 13px;
+}
+
+.rw-toc ol,
+.rw-toc-mobile ol {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.rw-toc a,
+.rw-toc-mobile a {
+	display: block;
+	padding: 4px 8px;
+	border-radius: var(--radius-sm);
+	color: var(--fg-muted);
+	text-decoration: none;
+}
+
+.rw-toc a:hover,
+.rw-toc-mobile a:hover {
+	background: var(--hover);
+	color: var(--fg);
+}
+
+.rw-toc-mobile {
+	display: none;
+	margin-bottom: 12px;
+}
+
+.rw-toc-mobile summary {
+	min-height: 32px;
+	padding: 6px 0;
+	color: var(--fg-muted);
+	cursor: pointer;
+}
+
+@media (max-width: 899px) {
+	.rw-toc {
+		display: none;
+	}
+
+	.rw-toc-mobile {
+		display: block;
+	}
+}
+
+.rw-doc {
+	flex: 1;
+	min-width: 0;
+	max-width: 860px;
+	line-height: 1.6;
+	overflow-wrap: anywhere;
+}
+
+.rw-doc section {
+	scroll-margin-top: 8px;
+}
+
+.rw-doc-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 12px;
+	margin: 28px 0 8px;
+}
+
+.rw-doc-head h2 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+/* Stays in view while reading, so Check claim is visible when a selection enables it. */
+.rw-reviews > .rw-toolbar {
+	position: sticky;
+	top: -12px;
+	z-index: 2;
+	margin-top: -12px;
+	padding: 12px 0 8px;
+	background: var(--bg);
+}
+
+.rw-reviews .rw-toolbar button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.rw-revise {
+	display: inline-flex;
+	gap: 6px;
+	opacity: 0;
+}
+
+.rw-app .rw-revise button {
+	padding: 2px 8px;
+	font-size: 12px;
+}
+
+.rw-doc section:hover .rw-revise,
+.rw-doc-head:focus-within .rw-revise {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.rw-revise {
+		opacity: 1;
+	}
+}
+
+/* The reference a citation link jumped to. */
+.rw-doc li:target {
+	border-radius: var(--radius-sm);
+	background: var(--accent-muted);
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.rw-doc li {
+	scroll-margin-top: 64px;
+}
+
+/* Graph */
+.rw-graph {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.rw-actions {
+	justify-content: space-between;
+	min-height: 32px;
+	margin-bottom: 8px;
+}
+
+.rw-actions-right {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.rw-graph-frame {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+}
+
+.rw-graph iframe {
+	width: 100%;
+	height: 100%;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--panel);
+}
+
+/* Set by GraphView while focus is inside the frame; outside, because the frame paints over an inset ring. */
+.rw-graph-frame.rw-focused iframe {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
+/* PRISMA */
+.rw-segmented {
+	display: inline-flex;
+	gap: 4px;
+}
+
+.rw-prisma-card {
+	max-width: 100%;
+	width: fit-content;
+	padding: 16px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-lg);
+	background: var(--panel);
+	overflow: auto;
+}
+
+.rw-prisma-card img {
+	display: block;
+	max-width: 100%;
+}
+
+.rw-prisma-card.rw-actual img {
+	max-width: none;
+}
+
