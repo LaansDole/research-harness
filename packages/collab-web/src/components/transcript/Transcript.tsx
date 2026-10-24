@@ -22,6 +22,8 @@ export interface TranscriptProps {
 	phase?: ConnectionPhase;
 	/** Collapse each run of thinking and tool calls into one "thinking" disclosure; prose stays visible. */
 	foldActivity?: boolean;
+	/** Entry still streaming in place (a host that folds the live reply into `entries` instead of `stream`). */
+	pendingEntryId?: string;
 }
 
 interface ScrollGeometry {
@@ -230,11 +232,19 @@ interface EntryRowProps {
 	active: ReadonlyMap<string, ActiveTool>;
 	host?: ToolRenderHost;
 	fold?: boolean;
+	pending?: boolean;
 }
 
 /** Re-render only when the entry itself or one of its tool pairings changed. */
 function entryRowEqual(prev: EntryRowProps, next: EntryRowProps): boolean {
-	if (prev.entry !== next.entry || prev.host !== next.host || prev.fold !== next.fold) return false;
+	if (
+		prev.entry !== next.entry ||
+		prev.host !== next.host ||
+		prev.fold !== next.fold ||
+		prev.pending !== next.pending
+	) {
+		return false;
+	}
 	const e = next.entry;
 	if (e.type !== "message" || e.message.role !== "assistant") return true;
 	for (const block of e.message.content) {
@@ -245,7 +255,7 @@ function entryRowEqual(prev: EntryRowProps, next: EntryRowProps): boolean {
 	return true;
 }
 
-const EntryRow = memo(function EntryRow({ entry, results, active, host, fold }: EntryRowProps): ReactNode {
+const EntryRow = memo(function EntryRow({ entry, results, active, host, fold, pending }: EntryRowProps): ReactNode {
 	switch (entry.type) {
 		case "message": {
 			const msg = entry.message;
@@ -263,7 +273,7 @@ const EntryRow = memo(function EntryRow({ entry, results, active, host, fold }: 
 								message={msg}
 								results={results}
 								active={active}
-								pending={false}
+								pending={pending === true}
 								host={host}
 								fold={fold}
 							/>
@@ -339,7 +349,8 @@ const WINDOW = 100;
 const EARLIER_TRIGGER_PX = 200;
 
 export function Transcript(props: TranscriptProps): ReactNode {
-	const { entries, stream, streamDone, activeTools, working, compact, host, phase, foldActivity } = props;
+	const { entries, stream, streamDone, activeTools, working, compact, host, phase, foldActivity, pendingEntryId } =
+		props;
 
 	// null follows the tail. A number pins the first mounted entry while the
 	// reader is scrolled away from the bottom, so appended entries never
@@ -468,6 +479,7 @@ export function Transcript(props: TranscriptProps): ReactNode {
 					active={activeTools}
 					host={host}
 					fold={foldActivity}
+					pending={entry.id === pendingEntryId}
 				/>
 			))}
 			{stream !== null && (

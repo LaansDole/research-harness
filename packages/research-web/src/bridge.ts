@@ -66,9 +66,9 @@ const FAILURE_REASONS: [flags: AIError.Flag[], text: string][] = [
 	],
 	[
 		[Flag.UsageLimit],
-		"You've hit the model provider's usage limit. Wait a while, or pick another model in the sidebar.",
+		"You've hit the model provider's usage limit. Wait a while, or pick another model in the message box.",
 	],
-	[[Flag.AccountPolicy], "Your account can't use this model. Pick another model in the sidebar."],
+	[[Flag.AccountPolicy], "Your account can't use this model. Pick another model in the message box."],
 	[
 		[Flag.ContextOverflow, Flag.PayloadRejected],
 		"This conversation has grown too long for the model. Start a new session, or pick a model with a larger context.",
