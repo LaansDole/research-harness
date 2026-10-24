@@ -12,15 +12,12 @@
  * or timeout means "review".
  */
 import type { AgentTelemetryConfig } from "@oh-my-pi/pi-agent-core";
-import type { Model, NoulQuestion } from "@oh-my-pi/pi-ai";
-import { logger, parseFrontmatter } from "@oh-my-pi/pi-utils";
+import { judgeQuestions, type Model } from "@oh-my-pi/pi-ai";
+import { logger } from "@oh-my-pi/pi-utils";
 import type { ModelRegistry } from "../config/model-registry";
 import type { Settings } from "../config/settings";
-import destructivePrompt from "../prompts/advisor/review-gate-destructive.md" with { type: "text" };
-import guessingPrompt from "../prompts/advisor/review-gate-guessing.md" with { type: "text" };
-import loopingPrompt from "../prompts/advisor/review-gate-looping.md" with { type: "text" };
-import shortcutPrompt from "../prompts/advisor/review-gate-shortcut.md" with { type: "text" };
 import { type JudgmentUsage, resolveJudge, sharedJudgmentCache } from "../judgment";
+import questionFile from "../prompts/judge/advisor-review-gate.json" with { type: "json" };
 
 /**
  * Lowest yes-probability on any risk question that still sends the update to
@@ -30,23 +27,8 @@ import { type JudgmentUsage, resolveJudge, sharedJudgmentCache } from "../judgme
 // ponytail: one global band; per-question thresholds fit on labeled __advisor.jsonl data if this misfires.
 const REVIEW_THRESHOLD = 0.2;
 
-/** Prompt body is the question; frontmatter `true`/`false` spell out what yes and no mean. */
-function noulQuestion(content: string): NoulQuestion {
-	const { frontmatter, body } = parseFrontmatter(content, { level: "fatal" });
-	return {
-		type: "noul",
-		instructions: body,
-		criteria: { true: String(frontmatter.true), false: String(frontmatter.false) },
-	};
-}
-
 /** Mirrors the advisor's concern/blocker lanes in `prompts/advisor/system.md`. */
-const REVIEW_QUESTIONS = {
-	destructive: noulQuestion(destructivePrompt),
-	guessing: noulQuestion(guessingPrompt),
-	looping: noulQuestion(loopingPrompt),
-	shortcut: noulQuestion(shortcutPrompt),
-};
+const REVIEW_QUESTIONS = judgeQuestions(questionFile);
 
 export interface AdvisorReviewGateDeps {
 	settings: Settings;
