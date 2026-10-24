@@ -24,6 +24,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refs_io
+import rerank_client
 
 PROJECTS_ROOT = os.path.expanduser("~/.research-harness/projects")
 ACTIVE_FILE = os.path.expanduser("~/.research-harness/active-project")
@@ -368,14 +369,43 @@ def cmd_verdict(con, args):
     print(row_json(row))
 
 
+def relevance_hash(con, pdir):
+    """Criteria hash whose scores match the CURRENT criteria.json, else None.
+
+    Edited criteria hash differently, so their old scores are ignored rather
+    than silently reordering records against a question nobody asked."""
+    try:
+        with open(os.path.join(pdir, "criteria.json"), encoding="utf-8") as fh:
+            criteria = json.load(fh)
+    except (OSError, ValueError):
+        return None
+    hashes = [rerank_client.criteria_hash(criteria, mode) for mode in ("min", "joint")]
+    try:
+        row = con.execute(
+            "SELECT criteria_hash FROM rerank_scores WHERE criteria_hash IN (?, ?)"
+            " ORDER BY scored_at DESC LIMIT 1", hashes).fetchone()
+    except sqlite3.OperationalError:
+        return None
+    return row[0] if row else None
+
+
 def cmd_next(con, args):
-    if args.stage == "ta":
-        q = ("SELECT * FROM records WHERE state = 'identified' AND ta_verdict IS NULL"
-             " ORDER BY rowid LIMIT ?")
+    where = ("state = 'identified' AND ta_verdict IS NULL" if args.stage == "ta" else
+             "state IN ('screened_included', 'fulltext_retrieved') AND ft_verdict IS NULL")
+    digest = relevance_hash(con, args.pdir) if args.order == "relevance" else None
+    if args.order == "relevance" and digest is None:
+        print("review: no relevance scores for the current criteria - using import order"
+              " (run rerank_screen.py score)", file=sys.stderr)
+    if digest is None:
+        q = f"SELECT * FROM records WHERE {where} ORDER BY rowid LIMIT ?"
+        params = (args.n,)
     else:
-        q = ("SELECT * FROM records WHERE state IN ('screened_included', 'fulltext_retrieved')"
-             " AND ft_verdict IS NULL ORDER BY rowid LIMIT ?")
-    for row in con.execute(q, (args.n,)):
+        # Unscored records still appear, after the scored ones: nothing is hidden.
+        q = (f"SELECT r.*, s.score AS rerank_score FROM records r"
+             f" LEFT JOIN rerank_scores s ON s.record_id = r.id AND s.criteria_hash = ?"
+             f" WHERE {where} ORDER BY s.score IS NULL, s.score DESC, r.rowid LIMIT ?")
+        params = (digest, args.n)
+    for row in con.execute(q, params):
         print(row_json(row))
 
 
@@ -460,6 +490,9 @@ def main():
     p = sub.add_parser("next", help="next unscreened records as JSON lines")
     p.add_argument("--stage", required=True, choices=["ta", "ft"])
     p.add_argument("--n", type=int, default=10)
+    p.add_argument("--order", choices=["rowid", "relevance"], default="rowid",
+                   help="rowid (import order, default) or relevance (experimental local"
+                        " reranker scores; adds rerank_score, unscored records come last)")
     p.set_defaults(func=cmd_next)
 
     p = sub.add_parser("set-state", help="direct state transition (retrieval bookkeeping)")
@@ -484,7 +517,8 @@ def main():
     p.set_defaults(func=cmd_stats)
 
     args = ap.parse_args()
-    con = connect(project_dir(args.project))
+    args.pdir = project_dir(args.project)
+    con = connect(args.pdir)
     try:
         args.func(con, args)
     finally:
