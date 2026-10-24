@@ -190,13 +190,9 @@ try {
 	await clickText(page, ".rw-context", "Make active", 2500);
 	await clickText(page, ".rw-composer", "Restore previous draft", 2000);
 
-	// 2 · The sidebar: projects with screening progress, sessions, model and appearance;
-	// Ctrl/⌘+B folds it away for reading room.
-	await clickText(page, ".rw-sidebar", "Model & appearance", 2500);
-	await clickText(page, ".rw-sidebar", "Model & appearance", 800);
-	await page.evaluate(() => {
-		for (const el of document.querySelectorAll(".rw-sidebar, .rw-sidebar *")) el.scrollTop = 0;
-	});
+	// 2 · The composer holds the model and thinking pickers; the sidebar has projects with screening
+	// progress and sessions. Ctrl/⌘+B folds it away for reading room.
+	await hover(page, ".rw-composer-bar", 2000);
 	await page.keyboard.down("Control");
 	await page.keyboard.press("b");
 	await page.keyboard.up("Control");
