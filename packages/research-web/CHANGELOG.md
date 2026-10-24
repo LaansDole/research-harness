@@ -14,7 +14,7 @@
 - Errors and empty states in the web UI are now plain-language; technical details go to the omp log.
 - The model and thinking-level pickers moved from the sidebar into the message box, which is now a raised card with a filled Send button.
 - Each agent turn shows as one row: its thinking and tool calls fold under a single "thinking · N steps" disclosure, leaving the answer visible.
-- Failed or stopped agent replies now explain what happened and what to do next (sign in again, usage limit, conversation too long, provider busy) instead of showing raw provider errors such as `401 {"type":"error",...}`; agent warnings no longer toast file paths or error codes.
+- Failed or stopped agent replies now explain what happened and what to do next (sign in again, usage limit, conversation too long, provider busy) instead of showing raw provider errors such as `401 {"type":"error",...}`; agent warnings that carry file paths, error codes or raw error bodies toast a plain sentence instead, while plain warnings (model fallback, truncated reply, advisor quota) show as written.
 - The web UI now works on phones (sidebar drawer, modal record sheet) and collapses the sidebar with ⌘/Ctrl+B; text meets WCAG AA contrast and tabs are keyboard-navigable.
 - The paper graph settles instead of drifting, labels only the hovered or selected paper and its neighbours, and supports Enter-to-select in search.
 
