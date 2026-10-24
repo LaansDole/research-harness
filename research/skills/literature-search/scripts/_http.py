@@ -18,15 +18,18 @@ _last_request = 0.0
 
 
 def fetch(url, user_agent, timeout=30, min_interval=0.0, data=None,
-          content_type="application/json"):
-    """Request url and return the response body bytes; `data` bytes make it a POST."""
+          content_type="application/json", attempts=MAX_ATTEMPTS):
+    """Request url and return the response body bytes; `data` bytes make it a POST.
+
+    `attempts=1` disables the retry ladder - right for liveness probes, where a
+    refused connection is the answer, not a transient failure."""
     global _last_request
     headers = {"User-Agent": user_agent}
     if data is not None:
         headers["Content-Type"] = content_type
     req = urllib.request.Request(url, data=data, headers=headers)
     last_err = None
-    for attempt in range(MAX_ATTEMPTS):
+    for attempt in range(attempts):
         if min_interval:
             wait = _last_request + min_interval - time.monotonic()
             if wait > 0:
@@ -43,7 +46,7 @@ def fetch(url, user_agent, timeout=30, min_interval=0.0, data=None,
             retry_after = e.headers.get("Retry-After")
         except (urllib.error.URLError, TimeoutError, OSError) as e:
             last_err = e
-        if attempt == MAX_ATTEMPTS - 1:
+        if attempt == attempts - 1:
             break
         delay = min(3.0 * 3**attempt, BACKOFF_CAP)
         if retry_after:
@@ -52,7 +55,7 @@ def fetch(url, user_agent, timeout=30, min_interval=0.0, data=None,
             except ValueError:
                 pass
         print(
-            f"_http: {last_err}; retry {attempt + 1}/{MAX_ATTEMPTS - 1} "
+            f"_http: {last_err}; retry {attempt + 1}/{attempts - 1} "
             f"in {delay:.0f}s: {url}",
             file=sys.stderr,
         )
