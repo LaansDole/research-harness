@@ -154,3 +154,23 @@ describe("readable errors", () => {
 		expect(await res.text()).toContain("The PDF for this paper is missing");
 	});
 });
+
+describe("theme route", () => {
+	const theme = (body?: string) => {
+		const init = body === undefined ? undefined : { method: "POST", body };
+		const req = Object.assign(new Request("http://127.0.0.1/api/theme", init), {
+			params: {},
+			cookies: new Bun.CookieMap(),
+		});
+		return Promise.resolve(routes["/api/theme"](req as Bun.BunRequest));
+	};
+
+	test("defaults to light, keeps a saved dark choice, and rejects anything else", async () => {
+		expect(await (await theme()).json()).toEqual({ theme: "light" });
+		expect((await theme("dark")).status).toBe(204);
+		expect(await (await theme()).json()).toEqual({ theme: "dark" });
+		const bad = await theme("../../etc/passwd");
+		expect(bad.status).toBe(400);
+		expect(await (await theme()).json()).toEqual({ theme: "dark" });
+	});
+});
