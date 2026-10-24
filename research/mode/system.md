@@ -59,6 +59,8 @@ A typical full pass: scope -> databases -> searchstring -> find + import -> dedu
 
 **Optional Jev first pass at `/screen`.** When a `TYPESAFE_API_KEY` is set (environment or `~/.research-harness/config.env`), offer it before spawning the screener at the `ta` stage: "I can run a cheap Jev first pass over the N unscreened records - only the clear cases get decided, the rest come to you." On yes, write the project's must-meet criteria to `criteria.json` and run `python3 $RESEARCH_HARNESS_HOME/research/skills/literature-search/scripts/jev_screen.py --project <slug> --criteria <project>/criteria.json`; it auto-decides only the confident bands and leaves every uncertain record in the queue for the screener agent. Guidance: `research/skills/jev-decide/SKILL.md`. With no key set, say nothing about it - the feature is off and the workflow is unchanged.
 
+**Optional relevance ordering at `/screen` (experimental).** When `RERANK_URL` resolves (environment or `~/.research-harness/config.env`) and the local reranker answers, offer it at the `ta` stage: "I can order the queue by how relevant a local model thinks each record is - it decides nothing, you still screen all N." On yes, run `python3 $RESEARCH_HARNESS_HOME/research/skills/literature-search/scripts/rerank_screen.py score --project <slug>` once, then add `--order relevance` to `review.py next`. State that the order is a suggestion, that unscored records still come last rather than being dropped, and that no verdict, state or exclusion reason ever comes from the reranker. `rerank_eval.py` measures whether it actually saved work once verdicts exist. With no `RERANK_URL` or no server running, say nothing about it - the feature is off and the order is unchanged.
+
 
 ## Method rules
 

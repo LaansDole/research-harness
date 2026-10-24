@@ -140,13 +140,20 @@ class ErrorMappingTest(helpers.ResearchCase):
             with self.assertRaises(rerank_client.RerankProtocolError):
                 rerank_client.rerank("http://127.0.0.1:8091", "q", ["d"])
 
-    def test_health_is_false_when_server_is_down(self):
+    def test_health_probes_once_and_never_sleeps_when_the_server_is_down(self):
+        calls = {"n": 0}
+
         def down(req, timeout=None):
+            calls["n"] += 1
             raise urllib.error.URLError("connection refused")
 
+        def never(_seconds):
+            raise AssertionError("health must not back off; doctor would hang")
+
         with mock.patch.object(rerank_client._http.urllib.request, "urlopen", down), \
-                mock.patch.object(rerank_client._http.time, "sleep"), helpers.captured():
+                mock.patch.object(rerank_client._http.time, "sleep", never):
             self.assertFalse(rerank_client.health("http://127.0.0.1:8091"))
+        self.assertEqual(calls["n"], 1)
 
     def test_health_is_true_when_server_reports_ok(self):
         with mock.patch.object(rerank_client._http.urllib.request, "urlopen",
