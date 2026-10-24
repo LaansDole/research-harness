@@ -92,14 +92,17 @@ def captured():
 
 
 def run_cli(module, argv):
-    """Run a script's main() with argv; returns (exit_code, stdout, stderr)."""
+    """Run a script's main() with argv; returns (exit_code, stdout, stderr).
+
+    A main() that returns its exit code (the `sys.exit(main())` scripts) counts
+    the same as one that raises SystemExit."""
     out, err = io.StringIO(), io.StringIO()
     code = 0
     old_argv = sys.argv
     sys.argv = [getattr(module, "__name__", "prog")] + list(argv)
     try:
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            module.main()
+            code = module.main() or 0
     except SystemExit as e:
         code = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
     finally:
