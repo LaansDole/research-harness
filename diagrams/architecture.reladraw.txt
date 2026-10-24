@@ -24,7 +24,7 @@ node server "research-web server (Bun.serve) / guard: Host + Origin checks / bri
 node omp "omp agent session - research mode / system.md + 13 commands (/scope ... /export) / agents: scholar · screener · synthesizer · librarian"  style: agent
   below server and tui (gap: wide)
 
-node skills "python3 stdlib skills / review.py · prisma_scr.py · fetch_paper.py · local_library.py / paper_graph.py · graph_viz.py · rerank_* · jev_*"  style: agent
+node skills "python3 stdlib skills / review.py · prisma_scr.py · fetch_paper.py · local_library.py / paper_graph.py · graph_viz.py · jev_*"  style: agent
   below omp (gap: wide)
 
 node stores "" shape: none  below skills (gap: wide)  layout: row (gap: wide)
@@ -33,7 +33,6 @@ node stores.papersdb "papers.db / paper graph + typed edges"  style: store
 node stores.corpus "local PDF corpus / read-only"  shape: document
 
 node oa "OpenAlex → Unpaywall → arXiv / open access only"  style: ext  right of skills (gap: wide)
-node rerank "llama-server reranker / loopback, optional"  style: ext  below oa (gap: tight)
 
 edge researcher -> web
 edge researcher -> tui
@@ -43,5 +42,4 @@ edge tui -> omp
 edge omp -> skills  "commands run scripts"
 edge skills -> stores  "writes review.db + papers.db"
 edge skills -> oa
-edge skills -> rerank
 edge server -> stores.reviewdb  "reads"  style: ro  from: left  to: left  line: (path: square, pattern: dashed, color: theme-muted)
