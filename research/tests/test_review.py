@@ -5,6 +5,8 @@ import os
 import unittest
 
 import helpers
+import rerank_client
+import rerank_screen
 import review
 
 RIS = """TY  - JOUR
@@ -296,7 +298,7 @@ class ConfidenceTest(ReviewCase):
 class NextTest(ReviewCase):
     def next_ids(self, stage, n=10):
         with helpers.captured() as (out, err):
-            review.cmd_next(self.con, ns(stage=stage, n=n))
+            review.cmd_next(self.con, ns(stage=stage, n=n, order="rowid", pdir=self.dir))
         return [r["id"] for r in helpers.json_lines(out.getvalue())]
 
     def test_next_ta_returns_unscreened_only(self):
@@ -318,6 +320,74 @@ class NextTest(ReviewCase):
         for i in range(5):
             self.insert(f"r{i}")
         self.assertEqual(len(self.next_ids("ta", n=3)), 3)
+
+
+class NextRelevanceTest(ReviewCase):
+    CRITERIA = {"Concept": "multi-agent LLM systems"}
+
+    def write_criteria(self, criteria):
+        with open(os.path.join(self.dir, "criteria.json"), "w", encoding="utf-8") as fh:
+            json.dump(criteria, fh)
+
+    def seed_scores(self, scores, criteria=None, mode="min"):
+        digest = rerank_client.criteria_hash(criteria or self.CRITERIA, mode)
+        self.con.executescript(rerank_screen.SCHEMA)
+        self.con.executemany(
+            "INSERT OR REPLACE INTO rerank_scores (record_id, criteria_hash, model, mode,"
+            " score, per_criterion, truncated, scored_at) VALUES (?,?,'m',?,?,NULL,0,?)",
+            [(rid, digest, mode, score, review.now()) for rid, score in scores.items()])
+        self.con.commit()
+
+    def next_rows(self, order="relevance", n=10):
+        with helpers.captured() as (out, err):
+            review.cmd_next(self.con, ns(stage="ta", n=n, order=order, pdir=self.dir))
+        return helpers.json_lines(out.getvalue()), err.getvalue()
+
+    def test_relevance_puts_the_best_match_first_and_the_unscored_last(self):
+        for rid in ("a", "b", "c"):
+            self.insert(rid)
+        self.write_criteria(self.CRITERIA)
+        self.seed_scores({"a": 0.2, "b": 0.9})
+        rows, err = self.next_rows()
+        self.assertEqual([r["id"] for r in rows], ["b", "a", "c"])
+        self.assertEqual([r["rerank_score"] for r in rows], [0.9, 0.2, None])
+        self.assertEqual(err, "")
+
+    def test_default_order_is_import_order_without_a_score_field(self):
+        for rid in ("a", "b"):
+            self.insert(rid)
+        self.write_criteria(self.CRITERIA)
+        self.seed_scores({"b": 0.9})
+        rows, _ = self.next_rows(order="rowid")
+        self.assertEqual([r["id"] for r in rows], ["a", "b"])
+        self.assertNotIn("rerank_score", rows[0])
+
+    def test_missing_score_table_degrades_to_import_order_with_a_notice(self):
+        for rid in ("a", "b"):
+            self.insert(rid)
+        self.write_criteria(self.CRITERIA)
+        rows, err = self.next_rows()
+        self.assertEqual([r["id"] for r in rows], ["a", "b"])
+        self.assertIn("import order", err)
+
+    def test_scores_for_edited_criteria_are_ignored(self):
+        for rid in ("a", "b"):
+            self.insert(rid)
+        self.write_criteria(self.CRITERIA)
+        self.seed_scores({"b": 0.9})
+        self.write_criteria({"Concept": "single-agent chatbots"})
+        rows, err = self.next_rows()
+        self.assertEqual([r["id"] for r in rows], ["a", "b"])
+        self.assertIn("import order", err)
+
+    def test_joint_mode_scores_are_used_when_that_is_what_was_run(self):
+        for rid in ("a", "b"):
+            self.insert(rid)
+        self.write_criteria(self.CRITERIA)
+        self.seed_scores({"b": 0.9}, mode="joint")
+        rows, _ = self.next_rows()
+        self.assertEqual([r["id"] for r in rows], ["b", "a"])
+
 
 
 class StatsTest(ReviewCase):
