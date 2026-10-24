@@ -9,6 +9,7 @@ remapped back to global document indices. A document that cannot fit alone is
 truncated and reported, never dropped or silently shortened. Notices go to
 stderr; retries/backoff come from _http.
 """
+import hashlib
 import json
 import os
 import pathlib
@@ -74,6 +75,16 @@ def check_url(url):
     raise RerankError(
         f"rerank_client: refusing non-loopback server {url!r}"
         " (set RERANK_ALLOW_REMOTE=1 to allow it)")
+
+
+def criteria_hash(criteria, mode):
+    """Identity of a scoring run: the criteria text plus the aggregation mode.
+
+    Shared by the writer (rerank_screen) and the reader (review.py next
+    --order relevance) so edited criteria retire their scores instead of
+    silently reordering against a stale question."""
+    canonical = json.dumps(criteria, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(f"{canonical}|{mode}".encode()).hexdigest()
 
 
 def est_tokens(text):
