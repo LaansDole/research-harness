@@ -81,7 +81,7 @@ flowchart TB
 | mode system prompt | `research/mode/system.md` | Operating posture (proactive workflow, OA-only, no paywalled-database scraping), project layout, and per-command semantics |
 | launcher | `bin/research` | Loads `~/.research-harness/config.env`, exports `RESEARCH_HARNESS_HOME`/`PAPER_GRAPH_DB`/`RESEARCHHARNESS_BRAND_*`, then `exec`s omp with `--append-system-prompt research/mode/system.md` (`bin/research:212-218`, preferring the fork's dev wrapper when `bun` and the repo's `node_modules/` are present, `bin/research:176-186`); `research web` starts the web UI (`bin/research:192`); `research doctor` verifies the whole installation (`bin/research:47-174`), including the key-gated Jev first pass, which it reports as an optional capability and never fails on |
 | web UI | `packages/research-web/`, `research web` | Local browser UI on 127.0.0.1: chat/sessions/models over a WebSocket bridge to `omp --mode rpc` (via `RpcClient`), plus read-only views of `papers.db`, `review.db`, `review-*.md`, PDFs and PRISMA whose action buttons prefill the chat; new package only, no upstream files touched (see its README) |
-| setup | `setup.sh` | Idempotent install: `omp plugin install research/`, copies agents/prompts to `$OMP_AGENT_DIR`, creates `~/.research-harness/`, detects the corpus, persists `config.env` (step 6 rewrites only `RESEARCH_HARNESS_HOME`/`PAPER_GRAPH_DB`/`RESEARCH_CORPUS_DIR` and copies every other line through verbatim, so hand-added keys survive a re-run — `research/tests/test_setup_config.py`), symlinks the launcher onto PATH |
+| setup | `setup.sh` | Idempotent install: `omp plugin install research/`, copies agents/prompts to `$OMP_AGENT_DIR`, creates `~/.research-harness/`, detects the corpus, persists `config.env`, symlinks the launcher onto PATH |
 | literature-search skill | `research/skills/literature-search/` | Search, import/export, retrieval, review store, PRISMA rendering (scripts below) |
 | — `arxiv_search.py` | `scripts/arxiv_search.py` | arXiv Atom API query → JSON lines; enforces ≥3s between arXiv requests |
 | — `openalex_search.py` | `scripts/openalex_search.py` | OpenAlex full-text search → JSON lines; reconstructs abstracts from `abstract_inverted_index` |
@@ -94,9 +94,6 @@ flowchart TB
 | — `_http.py` | `scripts/_http.py` | Shared HTTP GET with rate-limit-aware retries — the single network chokepoint |
 | — `jev_client.py` | `scripts/jev_client.py` | Optional TypeSafe Jev (System One) client: one POST per fan-out, same retry contract as `_http.py` (`jev_client.py:21-23`) |
 | — `jev_screen.py` | `scripts/jev_screen.py` | Optional calibrated first pass at title/abstract screening (section 6.1); writes verdicts only through the `review.py` CLI |
-| — `rerank_client.py` | `scripts/rerank_client.py` | Optional local cross-encoder client (llama-server `--reranking`): loopback-only unless `RERANK_ALLOW_REMOTE=1`, context-budget batching with global index remap, criteria hashing shared with the reader side |
-| — `rerank_screen.py` | `scripts/rerank_screen.py` | Optional relevance scoring into the additive `rerank_scores` table (section 6.2); writes no verdict, state or history row |
-| — `rerank_eval.py` | `scripts/rerank_eval.py` | Read-only evaluation of each ordering against gold labels: recall@10/20/50%, WSS@95, last-relevant rank |
 | — references | `references/SCREENING.md`, `references/DATABASES.md` | Screening methodology (source of truth for verdicts) and database selection + per-database search syntax |
 | paper-graph skill | `research/skills/paper-graph/` | The second-brain graph |
 | — `paper_graph.py` | `scripts/paper_graph.py` | SQLite graph CRUD, BFS neighbors, terminal `view`, OpenAlex `auto-edges`, export |
@@ -111,7 +108,7 @@ flowchart TB
 
 The welcome banner ships omp's name, mark and coding-agent tips. Rebranding it is the one change the research layer makes inside `packages/`, and it is deliberately content-free: `packages/utils/src/branding.ts` reads `RESEARCHHARNESS_BRAND_NAME`, `RESEARCHHARNESS_BRAND_LOGO` and `RESEARCHHARNESS_BRAND_TIPS` at call time (file reads wrapped in try/catch, blank rows dropped, logo rows kept byte-exact so the block grid stays aligned), and `packages/tui/src/prompt/welcome.ts` consumes it at three points - the wordmark beside the logo (the half-block `omp` in `#renderLines()`, the `APP_NAME` text in the native `describe()` card), `#currentLogoFrame()`, and the `tip` getter - each falling back to stock when its variable is unset. With the env unset every one of them yields the stock `WORDMARK`/`APP_NAME`/`PI_LOGO`/`TIPS` value, so an unbranded omp is byte-identical to upstream; `packages/utils/test/branding.test.ts` and `packages/tui/test/welcome-branding.test.ts` pin both branches. The native card keeps omp's builtin logo image; only its wordmark text is branded.
 
-The content lives in the research layer: `bin/research` exports the three variables (pointing at `research/branding/`) before exec'ing omp, `setup.sh` appends the brand name to `config.env` append-if-absent (step 6 preserves unmanaged lines, so a customized name survives a re-run), and `research doctor` reports the name and warns when either file is missing. Because the seam is source-level, the launcher prefers the fork's dev wrapper (`packages/coding-agent/scripts/omp`) over whatever `omp` is on PATH whenever `bun` and the repo's `node_modules/` are present; `RESEARCH_HARNESS_OMP` overrides the choice. An upstream edit to those `welcome.ts` lines makes the daily rebase stop on the branding commit (section 11): the AI resolver or a human re-applies the three brand fallbacks on top of upstream's version.
+The content lives in the research layer: `bin/research` exports the three variables (pointing at `research/branding/`) before exec'ing omp, `setup.sh` appends the brand name to `config.env` append-if-absent (its step-6 rewrite still drops the line on every run, so today the stanza always re-adds the default), and `research doctor` reports the name and warns when either file is missing. Because the seam is source-level, the launcher prefers the fork's dev wrapper (`packages/coding-agent/scripts/omp`) over whatever `omp` is on PATH whenever `bun` and the repo's `node_modules/` are present; `RESEARCH_HARNESS_OMP` overrides the choice. An upstream edit to those `welcome.ts` lines makes the daily rebase stop on the branding commit (section 11): the AI resolver or a human re-applies the three brand fallbacks on top of upstream's version.
 
 ## 3. The research workflow
 
@@ -251,18 +248,6 @@ A calibrated first pass at the title/abstract stage, off unless a TypeSafe API k
 - **Offline tests.** `test_jev_client.py` mocks `urllib.request.urlopen` inside the client; `test_jev_screen.py` runs a REAL temp project through the REAL `review.py` CLI with only `jev_screen.jev_call` monkeypatched (`test_jev_screen.py:1-6`), so bands, verdict rows, history, and the untouched middle band are asserted end to end. The band edges are pinned by `test_regression_band_edges` (`test_jev_screen.py:132`) and the exclusion reason by `test_regression_exclude_names_argmin_reason` (`test_jev_screen.py:146`).
 - **Calibrated is not correct.** Calibration is a property of the population of calls, not of any one call; a confidently wrong answer was observed in live testing. That is why the bands are wide, the middle escalates, and every probability is kept in the record.
 
-### 6.2 Relevance ordering (optional, experimental)
-
-Prioritisation, not decision: a local cross-encoder (`ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF` served by `llama-server --reranking` on 127.0.0.1:8091) scores unscreened records against the project's own `criteria.json`, and `review.py next --order relevance` serves the highest first. Measured 2026-10-24 on 45 real records: 7.2 s joint, 18.0 s min (see RUNBOOK, "Optional: relevance ordering").
-
-- **Off by default, silently.** `resolve_url()` reads `RERANK_URL`, then a `RERANK_URL=` line in `config.env`, else `None` (`rerank_client.py:53-67`). No URL or no server: a stderr notice and exit 0, with the `rerank_scores` table not even created (`rerank_screen.py:88-91,112-115`). `research doctor` reports it as an optional capability and never fails on it.
-- **Never decides.** The script writes only `rerank_scores`; `records` and `history` are untouched, asserted byte-identical before/after by `test_scoring_never_touches_records_or_history` and reproduced live against a copy of a real project (50 records, 50 history rows, identical hash).
-- **Aggregation is code, not prompt.** `--mode min` runs one call-set per criterion and keeps the weakest score (all must hold, the same rule as the Jev band); `--mode joint` runs one joined query. Per-criterion scores are stored for min so an ordering can be explained.
-- **Stale criteria retire themselves.** Rows are keyed by `sha256(canonical criteria JSON + mode)` (`rerank_client.criteria_hash`), and the reader joins only on the hash of the current `criteria.json`; editing criteria drops the queue back to import order with a stderr notice instead of ordering against an old question. `next --order relevance` uses whichever mode was scored last.
-- **Nothing is hidden.** Unscored records (no abstract, or scored under other criteria) still appear, after the scored ones (`review.py:400-407`). Default ordering is unchanged and carries no `rerank_score` field.
-- **Local by construction.** A non-loopback `RERANK_URL` is refused unless `RERANK_ALLOW_REMOTE=1`; documents are batched to the server context with a chars/4 estimate and an oversize document is truncated with the cut reported, never dropped silently.
-- **Measured, not assumed.** `rerank_eval.py` compares import order against each scored mode on the project's own verdicts (or a `--labels id_or_doi,label` CSV) and refuses below three relevant labels, so the experiment yields recall@k/WSS@95 or nothing.
-
 ## 7. Integrity guarantees
 
 | Property | Mechanism |
@@ -275,11 +260,10 @@ Prioritisation, not decision: a local cross-encoder (`ggml-org/Qwen3-Reranker-0.
 | Rate limits degrade instead of corrupting output | All network calls route through `_http.fetch`: 4 attempts on 429/500/502/503/504 and timeouts, exponential backoff 3s/9s/27s capped at 60s, numeric `Retry-After` honored; retry notices go to stderr so stdout stays pure JSON lines (`research/skills/literature-search/scripts/_http.py:13-15,44-55`) |
 | Idempotent ingestion | `UNIQUE(source_db, import_key)` makes re-imports no-ops (`review.py:83`); `dedupe` and `prisma.py` mutations are idempotent; screened records are never demoted by dedupe |
 | Bad inputs never crash a run | A malformed RIS/BibTeX/CSV entry is skipped with a stderr note; an unparseable PDF still emits a record with an `extract_error` field |
-| The reranker never decides | `rerank_screen.py` only writes `rerank_scores`; `records`/`history` byte-identical before and after (`research/tests/test_rerank_screen.py`), and a missing/stale criteria hash degrades the order instead of hiding records (`review.py:392-409`) |
 
 ## 8. Testing
 
-`research/tests/` is a python3 stdlib `unittest` suite — 148 tests, no third-party dependencies:
+`research/tests/` is a python3 stdlib `unittest` suite — 109 tests, no third-party dependencies:
 
 ```sh
 bash research/tests/run.sh    # python3 -m unittest discover -s research/tests -v
@@ -321,7 +305,6 @@ Constraints every contributor must respect: **stdlib-only python** (optional bin
 - **Corpus scan is non-recursive** — `local_library.py scan` reads `*.pdf` in one directory only; nested corpus folders need one scan per directory.
 - **`auto-edges` only links papers already in the graph** — it never imports new nodes, and OpenAlex has empty `referenced_works` for some records (notably bare arXiv preprints), so `references: 0` can mean "no data" rather than "no citations".
 - **`review.db` has no multi-reviewer support**: one verdict per stage per record — no dual screening, conflict resolution, or inter-rater agreement (a second reviewer can only overturn via the sibling state edges, which the history records).
-- **Relevance ordering is unvalidated** — the scores order the queue, but no local project carries title/abstract gold labels yet, so `rerank_eval.py` has never produced a recall@k/WSS@95 number here (it refuses below three relevant labels). `min` vs `joint` as the default is therefore undecided; `min` ships because it mirrors the all-must-hold criteria rule. The server is also an unauthenticated local process: it binds 127.0.0.1 and the client refuses non-loopback URLs unless explicitly allowed.
 
 ## 11. Staying in sync with upstream
 
