@@ -24,3 +24,4 @@
 - Long PRISMA exclusion reasons wrap inside their boxes instead of being clipped.
 - Losing the connection no longer stacks duplicate error toasts over the Reconnect button.
 - Opening the Graph tab no longer shows the papers piled into the top-left corner; the graph stays centred when its frame is shown or resized.
+- Opening another session no longer shows its steps and thinking already expanded because you opened the same spot in the previous session.
