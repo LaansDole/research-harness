@@ -21,11 +21,11 @@ Requires `bun` and the repo's `node_modules` (run from the checkout, like the de
 - **PRISMA**: the `prisma_scr.py` SVG with Fit / 100 % (when it doesn't fit) and SVG download.
 - **Empty states** say what to do next, with a button that prefills it.
 
-Views are read-only. Action buttons only **prefill** the chat composer; nothing runs until you press send, so the agent remains the only writer of research state. Views refresh after every agent turn.
+Research views are read-only: their action buttons only **prefill** the chat composer, and nothing runs until you press send, so the agent remains the only writer of research state. Views refresh after every agent turn. The sidebar's session controls (resume, new, fork) and model / thinking pickers act immediately; they change the agent's session, not research state.
 
 ## How it works
 
-`src/server.ts` (Bun.serve, 127.0.0.1) spawns one `omp --mode rpc --append-system-prompt research/mode/system.md` per browser tab through `RpcClient` and bridges it over `/ws` (`src/bridge.ts`, allowlisted commands, `src/protocol.ts`). `src/data.ts` serves read-only `/api/*` over `~/.research-harness`. `src/guard.ts` rejects foreign `Host` (DNS rebinding) and foreign `Origin` WebSocket/non-GET requests. No upstream package is modified. Design: `docs/superpowers/specs/2026-10-17-research-web-ui-design.md`.
+`src/server.ts` (Bun.serve, 127.0.0.1) spawns one `omp --mode rpc --append-system-prompt research/mode/system.md` per browser tab through `RpcClient` and bridges it over `/ws` (`src/bridge.ts`, allowlisted commands, `src/protocol.ts`). `src/data.ts` serves read-only `/api/*` over `~/.research-harness`. `src/guard.ts` rejects foreign `Host` (DNS rebinding) and foreign `Origin` WebSocket/non-GET requests. No upstream package is modified.
 
 | Env | Default |
 |---|---|
