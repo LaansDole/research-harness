@@ -1258,6 +1258,25 @@ describe("advisor", () => {
 			tool.flushDeferredNotes();
 			expect(onAdvice).toHaveBeenCalledTimes(1);
 		});
+
+		it("stays within the update's note budget when an aside displaces a defer-mode reservation", async () => {
+			// Budget 1: the nit reserved in defer mode holds the update's only slot.
+			// After the switch a distinct concern displaces it and routes now; the
+			// displaced reservation must not also flush, or the update delivers two.
+			const onAdvice = vi.fn();
+			let mode: "aside" | "defer" = "defer";
+			const tool = new AdviseTool(onAdvice, new AdvisorEmissionGuard({ budgetPerUpdate: 1 }), () => mode);
+			const concern = "The cache key ignores the tenant id.";
+
+			tool.beginUpdate(true, 4);
+			await tool.execute("f-0", { note: "The helper name shadows a builtin.", severity: "nit" });
+			mode = "aside";
+			await tool.execute("f-1", { note: concern, severity: "concern" });
+			tool.flushDeferredNotes();
+
+			expect(onAdvice).toHaveBeenCalledTimes(1);
+			expect(onAdvice).toHaveBeenCalledWith(concern, "concern", 4, { wip: true });
+		});
 	});
 
 	describe("advisor unsafe-output quarantine", () => {

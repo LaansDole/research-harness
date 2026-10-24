@@ -670,13 +670,10 @@ export class SessionAdvisors {
 				// flush drains it — would be shipped stampless by the loop's generic
 				// aside drain, and a stale nit would spuriously continue the run. Pull
 				// those into the boundary merge so they ship under continueSeverity with
-				// their original turn stamp. The predicate skips only untagged asides (no
-				// turn stamp); a stamped WIP aside's review turn is always earlier than
-				// this terminal turn, so every one is drained here.
-				for (const note of this.#host.yieldQueue.drain<AdvisorNote>(
-					"advisor",
-					n => n.turn !== undefined && n.turn < this.#advisorPrimaryTurnsCompleted,
-				)) {
+				// their original turn stamp. Only untagged asides (no turn stamp) stay:
+				// a stamped WIP aside's review turn is always earlier than this terminal
+				// turn, so every one is drained here.
+				for (const note of this.#host.yieldQueue.drain<AdvisorNote>("advisor", n => n.turn !== undefined)) {
 					this.#advisorBoundaryNotes.push(note);
 				}
 			}
