@@ -440,6 +440,7 @@ export function App(): ReactNode {
 							) : (
 								<Transcript
 									entries={shownEntries}
+									committedEntries={chat.entries}
 									stream={null}
 									streamDone
 									activeTools={chat.activeTools}
