@@ -2,7 +2,8 @@
   "extends": "../tsconfig.workspace.json",
   "include": [
     "src/client",
-    "test/reducer.test.ts"
+    "test/reducer.test.ts",
+    "test/transcript-session.test.tsx"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
