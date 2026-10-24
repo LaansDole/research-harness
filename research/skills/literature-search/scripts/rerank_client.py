@@ -133,9 +133,13 @@ def _post(url, payload, timeout):
 
 
 def health(url, timeout=5):
-    """True when the server answers GET /health with status ok."""
+    """True when the server answers GET /health with status ok.
+
+    One attempt, no backoff: `research doctor` and `rerank status` must answer
+    immediately when nothing is listening."""
     try:
-        body = json.loads(_http.fetch(check_url(url) + "/health", USER_AGENT, timeout=timeout))
+        body = json.loads(_http.fetch(check_url(url) + "/health", USER_AGENT,
+                                      timeout=timeout, attempts=1))
     except (OSError, ValueError, urllib.error.URLError, RerankError):
         return False
     return body.get("status") == "ok"
