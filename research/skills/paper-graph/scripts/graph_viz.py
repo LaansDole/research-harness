@@ -11,22 +11,27 @@ TEMPLATE = """<!DOCTYPE html>
 <meta charset="utf-8">
 <title>Paper Graph</title>
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0d1117; color: #c9d1d9;
+  :root { --bg: #0d1117; --panel: #161b22; --legend-bg: #161b22cc; --fg: #c9d1d9; --fg-strong: #e6edf3;
+    --muted: #8b949e; --border: #30363d; --accent: #58a6ff; }
+  /* Light palette: set by an embedding page (research web) via the paper-graph:theme message. */
+  :root[data-theme="light"] { --bg: #ffffff; --panel: #f6f8fa; --legend-bg: #f6f8facc; --fg: #1f2328;
+    --fg-strong: #1f2328; --muted: #59636e; --border: #d1d9e0; --accent: #0969da; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--fg);
     font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
   #canvas { display: block; cursor: grab; }
   #search { position: fixed; top: 12px; left: 12px; z-index: 2; width: 260px; padding: 7px 10px;
-    background: #161b22; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; outline: none; }
-  #search:focus { border-color: #58a6ff; }
+    background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; outline: none; }
+  #search:focus { border-color: var(--accent); }
   #panel { position: fixed; top: 0; right: 0; width: 320px; height: 100%; box-sizing: border-box;
-    padding: 16px; background: #161b22; border-left: 1px solid #30363d; overflow-y: auto;
+    padding: 16px; background: var(--panel); border-left: 1px solid var(--border); overflow-y: auto;
     transform: translateX(100%); transition: transform .15s ease; z-index: 2; }
   #panel.open { transform: none; }
-  #panel h2 { margin: 0 0 8px; font-size: 15px; color: #e6edf3; }
-  #panel .meta { color: #8b949e; margin: 4px 0; }
-  #panel a { color: #58a6ff; text-decoration: none; word-break: break-all; }
-  #panel .close { position: absolute; top: 10px; right: 12px; cursor: pointer; color: #8b949e; }
-  #legend { position: fixed; bottom: 12px; left: 12px; z-index: 2; background: #161b22cc;
-    border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; }
+  #panel h2 { margin: 0 0 8px; font-size: 15px; color: var(--fg-strong); }
+  #panel .meta { color: var(--muted); margin: 4px 0; }
+  #panel a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  #panel .close { position: absolute; top: 10px; right: 12px; cursor: pointer; color: var(--muted); }
+  #legend { position: fixed; bottom: 12px; left: 12px; z-index: 2; background: var(--legend-bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; }
   #legend span { display: inline-block; margin-right: 12px; }
   #legend i { display: inline-block; width: 10px; height: 3px; margin-right: 5px; vertical-align: middle; }
 </style>
@@ -43,12 +48,33 @@ TEMPLATE = """<!DOCTYPE html>
 <script>
 const DATA = __DATA__;
 const EDGE_COLOR = { "cites": "#4d9fff", "related": "#3fb950", "same-topic": "#ffa94d" };
+// Canvas colours follow the CSS palette; re-read only when the theme changes, not every frame.
+const PAL = {};
+function readPalette() {
+  const s = getComputedStyle(document.documentElement);
+  for (const k of ["bg", "fg", "muted", "accent"]) PAL[k] = s.getPropertyValue("--" + k).trim();
+}
+readPalette();
+window.addEventListener("message", e => {
+  if (e.source !== window.parent || !e.data) return;
+  if (e.data.type === "paper-graph:theme") {
+    document.documentElement.dataset.theme = e.data.theme === "light" ? "light" : "dark";
+    readPalette();
+  } else if (e.data.type === "paper-graph:select" && e.data.id == null) {
+    clearSelection(false);  // parent dismissed its selection; don't echo it back
+  }
+});
 
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 let W = 0, H = 0;
+// View transform (pan/zoom). The layout lives around the world origin, which stays at the centre of
+// the frame: an embedded graph is often first laid out while hidden (0x0) and only later shown.
+let scale = 1, tx = 0, ty = 0;
 function resize() {
-  W = window.innerWidth; H = window.innerHeight;
+  const w = window.innerWidth, h = window.innerHeight;
+  tx += (w - W) / 2; ty += (h - H) / 2;
+  W = w; H = h;
   const dpr = window.devicePixelRatio || 1;
   canvas.width = W * dpr; canvas.height = H * dpr;
   canvas.style.width = W + "px"; canvas.style.height = H + "px";
@@ -60,21 +86,21 @@ resize();
 // Build nodes with degree-based radius.
 const nodes = DATA.papers.map((p, i) => ({
   ...p, deg: 0,
-  x: W / 2 + 220 * Math.cos(2 * Math.PI * i / DATA.papers.length),
-  y: H / 2 + 220 * Math.sin(2 * Math.PI * i / DATA.papers.length),
+  x: 220 * Math.cos(2 * Math.PI * i / DATA.papers.length),
+  y: 220 * Math.sin(2 * Math.PI * i / DATA.papers.length),
   vx: 0, vy: 0,
 }));
 const byId = new Map(nodes.map(n => [n.id, n]));
 const links = DATA.edges
   .filter(e => byId.has(e.src) && byId.has(e.dst))
   .map(e => ({ a: byId.get(e.src), b: byId.get(e.dst), type: e.type }));
-for (const l of links) { l.a.deg++; l.b.deg++; }
+for (const n of nodes) n.nbrs = new Set();
+for (const l of links) { l.a.deg++; l.b.deg++; l.a.nbrs.add(l.b); l.b.nbrs.add(l.a); }
 for (const n of nodes) n.r = 6 + 3 * Math.sqrt(n.deg);
 
-// View transform (pan/zoom) and interaction state.
-let scale = 1, tx = 0, ty = 0;
+// Interaction state.
 let alpha = 1, dragNode = null, panning = false, lastX = 0, lastY = 0;
-let selected = null, query = "";
+let selected = null, hovered = null, query = "";
 
 function matches(n) {
   if (!query) return true;
@@ -106,12 +132,14 @@ function step() {
     l.b.vx -= dx * f; l.b.vy -= dy * f;
   }
   for (const n of nodes) {
-    n.vx += (W / 2 - n.x) * 0.002 * alpha;
-    n.vy += (H / 2 - n.y) * 0.002 * alpha;
+    n.vx -= n.x * 0.002 * alpha;
+    n.vy -= n.y * 0.002 * alpha;
     if (n !== dragNode) { n.x += n.vx; n.y += n.vy; }
     n.vx *= 0.6; n.vy *= 0.6;
   }
-  alpha *= 0.995;
+  alpha *= 0.97;
+  // Settled: freeze so nodes stop drifting; dragging re-heats alpha.
+  if (alpha < 0.005) for (const n of nodes) { n.vx = 0; n.vy = 0; }
 }
 
 function draw() {
@@ -121,27 +149,38 @@ function draw() {
   for (const l of links) {
     const dim = query && !(matches(l.a) && matches(l.b));
     ctx.globalAlpha = dim ? 0.08 : 0.55;
-    ctx.strokeStyle = EDGE_COLOR[l.type] || "#8b949e";
+    ctx.strokeStyle = EDGE_COLOR[l.type] || PAL.muted;
     ctx.lineWidth = 1.4 / scale;
     ctx.beginPath(); ctx.moveTo(l.a.x, l.a.y); ctx.lineTo(l.b.x, l.b.y); ctx.stroke();
   }
+  // Labels only for the focused (hovered/selected) node and its neighbours, or a
+  // narrow search, so titles never pile on top of each other.
+  const focus = hovered || selected;
+  const nMatch = query ? nodes.filter(matches).length : 0;
+  const labels = [];
   for (const n of nodes) {
     const dim = !matches(n);
     ctx.globalAlpha = dim ? 0.15 : 1;
     ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, 2 * Math.PI);
-    ctx.fillStyle = n === selected ? "#e3b341" : "#58a6ff";
+    ctx.fillStyle = n === selected ? "#e3b341" : PAL.accent;
     ctx.fill();
-    ctx.strokeStyle = "#0d1117"; ctx.lineWidth = 1.5; ctx.stroke();
-    if (!dim) {
-      ctx.fillStyle = "#c9d1d9";
-      ctx.font = (12 / scale) + "px sans-serif";
-      const label = n.title.length > 42 ? n.title.slice(0, 40) + "\\u2026" : n.title;
-      ctx.fillText(label, n.x + n.r + 4 / scale, n.y + 4 / scale);
-    }
+    ctx.strokeStyle = PAL.bg; ctx.lineWidth = 1.5; ctx.stroke();
+    if (n === focus) labels.push([n, n.title]);
+    else if ((focus && focus.nbrs.has(n)) || (query && !dim && nMatch <= 12))
+      labels.push([n, n.title.length > 30 ? n.title.slice(0, 28) + "\\u2026" : n.title]);
+  }
+  ctx.globalAlpha = 1;
+  ctx.font = (12 / scale) + "px sans-serif";
+  ctx.lineJoin = "round";
+  for (const [n, label] of labels) {
+    const lx = n.x + n.r + 4 / scale, ly = n.y + 4 / scale;
+    ctx.strokeStyle = PAL.bg; ctx.lineWidth = 3 / scale; ctx.strokeText(label, lx, ly);
+    ctx.fillStyle = n === focus ? PAL.fg : PAL.muted; ctx.fillText(label, lx, ly);
   }
   ctx.restore();
-  ctx.globalAlpha = 1;
 }
+
+while (alpha > 0.05) step();  // pre-settle off-screen so the first frame is already laid out
 
 function loop() { step(); draw(); requestAnimationFrame(loop); }
 loop();
@@ -162,6 +201,7 @@ const panelBody = document.getElementById("panel-body");
 function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
 function showPanel(n) {
   selected = n;
+  if (window.parent !== window) window.parent.postMessage({type: "paper-graph:select", id: n.id, title: n.title}, "*");
   let doi = n.doi || "";
   if (doi && !doi.startsWith("http")) doi = "https://doi.org/" + doi;
   const link = doi || n.url || "";
@@ -174,18 +214,25 @@ function showPanel(n) {
     (n.abstract ? "<p>" + esc(n.abstract) + "</p>" : "");
   panel.classList.add("open");
 }
-panel.querySelector(".close").onclick = () => { panel.classList.remove("open"); selected = null; };
+function clearSelection(notify) {
+  panel.classList.remove("open");
+  selected = null;
+  if (notify && window.parent !== window) window.parent.postMessage({type: "paper-graph:select", id: null}, "*");
+}
+panel.querySelector(".close").onclick = () => clearSelection(true);
 
 canvas.addEventListener("mousedown", e => {
   const n = nodeAt(e.clientX, e.clientY);
-  if (n) { dragNode = n; alpha = Math.max(alpha, 0.3); }
+  if (n) dragNode = n;  // physics re-heats on actual movement (mousemove), so a click doesn't shake the graph
   else { panning = true; canvas.style.cursor = "grabbing"; }
   lastX = e.clientX; lastY = e.clientY;
 });
 window.addEventListener("mousemove", e => {
   const dx = e.clientX - lastX, dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
-  if (dragNode) {
+  hovered = e.target === canvas && !panning ? nodeAt(e.clientX, e.clientY) : null;
+  if (!dragNode && !panning) canvas.style.cursor = hovered ? "pointer" : "grab";
+  if (dragNode && (dx || dy)) {
     dragNode.x += dx / scale; dragNode.y += dy / scale;
     alpha = Math.max(alpha, 0.3);
   } else if (panning) { tx += dx; ty += dy; }
@@ -208,8 +255,17 @@ canvas.addEventListener("wheel", e => {
   scale = ns;
 }, { passive: false });
 
-document.getElementById("search").addEventListener("input", e => {
+const search = document.getElementById("search");
+search.addEventListener("input", e => {
   query = e.target.value.trim().toLowerCase();
+});
+// Enter selects the best (highest-degree) hit, same path as a click, and centres it.
+search.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || !query) return;
+  const hit = nodes.filter(matches).sort((a, b) => b.deg - a.deg)[0];
+  if (!hit) return;
+  showPanel(hit);
+  tx = (W - 320) / 2 - hit.x * scale; ty = H / 2 - hit.y * scale;
 });
 </script>
 </body>
