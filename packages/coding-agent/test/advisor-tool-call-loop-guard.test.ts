@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "bun:test";
 import { type } from "@oh-my-pi/omptype";
 import {
 	Agent,
@@ -10,6 +10,7 @@ import {
 import type { AssistantMessage, Context, ToolResultMessage } from "@oh-my-pi/pi-ai";
 import { createMockModel } from "@oh-my-pi/pi-ai/providers/mock";
 import { AssistantMessageEventStream } from "@oh-my-pi/pi-ai/utils/event-stream";
+import * as reviewGate from "@oh-my-pi/pi-coding-agent/advisor/review-gate";
 import { ModelRegistry } from "@oh-my-pi/pi-coding-agent/config/model-registry";
 import { Settings } from "@oh-my-pi/pi-coding-agent/config/settings";
 import { AgentSession } from "@oh-my-pi/pi-coding-agent/session/agent-session";
@@ -56,6 +57,7 @@ describe("advisor tool-call loop guard", () => {
 	});
 
 	afterEach(async () => {
+		vi.restoreAllMocks();
 		await session?.dispose();
 		session = undefined;
 	});
@@ -676,6 +678,73 @@ describe("advisor tool-call loop guard", () => {
 		expect(cards).toHaveLength(1);
 		expect(JSON.stringify(cards[0])).toContain("The earlier change needs a regression test.");
 		expect(session.yieldQueue.hasDeliverable("advisor")).toBe(false);
+	});
+
+	it("stamps advice from a late-reviewed held update with that update's own turn", async () => {
+		// The judge gate holds turn 1's update (A) and turn 2's (C). A's verdict
+		// lands mid-run, so A is reviewed alone while C stays held. A's note must
+		// carry turn 1, not the newest scheduled boundary's turn 2, so the terminal
+		// boundary (turn 3) delivers it as two turns old.
+		const verdictA = Promise.withResolvers<boolean>();
+		const verdicts = [verdictA.promise, Promise.withResolvers<boolean>().promise];
+		vi.spyOn(reviewGate, "judgeAdvisorReview").mockImplementation(() => verdicts.shift() ?? Promise.resolve(false));
+		const note = "Step A guessed the retry config key instead of reading it.";
+		const readStep = (id: string) => ({
+			content: [{ type: "toolCall" as const, id, name: "read", arguments: { path: "missing.ts" } }],
+		});
+		const primaryMock = createMockModel({
+			provider: "anthropic",
+			responses: [
+				readStep("step-a"),
+				readStep("step-c"),
+				async () => {
+					verdictA.resolve(true);
+					// The runtime dispatches A on this verdict before our continuation
+					// runs; end the run only once A's review has queued its WIP aside.
+					await verdictA.promise;
+					await live.waitForAdvisorCatchup(2_000);
+					return { content: ["primary complete"] };
+				},
+			],
+		});
+		const advisorMock = createMockModel({
+			provider: "anthropic",
+			responses: [{ content: [{ type: "toolCall", name: "advise", arguments: { note, severity: "nit" } }] }],
+			handler: { content: ["Reviewed."] },
+		});
+		const settings = Settings.isolated({
+			"advisor.judgeGate": true,
+			"advisor.syncBacklog": "1",
+			"compaction.enabled": false,
+			"todo.enabled": false,
+		});
+		const live = new AgentSession({
+			agent: new Agent({
+				getApiKey: () => "test-key",
+				initialState: { model: primaryMock, systemPrompt: [], tools: [failingReadTool] },
+				streamFn: primaryMock.stream,
+			}),
+			sessionManager: SessionManager.inMemory(tempDir.path()),
+			settings,
+			modelRegistry: new ModelRegistry(authStorage, tempDir.join("models.yml")),
+			advisorTools: [],
+			advisorStreamFn: advisorMock.stream,
+		});
+		session = live;
+		settings.setModelRole("advisor", "anthropic/claude-sonnet-4-5");
+		expect(live.setAdvisorEnabled(true)).toBe(true);
+
+		await live.prompt("fix the retry config");
+		await live.waitForIdle();
+
+		const cards = live.agent.state.messages.filter(
+			message =>
+				message.role === "custom" && message.customType === "advisor" && JSON.stringify(message).includes(note),
+		);
+		expect(cards).toHaveLength(1);
+		const card = cards[0];
+		const content = card && "content" in card && typeof card.content === "string" ? card.content : "";
+		expect(content).toContain('turns_ago="2"');
 	});
 
 	it("holds a final-review continuation during the post-interrupt cooldown", async () => {

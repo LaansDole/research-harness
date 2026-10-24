@@ -60,9 +60,9 @@ export interface AdvisorRuntimeHost {
 	 * Called immediately before each `agent.prompt(batch)` cycle. Lets the host
 	 * clear per-update advisor state and apply the in-progress delivery policy.
 	 * The host owns these gates because it routes `advise()` results back to the
-	 * primary.
+	 * primary. `coveredTurn` is the `onTurnEnd` turn of the batch's newest update.
 	 */
-	beginAdvisorUpdate?(inProgress: boolean): void;
+	beginAdvisorUpdate?(inProgress: boolean, coveredTurn?: number): void;
 	/**
 	 * Called with the error of every failed advisor turn, before the retry sleep
 	 * or the dropped-after-3 path. Lets the host apply credential-level remedies
@@ -265,6 +265,8 @@ interface PendingDelta {
 	gate?: Promise<boolean>;
 	/** When the gate held this delta (epoch ms); unset for cadence-held deltas. */
 	gatedAt?: number;
+	/** Host primary-turn number from `onTurnEnd`; a batch reports its newest delta's. */
+	coveredTurn?: number;
 }
 
 /** Updates a review cadence captured but has not sent, and the primary cursor they end at. */
@@ -428,8 +430,14 @@ export class AdvisorRuntime {
 	 * @param opts.dispatch - `false` when review cadence skips this boundary: the
 	 *   delta is still captured now, as the primary saw it, and held until the
 	 *   next dispatching boundary sends every held delta as one review.
+	 * @param opts.coveredTurn - Host primary-turn number of this boundary, handed
+	 *   back through `beginAdvisorUpdate` when a review ending with this delta
+	 *   starts, however much later the gate or cadence dispatches it.
 	 */
-	onTurnEnd(messages?: AgentMessage[], opts?: { willContinue?: boolean; dispatch?: boolean }): void {
+	onTurnEnd(
+		messages?: AgentMessage[],
+		opts?: { willContinue?: boolean; dispatch?: boolean; coveredTurn?: number },
+	): void {
 		if (this.disposed || this.#quotaExhausted || this.#halted) return;
 		const all = messages ?? this.host.snapshotMessages();
 		this.#latestMessages = all;
@@ -477,11 +485,12 @@ export class AdvisorRuntime {
 				turns: 1,
 				gate: verdict,
 				gatedAt: verdict ? Date.now() : undefined,
+				coveredTurn: opts?.coveredTurn,
 			});
 			if (verdict) void this.#dispatchIfGatePasses(verdict);
 			return;
 		}
-		this.#dispatch(rendered ? { ...rendered, turns: 1 } : undefined);
+		this.#dispatch(rendered ? { ...rendered, turns: 1, coveredTurn: opts?.coveredTurn } : undefined);
 	}
 
 	/**
@@ -563,6 +572,7 @@ export class AdvisorRuntime {
 						renderRevision: Math.min(...parts.map(part => part.renderRevision)),
 						turns: 1,
 						wip: last.wip,
+						coveredTurn: last.coveredTurn,
 					},
 		);
 		this.#backlog++;
@@ -1395,6 +1405,8 @@ export class AdvisorRuntime {
 				}
 
 				const { batchText, rawMessages, preparedMessages, finalTurns, wip, resetContext } = result;
+				// Batch collection appended any coalesced deltas to `popped`; the newest stamps the review.
+				const coveredTurn = popped.at(-1)?.coveredTurn;
 				// The single-block text is only needed when the multi-message split
 				// cannot be used or a failed turn requeues the batch, so render it on
 				// first use (with the thinking policy this batch was prepared under).
@@ -1426,7 +1438,7 @@ export class AdvisorRuntime {
 				const messageSnapshot = this.agent.state.messages.length;
 				const contextWasFresh = resetContext || recoveringOverflow || messageSnapshot === 0;
 				try {
-					this.host.beginAdvisorUpdate?.(wip);
+					this.host.beginAdvisorUpdate?.(wip, coveredTurn);
 					// Candidate 4 (multi-message split): deliver the Session update as
 					// multiple user messages so the provider prompt cache can
 					// incrementally hit each appended message (cache_read grows with
@@ -1527,6 +1539,7 @@ export class AdvisorRuntime {
 									turns: finalTurns,
 									wip,
 									overflowRecovery: recoveringOverflow || undefined,
+									coveredTurn,
 								});
 								logger.debug("advisor refusal recovered by stripping primary reasoning");
 								continue;
@@ -1569,6 +1582,7 @@ export class AdvisorRuntime {
 								turns: finalTurns,
 								wip,
 								overflowRecovery: recoveringOverflow || undefined,
+								coveredTurn,
 							});
 							logger.debug("advisor refusal recovered by model fallback");
 							continue;
@@ -1613,10 +1627,12 @@ export class AdvisorRuntime {
 							continue;
 						}
 						const rePrime = this.#pending.length > 0 ? this.#latestMessages : undefined;
+						// Held deltas are newer than queued ones; the re-render covers through the newest.
+						const rePrimeTurn = (this.#held.at(-1) ?? this.#pending.at(-1))?.coveredTurn;
 						// Wake catchup waiters only when nothing is re-primed; otherwise the
 						// re-primed turn restores the backlog and waiters resolve on its completion.
 						this.#resetAdvisorContext(true, !rePrime, "quarantine-recovery");
-						if (rePrime) this.onTurnEnd(rePrime);
+						if (rePrime) this.onTurnEnd(rePrime, { coveredTurn: rePrimeTurn });
 						continue;
 					}
 					// Epoch guard after the async error hook.
@@ -1631,6 +1647,7 @@ export class AdvisorRuntime {
 							turns: finalTurns,
 							wip,
 							overflowRecovery: recoveringOverflow || undefined,
+							coveredTurn,
 						});
 						continue;
 					}
@@ -1654,6 +1671,7 @@ export class AdvisorRuntime {
 							turns: finalTurns,
 							wip,
 							overflowRecovery: recoveringOverflow || undefined,
+							coveredTurn,
 						});
 						this.#wakeAllWaiters();
 						try {
@@ -1698,6 +1716,7 @@ export class AdvisorRuntime {
 								turns: finalTurns,
 								wip,
 								overflowRecovery: true,
+								coveredTurn,
 							});
 							logger.debug("advisor context overflow recovered at current primary cursor");
 						}
@@ -1721,6 +1740,7 @@ export class AdvisorRuntime {
 								turns: finalTurns,
 								wip,
 								overflowRecovery: recoveringOverflow || undefined,
+								coveredTurn,
 							});
 							if (this.retryDelayMs <= 0) {
 								await Bun.sleep(0);
