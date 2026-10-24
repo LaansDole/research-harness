@@ -79,7 +79,8 @@ flowchart TB
 | librarian agent | `research/agents/librarian.md` | Curates the paper graph: add/link, OpenAlex auto-edges, connection queries, viz export |
 | prompt commands | `research/prompts/*.md` | The 13 `/` commands: `litreview`, `scope`, `databases`, `searchstring`, `find`, `import`, `dedupe`, `screen`, `fulltext`, `review`, `graph`, `prisma`, `export` |
 | mode system prompt | `research/mode/system.md` | Operating posture (proactive workflow, OA-only, no paywalled-database scraping), project layout, and per-command semantics |
-| launcher | `bin/research` | Loads `~/.research-harness/config.env`, exports `RESEARCH_HARNESS_HOME`/`PAPER_GRAPH_DB`/`RESEARCHHARNESS_BRAND_*`, then `exec`s omp with `--append-system-prompt research/mode/system.md` (`bin/research:188-204`, preferring the fork's dev wrapper when `bun` and the repo's `node_modules/` are present); `research doctor` verifies the whole installation (`bin/research:47-174`), including the key-gated Jev first pass, which it reports as an optional capability and never fails on |
+| launcher | `bin/research` | Loads `~/.research-harness/config.env`, exports `RESEARCH_HARNESS_HOME`/`PAPER_GRAPH_DB`/`RESEARCHHARNESS_BRAND_*`, then `exec`s omp with `--append-system-prompt research/mode/system.md` (`bin/research:212-218`, preferring the fork's dev wrapper when `bun` and the repo's `node_modules/` are present, `bin/research:176-186`); `research web` starts the web UI (`bin/research:192`); `research doctor` verifies the whole installation (`bin/research:47-174`), including the key-gated Jev first pass, which it reports as an optional capability and never fails on |
+| web UI | `packages/research-web/`, `research web` | Local browser UI on 127.0.0.1: chat/sessions/models over a WebSocket bridge to `omp --mode rpc` (via `RpcClient`), plus read-only views of `papers.db`, `review.db`, `review-*.md`, PDFs and PRISMA whose action buttons prefill the chat; new package only, no upstream files touched (see its README) |
 | setup | `setup.sh` | Idempotent install: `omp plugin install research/`, copies agents/prompts to `$OMP_AGENT_DIR`, creates `~/.research-harness/`, detects the corpus, persists `config.env`, symlinks the launcher onto PATH |
 | literature-search skill | `research/skills/literature-search/` | Search, import/export, retrieval, review store, PRISMA rendering (scripts below) |
 | — `arxiv_search.py` | `scripts/arxiv_search.py` | arXiv Atom API query → JSON lines; enforces ≥3s between arXiv requests |
@@ -307,7 +308,7 @@ Constraints every contributor must respect: **stdlib-only python** (optional bin
 
 ## 11. Staying in sync with upstream
 
-`main` is always an upstream `can1357/oh-my-pi` commit plus a short stack of fork commits: the research layer, the sync CI, and the branding seam (section 2.1). The stack is `git merge-base main upstream/main..main`; no other state is kept. Spec: `docs/superpowers/specs/2026-10-17-fork-rebase-stack-design.md`.
+`main` is always an upstream `can1357/oh-my-pi` commit plus a short stack of fork commits: the research layer, the web UI, the sync CI, and the branding seam (section 2.1). The stack is `git merge-base main upstream/main..main`; no other state is kept.
 
 `.github/workflows/fork-sync.yml` runs daily:
 
@@ -315,7 +316,7 @@ Constraints every contributor must respect: **stdlib-only python** (optional bin
 2. `.github/scripts/sync-push.sh` publishes it. A clean rebase with a green gate saves the old `main` as `main-prev` and force-pushes `main`, leased on the `main` the run started from, so a commit pushed mid-run is never overwritten. Anything else (conflicts, markers, red gate) is force-pushed to `sync/rebase`, and `.github/scripts/sync-pr-body.sh` writes the pull request: the conflict table per stack commit, the gate result, and `git range-diff` of the stack before and after.
 3. `sync-guard.yml` stays red while a fork-stack file in that PR holds markers. Adding the `promote` label runs `fork-promote.yml`, which re-checks the markers, saves `main-prev`, force-pushes `sync/rebase` to `main` (leased on the `main` the PR was built on), and closes the PR. Never use the merge button on it.
 
-Because `main` is force-pushed, update a clone with `git fetch origin && git rebase --onto origin/main <old origin/main> <branch>` for local work, or `git reset --hard origin/main` for a plain checkout. Commits pushed straight to `main` join the stack; fold them into the three stack commits with an occasional `git rebase -i`.
+Because `main` is force-pushed, update a clone with `git fetch origin && git rebase --onto origin/main <old origin/main> <branch>` for local work, or `git reset --hard origin/main` for a plain checkout. Commits pushed straight to `main` join the stack; fold them into the stack commits with an occasional `git rebase -i`.
 
 The manual procedure the workflow automates:
 

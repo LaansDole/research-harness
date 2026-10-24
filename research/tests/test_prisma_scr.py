@@ -118,6 +118,25 @@ class RenderTest(PrismaScrCase):
         for n in self.numbers(d):
             self.assertIn(f"(n={n})", svg)
 
+    def test_svg_wraps_long_reasons_and_grows_box(self):
+        d = self.derive(DISTS["mixed"])
+        reason = "no open-access copy found (web-search candidate pending human review)"
+        d["nr_reasons"] = {reason: 1}
+        root = ET.fromstring(prisma_scr.render_svg("proj", d))
+        ns = "{http://www.w3.org/2000/svg}"
+        text = next(t for t in root.iter(ns + "text") if "open-access" in "".join(t.itertext()))
+        spans = text.findall(ns + "tspan")
+        self.assertGreater(len(spans), 1)
+        self.assertEqual(" ".join(s.text for s in spans), reason + ": 1")
+        width = (prisma_scr.SIDE_W - 2 * prisma_scr.PAD - 12) / prisma_scr.CHAR_W
+        self.assertTrue(all(len(s.text) <= width for s in spans))
+        # The side box is tall enough for every wrapped line.
+        rect = next(r for r in root.iter(ns + "rect")
+                    if r.get("x") == str(prisma_scr.SIDE_X)
+                    and float(r.get("y")) < float(text.get("y")) < float(r.get("y")) + float(r.get("height")))
+        bottom = float(text.get("y")) + (len(spans) - 1) * prisma_scr.LINE_H
+        self.assertLessEqual(bottom + prisma_scr.PAD, float(rect.get("y")) + float(rect.get("height")))
+
     def test_empty_review_renders_zeros_not_crash(self):
         d = self.derive({})
         for fmt, render in (("text", prisma_scr.render_text),
