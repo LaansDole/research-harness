@@ -1,4 +1,4 @@
-"""Shared stdlib HTTP GET with rate-limit-aware retries.
+"""Shared stdlib HTTP with rate-limit-aware retries (GET, or POST with `data`).
 
 Retries HTTP 429/500/502/503/504 and socket/URL timeouts up to 4 attempts
 with exponential backoff (3s, 9s, 27s, capped at 60s), honoring a numeric
@@ -17,10 +17,14 @@ BACKOFF_CAP = 60.0
 _last_request = 0.0
 
 
-def fetch(url, user_agent, timeout=30, min_interval=0.0):
-    """GET url and return the response body bytes."""
+def fetch(url, user_agent, timeout=30, min_interval=0.0, data=None,
+          content_type="application/json"):
+    """Request url and return the response body bytes; `data` bytes make it a POST."""
     global _last_request
-    req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+    headers = {"User-Agent": user_agent}
+    if data is not None:
+        headers["Content-Type"] = content_type
+    req = urllib.request.Request(url, data=data, headers=headers)
     last_err = None
     for attempt in range(MAX_ATTEMPTS):
         if min_interval:
