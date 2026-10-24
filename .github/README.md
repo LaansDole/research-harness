@@ -11,7 +11,7 @@
 <p align="center"><strong>research-harness</strong></p>
 
 <p align="center">
-  A research harness built on oh-my-pi: review literature, grow a second brain of papers, and code — all local-first.
+  A literature-review assistant that runs on your own computer. Frame the question, screen the papers, see how they connect, and get a PRISMA diagram whose numbers add up — in your browser, in plain language.
 </p>
 
 <p align="center">
@@ -20,58 +20,89 @@
   <img src="https://img.shields.io/badge/APIs-arXiv%20%2B%20OpenAlex%20(keyless)-ffa94d?style=flat&colorA=222222" alt="keyless APIs">
 </p>
 
-![omp TUI: the PRISMA-ScR flow diagram the harness derives from its own record store at the end of the capture. The lower half of the diagram is on screen — "Records screened (n=50)" branching to "Records excluded (n=4)" with the four exclusion reasons spelled out one per line (sequential pipeline, no mutual agent conditioning; not a diagnostic task; no inter-agent communication; no abstract), then "Reports sought for retrieval (n=1)", "Reports not retrieved (n=0)", ELIGIBILITY with "Reports assessed for eligibility (n=0)", and INCLUDED with "Studies included in review (n=0)". Below it two NOTE lines for the pending work (45 awaiting title/abstract screening, 1 awaiting full-text retrieval) and the arithmetic line that has to balance: "50 - 0 duplicates = 50 screened; 50 - 4 excluded - 45 pending = 1 sought; 1 - 0 not retrieved - 1 pending = 0 assessed; 0 - 0 excluded = 0 included". The status bar at the bottom reads "active: llm-agent-teams-hospital-diagnosis · 5/50 screened · type /help for commands".](../assets/research/guided-review-poster.png)
+![research web in light mode, Chat tab, mid-turn: the researcher asked "Switch the active project to demo-web-ui"; the agent's folded steps are open on its thinking and the bash and write tool calls it ran, and its answer says the active project is now demo-web-ui, followed by a table of PRISMA-ScR counts read from review.db. The status reads Working… (a queued follow-up is running) and the message box shows a Stop button beside the claude-opus-5-5 and Thinking: medium pickers. The sidebar lists the projects demo-web-ui (9 of 12 screened) and llm-multi-agent-design and one earlier session; the header still offers Make active until the turn settles and the views refresh.](../assets/research/research-web-poster.png)
 
-_[Watch the capture ↗](https://laansdole.github.io/research-harness/#guided-review)_ — 13 min 24 seconds, unedited, eleven typed lines. It follows this repo's own testing runbook, [docs/RUNBOOK.md](../docs/RUNBOOK.md): both Part 0 environment gates, then Part 1 as far as the first screening pass — a real 50-record PubMed export imported, deduped, abstract-filled, screened, confirmed, and counted. It stops at the PRISMA diagram; full-text retrieval, synthesis, the paper graph and export are documented in the runbook but not on camera.
+_[Watch the 6-minute demo ↗](https://laansdole.github.io/research-harness/#research-web)_ — one unedited take with chapters. A researcher returns to her scoping review on multi-agent LLMs for clinical decision support, asks which paper to read first, triages her reading list, checks a claim in her review, explores the paper graph, and opens the PRISMA diagram. Recorded with real agent turns on a demo project built from a real OpenAlex search.
 
-## What it does
+## Get started
 
-You type what you want in plain language and the harness carries the method: it frames your question as PCC/PICO, ingests your database exports into a per-record store, fills in the abstracts a PubMed CSV does not carry, screens each record against your own criteria with an evidence sentence, and shows you those verdicts before it writes any of them. Every number in the PRISMA-ScR flow diagram — the chart reviewers expect, counting what you found, screened, excluded and included — is derived from record state rather than typed. Covidence stays optional: `/export` writes RIS/BibTeX for Covidence, Zotero or EndNote whenever you want it.
+```sh
+git clone https://github.com/LaansDole/research-harness
+cd research-harness
+./setup.sh        # one-time setup; safe to run again after you pull
+research web      # opens your research workspace in the browser
+```
 
-You never have to remember any of it. `/help` prints the whole capability guide in plain words — what each command does and when you would reach for it — and the bar at the bottom of the screen keeps your place, reading `active: <project> · 5/50 screened · type /help for commands` and moving as you screen. Plain sentences work everywhere a command does.
+You need [omp](https://github.com/can1357/oh-my-pi), `python3` and [bun](https://bun.sh) (run `bun install` once in the folder). If something looks off, `research doctor` tells you what is missing. Prefer the terminal? `research` starts the same assistant there.
 
-Paywalled databases are never scraped. The harness writes the search string in each database's own syntax; you paste it, run it, and bring the export back:
+Then just say what you are working on — *"I'm starting a scoping review on LLM agents in emergency triage. Where do I start?"* — and it proposes the next step.
 
-![omp TUI: the search strings the harness wrote for a scoping review on LLM agents in emergency-department triage — an Embase block of :ti,ab,kw terms, a Scopus TITLE-ABS-KEY() block, and the matching arXiv abs: query, followed by honest caveats (verify the controlled-vocabulary terms against Emtree; avoid a bare "ED" as a free-text term because it collides with an unrelated meaning) and the reminder to paste the strings into each database and bring the exports back.](../assets/research/search-strings.png)
+## What it does for you
+
+- **Frames your question** as PCC/PICO with inclusion and exclusion criteria.
+- **Plans the search** — which databases suit your question, and ready-to-paste search strings in each one's own syntax. It searches arXiv, OpenAlex and your own folder of PDFs itself; for paywalled databases you run the string and import the export (RIS, BibTeX or CSV). Nothing is scraped.
+- **Screens** — removes duplicates, then checks each record against your criteria and gives a one-sentence reason you can check. You see the verdicts before they are saved.
+- **Finds full texts** from open-access sources only (OpenAlex, Unpaywall, arXiv, your own PDFs). Anything it cannot find is marked *not retrieved*, never guessed.
+- **Drafts a cited review** from your included papers, citing only papers in your review.
+- **Counts for you** — every PRISMA-ScR number comes from each record's state, so the diagram always adds up.
+- **Exports** RIS or BibTeX for Covidence, Zotero or EndNote whenever you want.
+
+### Reading list
+
+![research web Reading list tab for the demo-web-ui project, filtered to Excluded at title/abstract (5 of 14 records): each row shows the paper's title, authors, year and venue, an Excluded · T/A state, and an "Ask agent to reconsider" button. Filter chips above show All 14, Duplicate 2, Excluded T/A 5, Passed T/A 1, Full text ready 1, Full text not found 1, Included 4, beside a search box; a banner offers "Screen full texts" for the 1 full text ready.](../assets/research/web-reading-list.png)
+
+Every record with its state, verdict and reason. Filter by state, search by title, author or DOI, and triage with the keyboard (↑/↓, Enter, Esc).
+
+### Paper graph
+
+![research web Graph tab: the paper graph across all projects, a handful of papers connected by cites, related and same-topic edges, with a side panel open on "Development of a Large Language Model-based Multi-Agent Clinical Decision Support System for Korean Triage and Acuity Scale" (2025, Adv Artif Intell Mach Learn, DOI link) and buttons for Find citing papers, Auto-edges and Explain neighbors.](../assets/research/web-graph.png)
+
+How your papers connect — citation links checked against OpenAlex, plus related and same-topic links. Click a paper for its details.
+
+### PRISMA diagram
+
+![research web PRISMA tab: the PRISMA-ScR flow for demo-web-ui — 14 records identified from OpenAlex, 2 duplicates removed, 12 screened, 5 excluded (no abstract 3, Other 1, Concept 1), 7 reports sought, 1 not retrieved (no open-access copy found), 5 assessed for eligibility, 0 excluded, 4 studies included, with notes for 1 awaiting full-text retrieval and 1 awaiting full-text screening, and a Download SVG button.](../assets/research/web-prisma.png)
+
+Drawn from your records and ready to download as SVG for your manuscript.
+
+**You stay in control.** The reading list, review, graph and PRISMA views only show your work. Buttons such as *Screen full texts* or *Check the claims in this section* just fill in the message box — nothing runs until you press Enter. The workspace runs on your own machine (`127.0.0.1`), and each review lives in its own folder under `~/.research-harness/projects/`, so several reviews can run side by side.
 
 ## Commands
 
-| Command | Does |
+You never need these — plain sentences work — but they are there if you like shortcuts. Type `/` in the message box to pick one (`/help` in the terminal).
+
+| Command | In plain words |
 |---|---|
-| `/scope <question>` | fuzzy question to PCC/PICO + inclusion/exclusion table; creates the project (or switches to an existing slug) |
-| `/databases` | which databases to search for THIS question, with rationale, coverage gaps, and access notes |
-| `/searchstring [db]` | ready-to-paste strings in each database's exact syntax (MeSH/Emtree/field tags), recorded under `searches/` |
-| `/find` | run what CAN be run: arXiv + OpenAlex + local corpus, via the `scholar` agent |
-| `/import <file>` | ingest RIS/BibTeX/CSV/JSONL exports into the per-record review store (`review.db`) with per-database counts; idempotent |
-| `/dedupe` | mark duplicates in the store (DOI, then normalized title), survivors keep merged metadata |
-| `/screen` | walk the unscreened queue with PCC verdicts per `SCREENING.md` — title/abstract or full-text stage — persisted per record; resumable (optional Jev pre-screen — see below) |
-| `/fulltext` | OA-first retrieval cascade: OpenAlex -> Unpaywall -> arXiv -> local corpus -> web-search candidate you approve |
-| `/prisma [--format]` | PRISMA-ScR flow diagram DERIVED from record states (text/mermaid/svg/html) |
-| `/review` | synthesize a cited review from the includes, via the `synthesizer` agent |
-| `/graph` | file the includes into the paper graph and view it inside the terminal (`paper_graph.py view`; inline PNG on Kitty terminals) |
-| `/export <ris\|bib>` | write out the includes, all candidates, or the whole graph for Covidence/Zotero/EndNote |
-| `/litreview <question>` | **the end-to-end shortcut** — search, screen, fetch, synthesize, graph, in one turn |
+| `/scope` | Turn a rough question into criteria and start a project |
+| `/databases` | Which databases to search, and why |
+| `/searchstring` | Search strings ready to paste into each database |
+| `/find` | Search arXiv, OpenAlex and your own PDFs |
+| `/import` | Bring in a RIS, BibTeX or CSV export |
+| `/dedupe` | Remove duplicate records |
+| `/screen` | Screen records against your criteria |
+| `/fulltext` | Fetch open-access full texts |
+| `/review` | Draft a cited review from the included papers |
+| `/graph` | Add papers to the paper graph and explore it |
+| `/prisma` | Draw the PRISMA-ScR diagram |
+| `/export` | Export RIS or BibTeX |
+| `/litreview` | Do a quick review end to end in one go |
 
-Each review lives in its own project folder under `~/.research-harness/projects/<slug>/`, so several reviews can run side by side. Full texts come from open-access PDFs only — OpenAlex, Unpaywall, arXiv, or your own folder of papers; a record that resolves to nothing is filed as not retrieved with a reason, never guessed at. [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) has the full pipeline, data model and retrieval order.
+## Optional: a faster first screening pass
 
-## The optional Jev first pass
+If you add a TypeSafe key (`TYPESAFE_API_KEY="..."` in `~/.research-harness/config.env`), the Jev model screens the clear-cut records first: very likely includes and very likely excludes are decided automatically, and everything in between — plus any record without an abstract — is left for the assistant and you. Each automatic verdict records the model version and its scores, so you can check or overturn it. Off by default. Walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md).
 
-**A decision-only model.** TypeSafe's Jev never writes prose — it answers specific yes/no questions and hands back a probability for each one. That is the shape screening already has (one question per inclusion criterion), which is why it is fast and costs a small fraction of a general LLM.
+## Learn more
 
-**How the pass works.** Before the `screener` agent reads anything, each title/abstract record gets ONE call carrying one question per must-meet criterion from your scope. The banding is enforced in code, not judgment: at or above 0.90 auto-includes, at or below 0.10 auto-excludes, and everything in between — plus any record with no abstract — is left completely untouched for the agent and for you. It only removes the records nobody would have argued about; it never shrinks what a human sees.
+- [docs/RUNBOOK.md](../docs/RUNBOOK.md) — try it on your own review, step by step, with the numbers you should see.
+- [packages/research-web/README.md](../packages/research-web/README.md) — the browser workspace in detail.
+- [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md) — how it is built: pipeline, data model, retrieval order, screening rules.
 
-**Auditable and reversible.** Each auto-verdict is written through the same review-store command a human verdict uses, and carries its provenance in the rationale — `[jev-1.13.0 p=0.04] exclude on criterion 'Context' (Concept=0.71, Context=0.04, Population=0.88)`: the model version that decided, and every per-criterion probability. Any of them can be checked or overturned later.
+<details>
+<summary><strong>For developers</strong></summary>
 
-**Off by default.** Turn it on with `TYPESAFE_API_KEY="..."` in `~/.research-harness/config.env`; `research doctor` reports the first pass as OFF when no key is set, and with no key the workflow is byte-for-byte unchanged. Enabled, it is one API call per record.
+This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is additive — `research/`, `assets/research/`, `setup.sh`, `bin/research`, `packages/research-web/`, `docs/` — and reaches stock omp through its plugin, prompt and agent extension points; the browser workspace drives omp's RPC mode. The one exception is a small env-driven branding seam for the terminal welcome banner ([ARCHITECTURE §2.1](../docs/ARCHITECTURE.md#21-branding-seam)). Upstream's own README is the repository-root [README.md](../README.md), untouched. Keeping `main` in step with upstream: [ARCHITECTURE §11](../docs/ARCHITECTURE.md#11-staying-in-sync-with-upstream).
 
-Hands-on walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md), "Optional: a cheap first pass with Jev". Design — band rule, provenance, key resolution: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
-
-## Second-brain paper graph
-
-![omp TUI: the librarian agent answering "what connects them" for the five papers it just added — citation edges verified in the papers' own reference lists rather than inferred, same-topic clusters grouped by architecture, the one trial-prediction paper called out as the outlier, and the next steps it can run.](../assets/research/paper-graph-poster.png)
-
-_[Watch the capture ↗](https://laansdole.github.io/research-harness/#paper-graph)_ — six and a half minutes, unedited: the folder, the adds, the connection answer, and the export.
-Point the `librarian` agent at a folder of papers and ask what connects them. Every reviewed paper lands in a local SQLite graph (`~/.research-harness/papers.db`) with typed edges — `cites`, `related`, `same-topic` — and `auto-edges` adds citation links verified against OpenAlex rather than inferred. The same operations are scriptable:
+The paper graph is scriptable and exports one self-contained HTML file:
 
 ```sh
 pg="python3 research/skills/paper-graph/scripts/paper_graph.py"
@@ -80,43 +111,12 @@ $pg auto-edges bert          # cites edges from OpenAlex
 $pg export --format html     # one-file interactive viz
 ```
 
-![Interactive paper-graph export: a dark force-directed canvas of paper nodes sized by degree, edges colored by type, a search box top-left, a type legend bottom-left, and a metadata side panel open on the selected paper.](../assets/research/graph-viz.png)
+Requirements beyond the above: `python3` standard library only (no pip installs); network access for arXiv/OpenAlex (a local folder of PDFs works offline).
 
-The export is ONE self-contained HTML file — node size by degree, edge colors by type, search, drag/zoom/pan, click for metadata. No external assets; it works from `file://` on a plane.
-
-## Browser UI
-
-![research web in light mode, Chat tab, mid-turn: the researcher asked "Switch the active project to demo-web-ui"; the agent's folded steps are open on its thinking and the bash and write tool calls it ran, and its answer says the active project is now demo-web-ui, followed by a table of PRISMA-ScR counts read from review.db. The status reads Working… (a queued follow-up is running) and the message box shows a Stop button beside the claude-opus-5-5 and Thinking: medium pickers. The sidebar lists the projects demo-web-ui (9 of 12 screened) and llm-multi-agent-design and one earlier session; the header still offers Make active until the turn settles and the views refresh.](../assets/research/research-web-poster.png)
-
-_[Watch the demo ↗](https://laansdole.github.io/research-harness/#research-web)_ — 6 min, one unedited take with chapters, recorded with real agent turns against a scratch copy of a seeded demo project built from a real OpenAlex search. A researcher returns to her scoping review on multi-agent LLMs for clinical decision support: she makes it the agent's project and asks which paper to read first, stops a second question with Esc, reopens an earlier session, triages the reading list and opens a PDF, checks a claim in the review, explores the paper graph in light and dark, visits PRISMA and an empty project, reconnects a stopped agent, and finishes on a phone-width screen. Action buttons only fill in the chat box; nothing runs until she presses Enter.
-
-`research web` opens the same agent in your browser on `127.0.0.1`, next to your review's working views: the reading list with state filters, search and keyboard triage (↑/↓, Enter, Esc) over each record's verdicts, rationale and abstract; the review with a contents list and citations that jump to their reference; the paper graph; and the PRISMA diagram with SVG download. The header shows the project you are viewing, whether the agent works on it (an *Agent project* chip, or *Make active*), and the agent's status.
-
-The views are read-only. Every action button — *Screen full texts*, *Re-screen*, *Explain neighbors*, *Check the claims in this section* — only fills in the chat box; nothing runs until you press Enter, so the agent stays the only writer of your research state. It works on a phone-width window too, and ⌘/Ctrl+B hides the sidebar. Details: [packages/research-web/README.md](../packages/research-web/README.md).
-## Quickstart
-
-```sh
-git clone https://github.com/LaansDole/research-harness
-cd research-harness
-./setup.sh        # registers the plugin, agents, prompts and launcher — idempotent
-research doctor   # checks omp, plugin, agents, prompts, corpus, and paper-graph db
-research          # starts omp with the research mode prompt and the Research Harness welcome banner
-research web      # or: the same agent in your browser, with the reading list, review, graph and PRISMA alongside
-```
-
-Then type `/help` to see every command in plain words. To test-drive it on your own review — every step with the numbers you should see and what a different one means — follow [docs/RUNBOOK.md](../docs/RUNBOOK.md); the capture above walks its first half. Re-run `./setup.sh` after pulling: new commands only reach omp when it runs.
-
-Requirements: [omp](https://github.com/can1357/oh-my-pi) installed, `python3` (stdlib only — no pip installs), and network access for arXiv/OpenAlex (a local folder of PDFs works fully offline). `research web` also needs [bun](https://bun.sh) and `bun install` run once in the checkout.
-
-## Under the hood
-
-This is a fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), so the whole coding agent is still here. The research layer is additive — it adds paths (`research/`, `assets/research/`, `setup.sh`, `bin/research`, `packages/research-web/`, `docs/`) and reaches stock omp through its plugin, prompt and agent extension points (the browser UI drives omp's published RPC mode), so upstream changes rebase under it cleanly. The one exception is a small env-driven branding seam (`packages/utils/src/branding.ts` plus three fallbacks in the TUI welcome screen) that puts the paper-stack mark, the name and researcher tips on the welcome banner; with its variables unset omp renders stock ([docs/ARCHITECTURE.md §2.1](../docs/ARCHITECTURE.md#21-branding-seam)). Design doc: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md); upstream's own README is the repository-root [README.md](../README.md), untouched.
-
-**Staying in sync with upstream:** `main` is upstream's `main` plus a short stack of fork commits. A GitHub Action rebases that stack onto upstream every day and force-pushes `main` when the rebase is clean and the tests pass (the previous `main` is kept as `main-prev`); a conflict or a red test opens a `sync/rebase` pull request instead, landed with the `promote` label. Details: [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md#11-staying-in-sync-with-upstream).
+</details>
 
 ## Credits
 
 - Fork of [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), itself a fork of [badlogic/pi-mono](https://github.com/badlogic/pi-mono) by [@mariozechner](https://github.com/mariozechner).
-- Literature data: [arXiv](https://arxiv.org) export API and [OpenAlex](https://openalex.org) (both keyless), plus [Unpaywall](https://unpaywall.org) for OA locations when a contact email is configured — honest User-Agent; open-access sources only.
-- Terminal demos rendered with [charmbracelet/vhs](https://github.com/charmbracelet/vhs); the browser demo is recorded live from Chrome with Puppeteer's `page.screencast()` ([assets/research/tapes/research-web.ts](../assets/research/tapes/research-web.ts)), so a take renders in its own running time rather than VHS's frame-by-frame terminal render. The captures play at full quality on [GitHub Pages](https://laansdole.github.io/research-harness/). GitHub will not render a committed MP4 above about 1 MB and serves repository blobs as downloads, so a repo-committed video cannot be watched in place — the page exists for that reason.
-
+- Literature data: [arXiv](https://arxiv.org) and [OpenAlex](https://openalex.org) (both keyless), plus [Unpaywall](https://unpaywall.org) when a contact email is configured — open-access sources only.
+- The demo is recorded live from Chrome with Puppeteer ([assets/research/tapes/research-web.ts](../assets/research/tapes/research-web.ts)) and hosted on [GitHub Pages](https://laansdole.github.io/research-harness/), because GitHub will not play a committed MP4 of this size in place.
