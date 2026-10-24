@@ -51,6 +51,8 @@ def gold_from_csv(con, path):
             if len(fields) < 2:
                 continue
             key, label = fields[0].strip(), fields[1].strip().lower()
+            if key.lower() in ("id", "doi", "id_or_doi", "record_id"):
+                continue  # header row
             rec_id = by_key.get(key) or by_key.get(key.lower())
             if rec_id is None:
                 unknown += 1
