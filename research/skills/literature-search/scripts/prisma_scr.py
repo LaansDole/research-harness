@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import sys
+import textwrap
 from xml.sax.saxutils import escape
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -167,18 +168,35 @@ MAIN_X, MAIN_W = 190, 340
 SIDE_X, SIDE_W = 570, 320
 LABEL_W = 150
 GAP = 46
+CHAR_W = 0.6 * FONT  # ponytail: conservative avg Helvetica (bold) glyph width; SVG has no text metrics
+
+
+def _wrap(lines, w):
+    """Each logical line -> (indent_px, [segments]) fitting inside a box of width w."""
+    out = []
+    for line in lines:
+        indent = 12 if line.startswith(" ") else 0
+        cols = max(10, int((w - 2 * PAD - indent) / CHAR_W))
+        out.append((indent, textwrap.wrap(line.strip(), cols, break_on_hyphens=False) or [""]))
+    return out
+
+
+def _box_h(lines, w):
+    return sum(len(segs) for _, segs in _wrap(lines, w)) * LINE_H + 2 * PAD
 
 
 def _svg_box(out, x, y, w, lines, bold_first=True):
-    h = len(lines) * LINE_H + 2 * PAD
+    h = _box_h(lines, w)
     out.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="#fff" '
                f'stroke="#333" stroke-width="1.5" rx="4"/>')
     ty = y + PAD + FONT
-    for i, line in enumerate(lines):
+    for i, (indent, segs) in enumerate(_wrap(lines, w)):
         weight = ' font-weight="bold"' if bold_first and i == 0 else ""
-        out.append(f'<text x="{x + PAD}" y="{ty}" font-size="{FONT}"{weight}>'
-                   f"{escape(line)}</text>")
-        ty += LINE_H
+        tx = x + PAD + indent
+        spans = "".join(f'<tspan x="{tx}" dy="{LINE_H if j else 0}">{escape(s)}</tspan>'
+                        for j, s in enumerate(segs))
+        out.append(f'<text x="{tx}" y="{ty}" font-size="{FONT}"{weight}>{spans}</text>')
+        ty += len(segs) * LINE_H
     return h
 
 
@@ -189,8 +207,8 @@ def render_svg(slug, d):
     stage_spans = []  # (stage, y0, y1)
     prev_bottom = None
     for stage, main, side in rows:
-        h = len(main) * LINE_H + 2 * PAD
-        side_h = (len(side) * LINE_H + 2 * PAD) if side else 0
+        h = _box_h(main, MAIN_W)
+        side_h = _box_h(side, SIDE_W) if side else 0
         if prev_bottom is not None:
             mid_x = MAIN_X + MAIN_W // 2
             body.append(f'<line x1="{mid_x}" y1="{prev_bottom}" x2="{mid_x}" y2="{y}" '
