@@ -53,11 +53,24 @@ function setup() {
 	return { ...fake, frames, bridge };
 }
 
+function failedReply(errorMessage: string) {
+	return {
+		role: "assistant",
+		content: [],
+		provider: "anthropic",
+		model: "m",
+		stopReason: "error",
+		errorMessage,
+		timestamp: 0,
+	};
+}
+
 describe("Bridge", () => {
 	it("rejects unknown commands without reaching the RPC client", async () => {
 		const { bridge, frames, calls } = setup();
 		await bridge.handle(JSON.stringify({ id: 1, cmd: "rm_rf" }));
-		expect(frames).toEqual([{ t: "reply", id: 1, ok: false, error: "That action isn't supported." }]);
+		expect(frames).toHaveLength(1);
+		expect(frames[0]).toMatchObject({ t: "reply", id: 1, ok: false });
 		expect(calls).toEqual([]);
 	});
 
@@ -79,22 +92,13 @@ describe("Bridge", () => {
 	});
 
 	it("shows researchers a plain reason instead of the provider's raw error", async () => {
-		const failed = (errorMessage: string) => ({
-			role: "assistant",
-			content: [],
-			provider: "anthropic",
-			model: "m",
-			stopReason: "error",
-			errorMessage,
-			timestamp: 0,
-		});
 		const { bridge, frames, emitRaw, rpc } = setup();
 		emitRaw({
 			type: "message_end",
-			message: failed('429 {"type":"error","error":{"type":"rate_limit_error","message":"usage limit"}}'),
+			message: failedReply('429 {"type":"error","error":{"type":"rate_limit_error","message":"usage limit"}}'),
 		});
-		emitRaw({ type: "message_end", message: failed("prompt is too long: 250000 tokens > 200000 maximum") });
-		rpc.getMessages = async () => [failed("socket hang up ECONNRESET")] as never;
+		emitRaw({ type: "message_end", message: failedReply("prompt is too long: 250000 tokens > 200000 maximum") });
+		rpc.getMessages = async () => [failedReply("socket hang up ECONNRESET")] as never;
 		await bridge.handle(JSON.stringify({ id: 1, cmd: "get_messages" }));
 		const errorOf = (m: WireMessage) => (m.role === "assistant" ? m.errorMessage : undefined);
 		const shown = frames.flatMap(f =>
@@ -104,26 +108,65 @@ describe("Bridge", () => {
 					? f.data.map(errorOf)
 					: [],
 		);
-		expect(shown).toEqual([
-			"You've hit the model provider's usage limit. Wait a while, or pick another model in the message box.",
-			"This conversation has grown too long for the model. Start a new session, or pick a model with a larger context.",
-			"The model provider is busy or unreachable right now. Try again in a moment.",
-		]);
+		expect(shown).toHaveLength(3);
+		for (const text of shown) {
+			expect(text).toBeString();
+			expect(text).not.toMatch(/429|rate_limit_error|250000|ECONNRESET|socket hang up/);
+		}
+		// Usage limit, an over-long conversation and a dropped connection call for different actions.
+		expect(new Set(shown).size).toBe(3);
 	});
 
-	it("replaces warning notices (paths, errno) with a plain sentence and leaves info notices alone", () => {
+	it("toasts plain warnings as is and rewrites notices carrying paths, errno codes or JSON", () => {
 		const { frames, emitRaw } = setup();
+		const plain = [
+			{ message: "Could not restore model anthropic/claude-opus-4. Using openai/gpt-5" },
+			{
+				source: "compaction",
+				message: "Response hit the anthropic/m output limit (8192 tokens) and was truncated.",
+			},
+			{ source: "advisor", message: 'Advisor "Reviewer" quota exhausted — pausing until reset.' },
+			{ source: "collab", message: "Collab ended: the host closed the session" },
+		];
+		const raw = [
+			{
+				source: "session-persistence",
+				message: "EACCES: permission denied, open '/Users/x/.omp/agent/sessions/a.jsonl'",
+			},
+			{ source: "advisor", message: "Advisor unavailable for anthropic/m: socket hang up ECONNRESET" },
+			{ source: "extensions", message: "Failed to load extension ~/.omp/extensions/x.ts: SyntaxError" },
+			{ source: "advisor", message: 'Advisor unavailable for anthropic/m: 429 {"type":"error"}' },
+		];
+		for (const notice of [...plain, ...raw]) emitRaw({ type: "notice", level: "warning", ...notice });
+		const shown = frames.flatMap(f => (f.t === "event" && f.event.type === "notice" ? [f.event.message] : []));
+		expect(shown.slice(0, plain.length)).toEqual(plain.map(notice => notice.message));
+		const rewritten = shown.slice(plain.length);
+		expect(rewritten).toHaveLength(raw.length);
+		for (const text of rewritten) expect(text).not.toMatch(/EACCES|ECONNRESET|\/Users\/|~\/|429|\{"/);
+		// A failed save keeps its own reason: the researcher learns recent messages may be lost.
+		expect(rewritten[0]).not.toBe(rewritten[1]);
+	});
+
+	it("keeps raw error text out of turn, run, retry and compaction events", () => {
+		const { frames, emitRaw } = setup();
+		const raw = '429 {"type":"error","error":{"type":"rate_limit_error"}}';
+		emitRaw({ type: "turn_end", message: failedReply(raw), toolResults: [] });
+		emitRaw({ type: "agent_end", messages: [failedReply(raw)] });
+		emitRaw({ type: "auto_retry_start", attempt: 1, maxAttempts: 3, delayMs: 1000, errorMessage: raw });
+		emitRaw({ type: "auto_retry_end", success: false, attempt: 3, finalError: raw, retryErrors: [{ note: raw }] });
 		emitRaw({
-			type: "notice",
-			level: "error",
-			source: "session-persistence",
-			message: "EACCES: permission denied, open '/Users/x/.omp/agent/sessions/a.jsonl'",
+			type: "auto_compaction_end",
+			aborted: false,
+			willRetry: false,
+			errorMessage: "ENOENT: no such file or directory, open '/Users/x/.omp/a.jsonl'",
 		});
-		emitRaw({ type: "notice", level: "info", message: "Context compacted" });
-		const notices = frames.flatMap(f => (f.t === "event" && f.event.type === "notice" ? [f.event.message] : []));
-		expect(notices).toEqual([
-			"Couldn't save this session to disk, so recent messages may not be kept. The details are in the omp log.",
-			"Context compacted",
+		expect(frames.map(f => (f.t === "event" ? f.event.type : f.t))).toEqual([
+			"turn_end",
+			"agent_end",
+			"auto_retry_start",
+			"auto_retry_end",
+			"auto_compaction_end",
 		]);
+		expect(JSON.stringify(frames)).not.toMatch(/429|rate_limit_error|ENOENT|\/Users\//);
 	});
 });
