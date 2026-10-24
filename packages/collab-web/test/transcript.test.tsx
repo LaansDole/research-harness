@@ -55,6 +55,7 @@ function renderTranscript(props: {
 	entries?: readonly SessionEntry[];
 	activeTools?: ReadonlyMap<string, ActiveTool>;
 	working: boolean;
+	foldActivity?: boolean;
 }): string {
 	return renderToStaticMarkup(
 		<Transcript
@@ -63,6 +64,7 @@ function renderTranscript(props: {
 			streamDone={true}
 			activeTools={props.activeTools ?? new Map()}
 			working={props.working}
+			foldActivity={props.foldActivity}
 		/>,
 	);
 }
@@ -143,6 +145,41 @@ describe("Transcript message Markdown", () => {
 
 		expect(countElements(html, ".tr-row--user .tr-md code")).toBe(1);
 		expect(countElements(html, ".tr-row--user .tr-md strong")).toBe(1);
+	});
+});
+
+describe("Transcript activity folding", () => {
+	it("collapses each thinking/tool run into one disclosure and keeps prose visible", () => {
+		const toolCall = (id: string) => ({ type: "toolCall" as const, id, name: TOOL_NAME, arguments: {} });
+		const entry: SessionEntry = {
+			...committedAssistantToolCall(),
+			type: "message",
+			message: {
+				role: "assistant",
+				content: [
+					{ type: "thinking", thinking: "plan" },
+					toolCall("a"),
+					{ type: "thinking", thinking: "more" },
+					toolCall("b"),
+					{ type: "text", text: "Found **three** papers." },
+					toolCall("c"),
+				],
+				model: "test/model",
+				usage: assistantUsage(),
+				stopReason: "stop",
+				timestamp: 1,
+			},
+		};
+
+		const folded = renderTranscript({ entries: [entry], working: false, foldActivity: true });
+		expect(countElements(folded, ".tv-card")).toBe(0);
+		expect(countElements(folded, ".tr-think-head")).toBe(2);
+		expect(folded).toContain("thinking · 2 steps");
+		expect(folded).toContain("thinking · 1 step");
+		expect(countElements(folded, ".tr-md strong")).toBe(1);
+
+		const unfolded = renderTranscript({ entries: [entry], working: false });
+		expect(countElements(unfolded, ".tv-card")).toBe(3);
 	});
 });
 

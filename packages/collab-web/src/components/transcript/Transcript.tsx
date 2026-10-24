@@ -20,6 +20,8 @@ export interface TranscriptProps {
 	host?: ToolRenderHost;
 	/** Main connection phase; absent for the agent drawer's compact transcript. */
 	phase?: ConnectionPhase;
+	/** Collapse each run of thinking and tool calls into one "thinking" disclosure; prose stays visible. */
+	foldActivity?: boolean;
 }
 
 interface ScrollGeometry {
@@ -77,6 +79,62 @@ function ThinkingBlock({ text, redacted }: { text: string; redacted?: boolean })
 	);
 }
 
+function ActivityGroup({ steps, busy, children }: { steps: number; busy: boolean; children: ReactNode }): ReactNode {
+	const [open, setOpen] = useState(false);
+	return (
+		<div className="tr-think">
+			<button type="button" className="tr-think-head" aria-expanded={open} onClick={() => setOpen(v => !v)}>
+				<ChevronRight size={11} className={`tr-chev${open ? " tr-chev--open" : ""}`} />
+				thinking{steps > 0 ? ` · ${steps} ${steps === 1 ? "step" : "steps"}` : ""}
+				{busy ? "…" : ""}
+			</button>
+			{open && <div className="tr-activity-body">{children}</div>}
+		</div>
+	);
+}
+
+/** Wraps each run of non-text blocks in an {@link ActivityGroup}; keys stay stable as the message grows. */
+function foldBlocks(
+	content: AssistantMessage["content"],
+	rendered: ReactNode[],
+	active: ReadonlyMap<string, ActiveTool>,
+): ReactNode[] {
+	const out: ReactNode[] = [];
+	let run: ReactNode[] = [];
+	let start = 0;
+	let steps = 0;
+	let busy = false;
+	const flush = (): void => {
+		if (run.length > 0) {
+			out.push(
+				<ActivityGroup key={`g${start}`} steps={steps} busy={busy}>
+					{run}
+				</ActivityGroup>,
+			);
+		}
+		run = [];
+		steps = 0;
+		busy = false;
+	};
+	content.forEach((block, i) => {
+		if (block.type === "text") {
+			if (block.text.trim() === "") return;
+			flush();
+			out.push(rendered[i]);
+			return;
+		}
+		if (rendered[i] === null) return;
+		if (run.length === 0) start = i;
+		run.push(rendered[i]);
+		if (block.type === "toolCall") {
+			steps++;
+			if (active.has(block.id)) busy = true;
+		}
+	});
+	flush();
+	return out;
+}
+
 /** Markdown + image thumbnails for user / custom message content. */
 function MsgContent({ content }: { content: string | readonly (TextContent | ImageContent)[] }): ReactNode {
 	if (typeof content === "string") return <Markdown text={content} />;
@@ -109,6 +167,7 @@ function AssistantBody({
 	active,
 	pending,
 	host,
+	fold,
 }: {
 	message: AssistantMessage;
 	results: ReadonlyMap<string, ToolResultMessage>;
@@ -116,6 +175,7 @@ function AssistantBody({
 	/** Still streaming — suppress stop-reason chips on the partial message. */
 	pending: boolean;
 	host?: ToolRenderHost;
+	fold?: boolean;
 }): ReactNode {
 	const blocks = message.content.map((block, i) => {
 		switch (block.type) {
@@ -151,7 +211,7 @@ function AssistantBody({
 	const failed = !pending && (stop === "error" || stop === "aborted");
 	return (
 		<>
-			{blocks}
+			{fold === true ? foldBlocks(message.content, blocks, active) : blocks}
 			{failed && (
 				<div className="tr-stop">
 					<span className={`tr-chip ${stop === "error" ? "tr-chip--err" : "tr-chip--warn"}`}>{stop}</span>
@@ -169,11 +229,12 @@ interface EntryRowProps {
 	results: ReadonlyMap<string, ToolResultMessage>;
 	active: ReadonlyMap<string, ActiveTool>;
 	host?: ToolRenderHost;
+	fold?: boolean;
 }
 
 /** Re-render only when the entry itself or one of its tool pairings changed. */
 function entryRowEqual(prev: EntryRowProps, next: EntryRowProps): boolean {
-	if (prev.entry !== next.entry || prev.host !== next.host) return false;
+	if (prev.entry !== next.entry || prev.host !== next.host || prev.fold !== next.fold) return false;
 	const e = next.entry;
 	if (e.type !== "message" || e.message.role !== "assistant") return true;
 	for (const block of e.message.content) {
@@ -184,7 +245,7 @@ function entryRowEqual(prev: EntryRowProps, next: EntryRowProps): boolean {
 	return true;
 }
 
-const EntryRow = memo(function EntryRow({ entry, results, active, host }: EntryRowProps): ReactNode {
+const EntryRow = memo(function EntryRow({ entry, results, active, host, fold }: EntryRowProps): ReactNode {
 	switch (entry.type) {
 		case "message": {
 			const msg = entry.message;
@@ -198,7 +259,14 @@ const EntryRow = memo(function EntryRow({ entry, results, active, host }: EntryR
 				case "assistant":
 					return (
 						<Row kind="assistant" gutter="agent" title={entry.timestamp}>
-							<AssistantBody message={msg} results={results} active={active} pending={false} host={host} />
+							<AssistantBody
+								message={msg}
+								results={results}
+								active={active}
+								pending={false}
+								host={host}
+								fold={fold}
+							/>
 						</Row>
 					);
 				default:
@@ -271,7 +339,7 @@ const WINDOW = 100;
 const EARLIER_TRIGGER_PX = 200;
 
 export function Transcript(props: TranscriptProps): ReactNode {
-	const { entries, stream, streamDone, activeTools, working, compact, host, phase } = props;
+	const { entries, stream, streamDone, activeTools, working, compact, host, phase, foldActivity } = props;
 
 	// null follows the tail. A number pins the first mounted entry while the
 	// reader is scrolled away from the bottom, so appended entries never
@@ -393,7 +461,14 @@ export function Transcript(props: TranscriptProps): ReactNode {
 				</button>
 			)}
 			{visible.map(entry => (
-				<EntryRow key={entry.id} entry={entry} results={results} active={activeTools} host={host} />
+				<EntryRow
+					key={entry.id}
+					entry={entry}
+					results={results}
+					active={activeTools}
+					host={host}
+					fold={foldActivity}
+				/>
 			))}
 			{stream !== null && (
 				<Row kind="assistant" gutter="agent">
@@ -403,6 +478,7 @@ export function Transcript(props: TranscriptProps): ReactNode {
 						active={activeTools}
 						pending={!streamDone}
 						host={host}
+						fold={foldActivity}
 					/>
 				</Row>
 			)}
