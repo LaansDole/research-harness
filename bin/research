@@ -2,7 +2,7 @@
 # Research-mode launcher: loads persisted settings, exports the research env,
 # and starts omp (the fork's dev wrapper when runnable, else the installed omp)
 # with the research system prompt.
-# Usage: research [omp args...] | research doctor | research web | research rerank start|stop|status
+# Usage: research [omp args...] | research doctor | research web
 set -euo pipefail
 
 CONFIG="$HOME/.research-harness/config.env"
@@ -42,93 +42,6 @@ warn() { printf '  warn  %s\n' "$1"; }
 fail() {
 	printf '  FAIL  %s\n' "$1"
 	DOCTOR_FAILED=1
-}
-
-# Experimental local reranker (relevance ordering). Off unless started; the
-# scripts stay silent until RERANK_URL points at it.
-RERANK_DIR="$HOME/.research-harness/rerank"
-RERANK_PID="$RERANK_DIR/server.pid"
-RERANK_LOG="$RERANK_DIR/server.log"
-RERANK_MODEL="${RERANK_MODEL:-ggml-org/Qwen3-Reranker-0.6B-Q8_0-GGUF}"
-RERANK_PORT="${RERANK_PORT:-8091}"
-RERANK_ENDPOINT="http://127.0.0.1:$RERANK_PORT"
-
-rerank_running() { [ -f "$RERANK_PID" ] && kill -0 "$(cat "$RERANK_PID")" 2>/dev/null; }
-
-rerank_health() {
-	python3 -c "
-import sys
-sys.path.insert(0, sys.argv[1])
-import rerank_client
-print('up' if rerank_client.health(sys.argv[2]) else 'down')
-" "$RESEARCH_HARNESS_HOME/research/skills/literature-search/scripts" "$RERANK_ENDPOINT" \
-		2>/dev/null || echo down
-}
-
-rerank_url_hint() {
-	if [ -z "${RERANK_URL:-}" ]; then
-		echo "        scoring stays off until RERANK_URL=\"$RERANK_ENDPOINT\" is in $CONFIG"
-	fi
-}
-
-rerank() {
-	case "${1:-status}" in
-	start)
-		if rerank_running; then
-			echo "rerank: already running (pid $(cat "$RERANK_PID")) on $RERANK_ENDPOINT"
-			rerank_url_hint
-			return 0
-		fi
-		if ! command -v llama-server >/dev/null 2>&1; then
-			echo "rerank: llama-server not found - brew install llama.cpp" >&2
-			return 1
-		fi
-		mkdir -p "$RERANK_DIR"
-		nohup llama-server -hf "$RERANK_MODEL" --reranking --host 127.0.0.1 \
-			--port "$RERANK_PORT" -c 8192 -ub 8192 -b 8192 >"$RERANK_LOG" 2>&1 &
-		echo $! >"$RERANK_PID"
-		# First start downloads the model (~600 MB), so wait generously.
-		for _ in $(seq 180); do
-			if [ "$(rerank_health)" = up ]; then
-				echo "rerank: ready on $RERANK_ENDPOINT ($RERANK_MODEL)"
-				rerank_url_hint
-				return 0
-			fi
-			rerank_running || break
-			sleep 1
-		done
-		echo "rerank: server did not come up - see $RERANK_LOG" >&2
-		return 1
-		;;
-	stop)
-		if ! rerank_running; then
-			rm -f "$RERANK_PID"
-			echo "rerank: not running"
-			return 0
-		fi
-		pid="$(cat "$RERANK_PID")"
-		kill "$pid" 2>/dev/null || true
-		for _ in $(seq 10); do
-			kill -0 "$pid" 2>/dev/null || break
-			sleep 1
-		done
-		kill -0 "$pid" 2>/dev/null && kill -9 "$pid" 2>/dev/null
-		rm -f "$RERANK_PID"
-		echo "rerank: stopped"
-		;;
-	status)
-		if [ "$(rerank_health)" = up ]; then
-			echo "rerank: up on $RERANK_ENDPOINT ($RERANK_MODEL)"
-			rerank_url_hint
-		else
-			echo "rerank: down - run 'research rerank start'"
-		fi
-		;;
-	*)
-		echo "usage: research rerank start|stop|status" >&2
-		return 2
-		;;
-	esac
 }
 
 doctor() {
@@ -214,16 +127,6 @@ else:
 	*) warn "Jev key set but API unreachable (${jev_state#unreachable }) - first pass will skip" ;;
 	esac
 
-	# Optional and never fatal: relevance ordering is an experiment.
-	if [ "$(rerank_health)" = up ]; then
-		ok "Rerank (experimental) ready on $RERANK_ENDPOINT${RERANK_URL:+, RERANK_URL set}"
-		if [ -z "${RERANK_URL:-}" ]; then
-			warn "Rerank server up but RERANK_URL is not in $CONFIG - scoring stays off"
-		fi
-	else
-		warn "Rerank (experimental) OFF - optional; run 'research rerank start'"
-	fi
-
 	if [ -n "${RESEARCH_CORPUS_DIR:-}" ]; then
 		if [ -d "$RESEARCH_CORPUS_DIR" ]; then
 			ok "corpus $RESEARCH_CORPUS_DIR ($(find "$RESEARCH_CORPUS_DIR" -maxdepth 1 -name '*.pdf' 2>/dev/null | wc -l | tr -d ' ') PDFs)"
@@ -284,11 +187,6 @@ fi
 case "${1:-}" in
 doctor)
 	doctor
-	exit $?
-	;;
-rerank)
-	shift
-	rerank "$@"
 	exit $?
 	;;
 web)
