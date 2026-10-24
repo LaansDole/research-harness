@@ -166,7 +166,7 @@ When you deliberately interrupt the agent (Esc, or a cancel from collab, ACP, RP
 
 A normal yield the agent drove itself is treated differently from a deliberate interrupt, but it is not a blanket "always steers and resumes". The loop state and completed turn first determine the normal delivery path:
 
-- **While the loop is still streaming**, blockers can steer into the live turn. Nits and concerns from an in-progress review remain deferred until a final boundary.
+- **While the loop is still streaming**, blockers can steer into the live turn. Under the default `advisor.wipDelivery: aside`, nits and concerns from an in-progress review reach the agent at its next step as non-interrupting asides; the legacy `defer` mode holds them until a final boundary.
 - **Once the loop has yielded and gone idle**, delivery keys on how the turn ended:
    - If the primary's tail is a **terminal text answer with no queued work**, `advisor.continueSeverity` (default `concern`) decides: a note at or above it requests one continuation; a note below it is preserved as a visible card at the end of the transcript rather than waking the agent to restate a completed turn (#4840), and reaches the agent with your next message. All stop, cooldown, plan-mode, and client constraints still apply; a continuation they block is preserved as a card.
    - Otherwise (the agent yielded mid-work, no terminal answer), an idle `concern`/`blocker` normally triggers a fresh turn so the advice is acted on immediately.
@@ -180,7 +180,7 @@ So the advisor can steer and resume a run the agent ended on its own **while it 
 
 `advisor.immuneTurns` limits concern interruption frequency independently of review cadence. After the advisor successfully delivers a `concern` or `blocker` through the steering channel, later concerns are routed as non-interrupting asides until the configured number of primary turns has completed. Tool-loop continuations count toward that cooldown even for an `agent-end` reviewer. The default is `3`. Blockers are exempt from this cooldown, but still obey preservation constraints such as deliberate interrupts and plan mode. `nit` notes are unchanged.
 
-While an advisor update reviews work still in progress, `AdviseTool` defers `nit` and `concern` calls until a final boundary; only a `blocker` may interrupt partial work. Deferred notes pass the emission guard before reservation. A higher-severity note may displace a pending lower-severity note from the same review, but cannot displace notes from earlier reviews or retract routed advice. A final boundary flushes pending notes even when cadence skips a new review, without resetting the current review's budget.
+While an advisor update reviews work still in progress, only a `blocker` may interrupt partial work. Under the default `advisor.wipDelivery: aside`, `AdviseTool` admits `nit` and `concern` calls through the emission guard at once and routes them as non-interrupting asides while the loop is running; a note that lands at or after the run's final boundary follows the finished-run policy above instead. The legacy `defer` mode withholds them until a final boundary: deferred notes pass the emission guard before reservation, a higher-severity note may displace a pending lower-severity note from the same review (but cannot displace notes from earlier reviews or retract routed advice), and a final boundary flushes pending notes even when cadence skips a new review, without resetting the current review's budget.
 
 ### Emission guard
 
