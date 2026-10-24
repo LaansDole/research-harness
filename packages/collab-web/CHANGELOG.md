@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added opt-in `foldActivity` and `pendingEntryId` options to `Transcript`: collapse each run of thinking and tool calls into one "thinking · N steps" disclosure, and stream a reply that the host folds into an existing entry.
+- Added opt-in `foldActivity`, `pendingEntryId` and `committedEntries` options to `Transcript`: collapse each run of thinking and tool calls into one "thinking · N steps" disclosure, and stream a reply that the host folds into an existing entry without rescanning the session on every token.
 
 ## [18.8.0] - 2026-10-07
 
