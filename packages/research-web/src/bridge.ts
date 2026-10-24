@@ -78,6 +78,12 @@ const FAILURE_REASONS: [flags: AIError.Flag[], text: string][] = [
 ];
 const MODEL_FAILED =
 	"The model ran into a problem and stopped. Try again; if it keeps happening, the details are in the omp log.";
+const COMPACTION_FAILED = "Couldn't shorten the conversation automatically. The details are in the omp log.";
+
+/** Researcher-facing reason for a provider error classified by `AIError.classifyMessage`. */
+function failureReason(errorId: number): string {
+	return FAILURE_REASONS.find(([flags]) => flags.some(f => AIError.is(errorId, f)))?.[1] ?? MODEL_FAILED;
+}
 
 /**
  * Replaces a failed reply's raw provider error (HTTP status, JSON body) with a sentence a researcher can act on.
@@ -91,28 +97,68 @@ function forDisplay(message: WireMessage, log: boolean): WireMessage {
 		logger.warn("research-web: model reply failed", { model: message.model, error: message.errorMessage });
 	}
 	// classifyMessage writes errorId onto its argument; classify a copy.
-	const id = AIError.classifyMessage({ ...(message as AssistantMessage) });
-	const reason = FAILURE_REASONS.find(([flags]) => flags.some(f => AIError.is(id, f)))?.[1] ?? MODEL_FAILED;
-	return { ...message, errorMessage: reason };
+	return { ...message, errorMessage: failureReason(AIError.classifyMessage({ ...(message as AssistantMessage) })) };
 }
 
-/** Agent notices carry file paths and errno codes; the toast gets a plain sentence, the log the original. */
-function noticeText(source: string | undefined): string {
-	return source === "session-persistence"
-		? "Couldn't save this session to disk, so recent messages may not be kept. The details are in the omp log."
-		: "The agent reported a problem. The details are in the omp log.";
-}
+const NOTICE_FALLBACK = "The agent reported a problem. The details are in the omp log.";
+/** Notice sources whose text always carries file paths or errno codes, and what the toast shows instead. */
+const NOTICE_TEXT: Record<string, string> = {
+	"session-persistence":
+		"Couldn't save this session to disk, so recent messages may not be kept. The details are in the omp log.",
+	"btw-history": NOTICE_FALLBACK,
+};
+/**
+ * Raw error text any other source may interpolate into a notice: a file path (`/a/b`, `~/a/b`, `C:\a\b`),
+ * an errno code, or a JSON body. Sources mix plain and raw notices (`advisor` quota vs. a failed advisor
+ * turn), so the text decides, not the source.
+ */
+const RAW_NOTICE_TEXT =
+	/(?:^|[\s'"(=:,])(?:~|[A-Za-z]:)?[\\/][^\s'"\\/]+[\\/]|\bE(?:ACCES|PERM|NOENT|NOTDIR|ISDIR|EXIST|NOSPC|ROFS|BUSY|MFILE|PIPE|CONNRESET|CONNREFUSED|TIMEDOUT|NOTFOUND)\b|\{"/;
 
+/**
+ * Error text crosses to the browser only as a plain sentence: failed replies and retry errors map to
+ * {@link FAILURE_REASONS}, compaction errors to one sentence, notices with raw text to a sentence that
+ * points at the omp log. `turn_end` and `agent_end` drop their message payloads; each message already
+ * went out, sanitized, as `message_end`. Other events carry no error text.
+ */
 function eventForDisplay(event: WireAgentEvent): WireAgentEvent {
 	switch (event.type) {
 		case "message_start":
 		case "message_update":
 		case "message_end":
 			return { ...event, message: forDisplay(event.message, event.type === "message_end") };
-		case "notice":
+		case "turn_end":
+		case "agent_end":
+			return { type: event.type };
+		case "auto_retry_start":
+			return {
+				...event,
+				errorMessage: failureReason(AIError.classifyMessage({ errorMessage: event.errorMessage })),
+			};
+		case "auto_retry_end": {
+			// Projected to the wire shape, dropping the untyped `retryErrors` the browser never reads.
+			const { type, success, attempt, finalError } = event;
+			return finalError === undefined
+				? { type, success, attempt }
+				: {
+						type,
+						success,
+						attempt,
+						finalError: failureReason(AIError.classifyMessage({ errorMessage: finalError })),
+					};
+		}
+		case "auto_compaction_end":
+			if (event.errorMessage === undefined) return event;
+			logger.warn("research-web: auto-compaction failed", { error: event.errorMessage });
+			return { ...event, errorMessage: COMPACTION_FAILED };
+		case "notice": {
 			if (event.level === "info") return event;
 			logger.warn("research-web: agent notice", { source: event.source, message: event.message });
-			return { ...event, message: noticeText(event.source) };
+			const source = event.source ?? "";
+			if (Object.hasOwn(NOTICE_TEXT, source)) return { ...event, message: NOTICE_TEXT[source] };
+			// Plain warnings (model fallback, output limit, advisor quota, collab ended) toast as is.
+			return RAW_NOTICE_TEXT.test(event.message) ? { ...event, message: NOTICE_FALLBACK } : event;
+		}
 		default:
 			return event;
 	}
