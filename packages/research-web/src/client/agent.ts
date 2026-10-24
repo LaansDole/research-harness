@@ -29,11 +29,18 @@ export const emptyChat: ChatState = {
 /** Roles Transcript renders; everything else (custom/bash/…) is dropped. */
 const RENDERED_ROLES: Record<string, true> = { user: true, assistant: true, toolResult: true };
 
-function messageEntry(message: WireMessage, index: number): SessionEntry {
+/**
+ * Ids are positions within one conversation, prefixed by its first entry's time (`first`; absent for
+ * that entry itself). Another session's rows never share a React key, so a fold or tool card opened in
+ * one session doesn't come back open when the next session loads.
+ */
+function messageEntry(message: WireMessage, index: number, first: string | undefined): SessionEntry {
+	const timestamp = new Date(message.timestamp || 0).toISOString();
+	const conversation = first ?? timestamp;
 	const base = {
-		id: `m${index}`,
-		parentId: index === 0 ? null : `m${index - 1}`,
-		timestamp: new Date(message.timestamp || 0).toISOString(),
+		id: `${conversation}#${index}`,
+		parentId: index === 0 ? null : `${conversation}#${index - 1}`,
+		timestamp,
 	};
 	// ponytail: Transcript hard-codes the "host" gutter for user messages; its
 	// collab-prompt entry is the only seam that takes a label, so reuse it for "you".
@@ -77,7 +84,7 @@ export function appendMessage(entries: readonly SessionEntry[], message: WireMes
 			return next;
 		}
 	}
-	return [...entries, messageEntry(message, entries.length)];
+	return [...entries, messageEntry(message, entries.length, entries[0]?.timestamp)];
 }
 
 export function entriesFromMessages(messages: readonly WireMessage[]): SessionEntry[] {
