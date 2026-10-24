@@ -200,19 +200,15 @@ export class YieldQueue {
 	}
 
 	/**
-	 * Remove and return queued values for `kind`, resolving each taken entry's
-	 * receipt — the caller takes over delivery through another channel. With
-	 * `predicate`, only matching entries are removed; the rest stay queued in
-	 * order. Lets a skip-idle-flush kind relocate selected entries before they
-	 * would otherwise linger.
+	 * Remove and return the queued values for `kind` that match `predicate`,
+	 * resolving each taken entry's receipt — the caller takes over delivery
+	 * through another channel. The rest stay queued in order. Lets a
+	 * skip-idle-flush kind relocate selected entries before they would
+	 * otherwise linger.
 	 */
-	drain<P>(kind: string, predicate?: (value: P) => boolean): P[] {
+	drain<P>(kind: string, predicate: (value: P) => boolean): P[] {
 		const entries = this.#drain(kind);
 		if (entries.length === 0) return [];
-		if (!predicate) {
-			this.#resolveEntries(entries);
-			return entries.map(entry => entry.value as P);
-		}
 		const taken: StoredEntry[] = [];
 		const kept: StoredEntry[] = [];
 		for (const entry of entries) (predicate(entry.value as P) ? taken : kept).push(entry);
