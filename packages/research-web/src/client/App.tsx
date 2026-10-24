@@ -1,13 +1,15 @@
 import { Transcript } from "@oh-my-pi/collab-web/src/components/transcript/Transcript";
+import { useThemePreference } from "@oh-my-pi/collab-web/src/lib/theme";
 import type { ImageContent, WireMessage } from "@oh-my-pi/pi-wire";
-import { PanelLeft, X } from "lucide-react";
+import { Moon, PanelLeft, Sun, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ProjectSummary } from "../data";
 import type { SessionListItem } from "../protocol";
 import {
 	AgentConnection,
 	type AgentState,
+	appendMessage,
 	type CommandBody,
 	type ExitInfo,
 	emptyChat,
@@ -292,16 +294,6 @@ export function App(): ReactNode {
 		await loadHistory();
 	};
 
-	const focusModel = (): void => {
-		if (NARROW.matches) setDrawer(true);
-		else if (collapsed) toggleSidebar();
-		requestAnimationFrame(() => {
-			const settings = document.querySelector<HTMLDetailsElement>(".rw-settings");
-			if (settings) settings.open = true;
-			document.getElementById("rw-model")?.focus();
-		});
-	};
-
 	const onTabKey = (e: KeyboardEvent<HTMLDivElement>): void => {
 		const i = TABS.findIndex(([id]) => id === tab);
 		const last = TABS.length - 1;
@@ -334,6 +326,16 @@ export function App(): ReactNode {
 		</section>
 	);
 	const noProjects = <p className="rw-notice">No research projects yet.</p>;
+	// The live reply joins its turn's entry (same id it gets on commit), so the folded row never remounts.
+	const shownEntries = useMemo(
+		() => (chat.stream === null ? chat.entries : appendMessage(chat.entries, chat.stream)),
+		[chat.entries, chat.stream],
+	);
+	// That entry is the turn's last assistant row; it renders as streaming (incremental Markdown, running tools).
+	const liveEntryId =
+		chat.stream === null
+			? undefined
+			: shownEntries.findLast(e => e.type === "message" && e.message.role === "assistant")?.id;
 	const chatEmpty = chat.entries.length === 0 && chat.stream === null && !chat.working;
 	const connecting = agentState === null && !exit;
 	const status = exit ? "Disconnected" : connecting ? "Connecting…" : chat.working ? "Working…" : "Ready";
@@ -352,17 +354,12 @@ export function App(): ReactNode {
 				}}
 				sessions={sessions}
 				agentState={agentState}
-				models={models}
 				onNewSession={() => void switchTo({ cmd: "new_session" })}
 				onForkSession={() => void switchTo({ cmd: "fork" })}
 				onSwitchSession={path => {
 					setDrawer(false);
 					void switchTo({ cmd: "switch_session", path });
 				}}
-				onSetModel={model =>
-					void run({ cmd: "set_model", provider: model.provider, modelId: model.id }).then(syncState)
-				}
-				onSetThinking={level => void run({ cmd: "set_thinking_level", level }).then(syncState)}
 				inert={narrow && !drawer}
 			/>
 			{narrow && drawer && <div className="rw-scrim" onClick={() => setDrawer(false)} />}
@@ -413,16 +410,7 @@ export function App(): ReactNode {
 						<span className={`rw-status${statusClass}`} role="status" aria-live="polite">
 							{status}
 						</span>
-						{agentState?.model && (
-							<button
-								type="button"
-								className="rw-link rw-model-name"
-								title={`${agentState.model.provider}/${agentState.model.id}: change model`}
-								onClick={focusModel}
-							>
-								{agentState.model.id}
-							</button>
-						)}
+						<ThemeToggle onSaveFailed={toast} />
 					</div>
 				</header>
 				{exit && (
@@ -451,11 +439,14 @@ export function App(): ReactNode {
 								<ChatEmpty projects={projects.data ?? []} prefill={prefill} />
 							) : (
 								<Transcript
-									entries={chat.entries}
-									stream={chat.stream}
-									streamDone={chat.streamDone}
+									entries={shownEntries}
+									stream={null}
+									streamDone
 									activeTools={chat.activeTools}
-									working={chat.working}
+									// The live reply is already in shownEntries; no "thinking…" placeholder under it.
+									working={chat.working && chat.stream === null}
+									foldActivity
+									pendingEntryId={liveEntryId}
 								/>
 							)}
 						</div>
@@ -478,6 +469,12 @@ export function App(): ReactNode {
 							}
 							onSend={send}
 							onStop={() => void run({ cmd: "abort" })}
+							agentState={agentState}
+							models={models}
+							onSetModel={model =>
+								void run({ cmd: "set_model", provider: model.provider, modelId: model.id }).then(syncState)
+							}
+							onSetThinking={level => void run({ cmd: "set_thinking_level", level }).then(syncState)}
 						/>
 					</>,
 					"rw-panel rw-chat",
@@ -512,5 +509,32 @@ export function App(): ReactNode {
 				))}
 			</div>
 		</div>
+	);
+}
+
+const THEME_NOT_SAVED = "Couldn't save your theme choice; it will go back to light next time research web starts.";
+
+function ThemeToggle({ onSaveFailed }: { onSaveFailed(text: string): void }): ReactNode {
+	const { resolved, setPreference } = useThemePreference();
+	const next = resolved === "dark" ? "light" : "dark";
+	const label = `Switch to ${next} mode`;
+	return (
+		<button
+			type="button"
+			className="rw-icon"
+			aria-label={label}
+			title={label}
+			onClick={() => {
+				setPreference(next);
+				fetch("/api/theme", { method: "POST", body: next }).then(
+					res => {
+						if (!res.ok) onSaveFailed(THEME_NOT_SAVED);
+					},
+					() => onSaveFailed(THEME_NOT_SAVED),
+				);
+			}}
+		>
+			{resolved === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+		</button>
 	);
 }

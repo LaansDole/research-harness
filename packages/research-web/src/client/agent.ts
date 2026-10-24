@@ -50,10 +50,40 @@ function messageEntry(message: WireMessage, index: number): SessionEntry {
 	return { ...base, type: "message", message };
 }
 
+/** The assistant entry this turn's next assistant message joins; -1 once a user message starts a new turn. */
+function turnAssistantIndex(entries: readonly SessionEntry[]): number {
+	for (let i = entries.length - 1; i >= 0; i--) {
+		const entry = entries[i];
+		if (entry.type !== "message") return -1;
+		if (entry.message.role === "assistant") return i;
+		if (entry.message.role !== "toolResult") return -1;
+	}
+	return -1;
+}
+
+/**
+ * Adds `message` as an entry. An assistant message continues its turn's assistant entry, so a whole turn
+ * renders as one row whose thinking and tool calls fold together; the entry keeps its id (the React key).
+ */
+export function appendMessage(entries: readonly SessionEntry[], message: WireMessage): SessionEntry[] {
+	if (message.role === "assistant") {
+		const i = turnAssistantIndex(entries);
+		const prev = entries[i];
+		if (prev?.type === "message" && prev.message.role === "assistant") {
+			const next = [...entries];
+			// Stop reason, error and usage come from the newest message: a turn that recovered (auto-retry)
+			// after an earlier failure shows its outcome, not the stale error.
+			next[i] = { ...prev, message: { ...message, content: [...prev.message.content, ...message.content] } };
+			return next;
+		}
+	}
+	return [...entries, messageEntry(message, entries.length)];
+}
+
 export function entriesFromMessages(messages: readonly WireMessage[]): SessionEntry[] {
-	const entries: SessionEntry[] = [];
+	let entries: SessionEntry[] = [];
 	for (const message of messages) {
-		if (RENDERED_ROLES[message.role]) entries.push(messageEntry(message, entries.length));
+		if (RENDERED_ROLES[message.role]) entries = appendMessage(entries, message);
 	}
 	return entries;
 }
@@ -66,7 +96,7 @@ export function reduce(state: ChatState, event: AgentEvent): ChatState {
 			return { ...state, stream: event.message, streamDone: false };
 		case "message_end": {
 			if (!RENDERED_ROLES[event.message.role]) return state;
-			const entries = [...state.entries, messageEntry(event.message, state.entries.length)];
+			const entries = appendMessage(state.entries, event.message);
 			// The committed entry supersedes the stream ghost so it never renders twice.
 			if (event.message.role === "assistant") return { ...state, entries, stream: null, streamDone: false };
 			return { ...state, entries };

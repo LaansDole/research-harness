@@ -1,6 +1,7 @@
 import * as path from "node:path";
 import type { ThinkingLevel } from "@oh-my-pi/pi-agent-core";
-import type { ImageContent } from "@oh-my-pi/pi-ai";
+import type { AssistantMessage, ImageContent } from "@oh-my-pi/pi-ai";
+import * as AIError from "@oh-my-pi/pi-ai/error";
 import type { RpcClient } from "@oh-my-pi/pi-coding-agent/modes/rpc/rpc-client";
 import {
 	isEmptySession,
@@ -9,7 +10,7 @@ import {
 } from "@oh-my-pi/pi-coding-agent/session/session-listing";
 import { FileSessionStorage } from "@oh-my-pi/pi-coding-agent/session/session-storage";
 import { logger } from "@oh-my-pi/pi-utils";
-import type { AgentEvent as WireAgentEvent } from "@oh-my-pi/pi-wire";
+import type { WireMessage, AgentEvent as WireAgentEvent } from "@oh-my-pi/pi-wire";
 import type { BridgeCommand, BridgeFrame, SessionListItem } from "./protocol";
 
 export type BridgeRpc = Pick<
@@ -53,6 +54,70 @@ function str(cmd: RawCommand, key: string): string {
 	return value;
 }
 
+const { Flag } = AIError;
+
+const STOPPED = "Stopped before finishing.";
+/** Researcher-facing reasons for a failed reply; first matching flag wins. */
+const FAILURE_REASONS: [flags: AIError.Flag[], text: string][] = [
+	[[Flag.UserInterrupt, Flag.Abort, Flag.SilentAbort], STOPPED],
+	[
+		[Flag.AuthFailed, Flag.OAuthExpiry],
+		"The model provider didn't accept your sign-in. Log in again by running omp in a terminal, then retry.",
+	],
+	[
+		[Flag.UsageLimit],
+		"You've hit the model provider's usage limit. Wait a while, or pick another model in the message box.",
+	],
+	[[Flag.AccountPolicy], "Your account can't use this model. Pick another model in the message box."],
+	[
+		[Flag.ContextOverflow, Flag.PayloadRejected],
+		"This conversation has grown too long for the model. Start a new session, or pick a model with a larger context.",
+	],
+	[[Flag.ContentBlocked], "The model provider declined this request. Try rewording it."],
+	[[Flag.Transient, Flag.Timeout], "The model provider is busy or unreachable right now. Try again in a moment."],
+];
+const MODEL_FAILED =
+	"The model ran into a problem and stopped. Try again; if it keeps happening, the details are in the omp log.";
+
+/**
+ * Replaces a failed reply's raw provider error (HTTP status, JSON body) with a sentence a researcher can act on.
+ * `log` records the raw error once, when the reply ends live; history replays skip it.
+ */
+function forDisplay(message: WireMessage, log: boolean): WireMessage {
+	if (message.role !== "assistant") return message;
+	if (message.stopReason === "aborted") return { ...message, errorMessage: STOPPED };
+	if (message.stopReason !== "error") return message;
+	if (log) {
+		logger.warn("research-web: model reply failed", { model: message.model, error: message.errorMessage });
+	}
+	// classifyMessage writes errorId onto its argument; classify a copy.
+	const id = AIError.classifyMessage({ ...(message as AssistantMessage) });
+	const reason = FAILURE_REASONS.find(([flags]) => flags.some(f => AIError.is(id, f)))?.[1] ?? MODEL_FAILED;
+	return { ...message, errorMessage: reason };
+}
+
+/** Agent notices carry file paths and errno codes; the toast gets a plain sentence, the log the original. */
+function noticeText(source: string | undefined): string {
+	return source === "session-persistence"
+		? "Couldn't save this session to disk, so recent messages may not be kept. The details are in the omp log."
+		: "The agent reported a problem. The details are in the omp log.";
+}
+
+function eventForDisplay(event: WireAgentEvent): WireAgentEvent {
+	switch (event.type) {
+		case "message_start":
+		case "message_update":
+		case "message_end":
+			return { ...event, message: forDisplay(event.message, event.type === "message_end") };
+		case "notice":
+			if (event.level === "info") return event;
+			logger.warn("research-web: agent notice", { source: event.source, message: event.message });
+			return { ...event, message: noticeText(event.source) };
+		default:
+			return event;
+	}
+}
+
 /** Translates allowlisted WebSocket commands into `RpcClient` calls; one per connection. */
 export class Bridge {
 	#rpc: BridgeRpc;
@@ -70,7 +135,7 @@ export class Bridge {
 				if (event.type === "agent_start") this.#working = true;
 				else if (event.type === "agent_end") this.#working = false;
 				// Wire union is the client-rendered subset; other variants pass through as plain JSON.
-				send({ t: "event", event: event as WireAgentEvent });
+				send({ t: "event", event: eventForDisplay(event as WireAgentEvent) });
 			}),
 			rpc.onSessionSettled(() => send({ t: "settled" })),
 		];
@@ -128,7 +193,7 @@ export class Bridge {
 			case "get_state":
 				return rpc.getState();
 			case "get_messages":
-				return rpc.getMessages();
+				return ((await rpc.getMessages()) as WireMessage[]).map(m => forDisplay(m, false));
 			case "get_available_models":
 				return rpc.getAvailableModels();
 			case "set_model":
