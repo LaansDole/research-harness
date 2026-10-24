@@ -44,10 +44,15 @@ const COLLAPSED_KEY = "research-web.sidebar-collapsed";
 // `#<tab>/<viewed slug>` keeps the view across reloads and makes it linkable. Review citations
 // navigate to `#ref-n`, so the view is mirrored in sessionStorage for reloads on such a hash.
 const VIEW_KEY = "research-web.view";
+function decodeHash(raw: string): string {
+	try {
+		return decodeURIComponent(raw);
+	} catch {
+		return ""; // malformed bookmark: fall back to the default view
+	}
+}
 const [HASH_TAB = "", HASH_SLUG = ""] = (
-	location.hash.startsWith("#ref-")
-		? (sessionStorage.getItem(VIEW_KEY) ?? "")
-		: decodeURIComponent(location.hash.slice(1))
+	location.hash.startsWith("#ref-") ? (sessionStorage.getItem(VIEW_KEY) ?? "") : decodeHash(location.hash.slice(1))
 ).split("/");
 
 /** Starter prompts; descriptions condensed from research/prompts/*.md frontmatter. */

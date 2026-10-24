@@ -87,7 +87,7 @@ export class Bridge {
 			const cmd = parsed as RawCommand;
 			if (typeof cmd.id !== "number") throw new Error("id must be a number");
 			id = cmd.id;
-			action = ACTION_BY_CMD[String(cmd.cmd)];
+			action = Object.hasOwn(ACTION_BY_CMD, String(cmd.cmd)) ? ACTION_BY_CMD[String(cmd.cmd)] : undefined;
 			const data = await this.#dispatch(cmd);
 			this.#send({ t: "reply", id, ok: true, data });
 		} catch (error) {

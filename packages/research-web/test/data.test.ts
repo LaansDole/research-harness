@@ -31,6 +31,7 @@ beforeAll(async () => {
 	await Bun.write(path.join(tmp, "outside.pdf"), "%PDF-1.4 outside");
 	await fs.symlink(path.join(tmp, "outside.pdf"), path.join(proj, "papers", "link.pdf"));
 	await Bun.write(path.join(proj, "review-x.md"), "# Review");
+	await fs.symlink(path.join(tmp, "outside.pdf"), path.join(proj, "review-link.md"));
 	await Bun.write(path.join(home, "active-project"), "p1\n");
 	await fs.mkdir(path.join(home, "projects", "empty"));
 	await fs.mkdir(path.join(home, "projects", "zero"));
@@ -103,6 +104,11 @@ describe("validation", () => {
 		const res = await call("/api/projects/:slug/reviews/:file", { slug: "p1", file: "review-x.md" });
 		expect(res.headers.get("content-type")).toStartWith("text/markdown");
 		expect(await res.text()).toBe("# Review");
+	});
+
+	test("review file symlinked outside the project → 404", async () => {
+		const res = await call("/api/projects/:slug/reviews/:file", { slug: "p1", file: "review-link.md" });
+		expect(res.status).toBe(404);
 	});
 
 	test("unknown state → 400", async () => {

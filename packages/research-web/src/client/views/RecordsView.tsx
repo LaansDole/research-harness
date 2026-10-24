@@ -254,7 +254,7 @@ export function RecordsView({
 					</a>
 				</p>
 			)}
-			{selected.url && (
+			{selected.url && /^https?:\/\//i.test(selected.url) && (
 				<p className="rw-break">
 					<a href={selected.url} target="_blank" rel="noopener">
 						{selected.url}

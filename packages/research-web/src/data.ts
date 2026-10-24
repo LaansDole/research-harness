@@ -194,9 +194,11 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 			const dir = await projectDir(config, req.params.slug);
 			const name = req.params.file;
 			if (!name || !REVIEW_FILE_RE.test(name)) throw new HttpError(400, "That review file name isn't valid.");
-			const file = Bun.file(path.join(dir, name));
-			if (!(await file.exists()))
+			const real = await realpathOrNull(path.join(dir, name));
+			const root = await realpathOrNull(dir);
+			if (!real || !root || !real.startsWith(root + path.sep))
 				throw new HttpError(404, "This review no longer exists. It may have been renamed or deleted.");
+			const file = Bun.file(real);
 			return new Response(file, { headers: { "content-type": "text/markdown; charset=utf-8" } });
 		},
 
