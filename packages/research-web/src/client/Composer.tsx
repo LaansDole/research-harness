@@ -3,6 +3,9 @@ import type { ImageContent } from "@oh-my-pi/pi-wire";
 import { ImagePlus, SendHorizontal, Square, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
+import type { AgentState, ModelRef } from "./agent";
+
+const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"];
 
 export interface ComposerProps {
 	draft: string;
@@ -15,6 +18,10 @@ export interface ComposerProps {
 	onRestore: (() => void) | null;
 	onSend(message: string, images: ImageContent[]): void;
 	onStop(): void;
+	agentState: AgentState | null;
+	models: readonly ModelRef[];
+	onSetModel(model: ModelRef): void;
+	onSetThinking(level: string): void;
 }
 
 async function toImage(file: File): Promise<ImageContent> {
@@ -22,7 +29,8 @@ async function toImage(file: File): Promise<ImageContent> {
 	return { type: "image", data: bytes.toBase64(), mimeType: file.type };
 }
 
-export function Composer({ draft, onEdit, working, prefilled, onRestore, onSend, onStop }: ComposerProps): ReactNode {
+export function Composer(props: ComposerProps): ReactNode {
+	const { draft, onEdit, working, prefilled, onRestore, onSend, onStop, agentState } = props;
 	const [images, setImages] = useState<ImageContent[]>([]);
 	const composingRef = useRef(false);
 	const fileRef = useRef<HTMLInputElement | null>(null);
@@ -79,27 +87,7 @@ export function Composer({ draft, onEdit, working, prefilled, onRestore, onSend,
 					))}
 				</div>
 			)}
-			<div className="rw-composer-row">
-				<button
-					type="button"
-					className="rw-icon"
-					aria-label="Attach image"
-					title="Attach image"
-					onClick={() => fileRef.current?.click()}
-				>
-					<ImagePlus size={16} />
-				</button>
-				<input
-					ref={fileRef}
-					type="file"
-					accept="image/*"
-					multiple
-					hidden
-					onChange={e => {
-						if (e.target.files) void addFiles(e.target.files);
-						e.target.value = "";
-					}}
-				/>
+			<div className="rw-composer-box">
 				<textarea
 					value={draft}
 					rows={2}
@@ -133,24 +121,95 @@ export function Composer({ draft, onEdit, working, prefilled, onRestore, onSend,
 						}
 					}}
 				/>
-				{working && (
-					<button type="button" className="rw-stop" title="Stop (Esc)" onClick={onStop}>
-						<Square size={14} />
-						Stop
+				<div className="rw-composer-bar">
+					<button
+						type="button"
+						className="rw-icon"
+						aria-label="Attach image"
+						title="Attach image"
+						onClick={() => fileRef.current?.click()}
+					>
+						<ImagePlus size={16} />
 					</button>
-				)}
-				<button
-					type="button"
-					className="rw-icon rw-send"
-					aria-label="Send"
-					title="Send"
-					aria-disabled={empty}
-					onClick={send}
-				>
-					<SendHorizontal size={16} />
-				</button>
+					<input
+						ref={fileRef}
+						type="file"
+						accept="image/*"
+						multiple
+						hidden
+						onChange={e => {
+							if (e.target.files) void addFiles(e.target.files);
+							e.target.value = "";
+						}}
+					/>
+					<ModelSelect {...props} />
+					<select
+						className="rw-pick"
+						aria-label="Thinking level"
+						title="How long the model thinks before answering"
+						value={agentState?.thinkingLevel ?? "off"}
+						onChange={e => props.onSetThinking(e.target.value)}
+					>
+						{THINKING_LEVELS.map(level => (
+							<option key={level} value={level}>
+								Thinking: {level}
+							</option>
+						))}
+					</select>
+					<span className="rw-spacer" />
+					{working && (
+						<button type="button" className="rw-stop" title="Stop (Esc)" onClick={onStop}>
+							<Square size={14} />
+							Stop
+						</button>
+					)}
+					<button
+						type="button"
+						className="rw-icon rw-send"
+						aria-label="Send"
+						title="Send (Enter)"
+						aria-disabled={empty}
+						onClick={send}
+					>
+						<SendHorizontal size={16} />
+					</button>
+				</div>
 			</div>
 			<p className="rw-hint rw-faint">Enter send · Shift+Enter newline · type / for research commands</p>
 		</div>
+	);
+}
+
+function ModelSelect({ agentState, models, onSetModel }: ComposerProps): ReactNode {
+	const current = agentState?.model;
+	const index = models.findIndex(m => m.provider === current?.provider && m.id === current?.id);
+	const byProvider = new Map<string, number[]>();
+	models.forEach((model, i) => {
+		const group = byProvider.get(model.provider);
+		if (group) group.push(i);
+		else byProvider.set(model.provider, [i]);
+	});
+	return (
+		<select
+			className="rw-pick rw-pick-model"
+			aria-label="Model"
+			title={current ? `${current.provider}/${current.id}` : "Model"}
+			value={index}
+			onChange={e => {
+				const model = models[Number(e.target.value)];
+				if (model) onSetModel(model);
+			}}
+		>
+			{index < 0 && <option value={-1}>{current?.id ?? "Model"}</option>}
+			{[...byProvider].map(([provider, indices]) => (
+				<optgroup key={provider} label={provider}>
+					{indices.map(i => (
+						<option key={i} value={i}>
+							{models[i]?.id}
+						</option>
+					))}
+				</optgroup>
+			))}
+		</select>
 	);
 }
