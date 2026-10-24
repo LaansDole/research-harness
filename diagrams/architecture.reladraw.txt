@@ -1,0 +1,47 @@
+// research-harness architecture - rendered for the GitHub Pages site.
+// Source of truth for the claims: docs/ARCHITECTURE.md and packages/research-web/README.md.
+// Published as architecture.reladraw.txt; save it as architecture.reladraw, then render the site's SVG
+// (the page uses the Catppuccin Mocha palette): npx -y reladraw@0.19.0 render architecture.reladraw --theme catppuccin-mocha -o architecture.svg
+
+diagram  theme: light
+
+style ui       fill: theme-primary-subtle  border: theme-primary
+style agent    fill: theme-secondary-subtle  border: theme-border
+style store    shape: cylinder
+style ext      border: #d2904e  text: (color: theme-muted)
+style ro       line: (pattern: dashed, color: theme-muted)
+
+node researcher "Researcher"  shape: pill
+
+node web "research web / browser on 127.0.0.1 / chat · reading list · reviews · graph · PRISMA"  style: ui
+  below-left of researcher (gap: wide)
+node tui "research (terminal TUI) / branded welcome · /help · statusline progress"  style: ui
+  below-right of researcher (gap: wide)
+
+node server "research-web server (Bun.serve) / guard: Host + Origin checks / bridge: allowlisted RPC over /ws / data: /api/*, research state read-only"
+  below web (gap: wide)
+
+node omp "omp agent session - research mode / system.md + 13 commands (/scope ... /export) / agents: scholar · screener · synthesizer · librarian"  style: agent
+  below server and tui (gap: wide)
+
+node skills "python3 stdlib skills / review.py · prisma_scr.py · fetch_paper.py · local_library.py / paper_graph.py · graph_viz.py · rerank_* · jev_*"  style: agent
+  below omp (gap: wide)
+
+node stores "" shape: none  below skills (gap: wide)  layout: row (gap: wide)
+node stores.reviewdb "review.db per project / records + history (PRISMA-ScR states)"  style: store
+node stores.papersdb "papers.db / paper graph + typed edges"  style: store
+node stores.corpus "local PDF corpus / read-only"  shape: document
+
+node oa "OpenAlex → Unpaywall → arXiv / open access only"  style: ext  right of skills (gap: wide)
+node rerank "llama-server reranker / loopback, optional"  style: ext  below oa (gap: tight)
+
+edge researcher -> web
+edge researcher -> tui
+edge web <-> server  "WebSocket + /api"
+edge server -> omp  "omp --mode rpc, one per tab"
+edge tui -> omp
+edge omp -> skills  "commands run scripts"
+edge skills -> stores  "writes review.db + papers.db"
+edge skills -> oa
+edge skills -> rerank
+edge server -> stores.reviewdb  "reads"  style: ro  from: left  to: left  line: (path: square, pattern: dashed, color: theme-muted)
