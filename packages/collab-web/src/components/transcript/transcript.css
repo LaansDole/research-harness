@@ -180,6 +180,15 @@
 	word-break: break-word;
 }
 
+.tr-activity-body {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 6px;
+	padding-left: 10px;
+	border-left: 2px solid var(--border);
+}
+
 .tr-chev {
 	flex: none;
 	color: var(--fg-faint);

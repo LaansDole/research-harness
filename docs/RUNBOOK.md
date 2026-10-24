@@ -184,8 +184,8 @@ past sessions, and the model. The other tabs show your work without typing comma
 
 The tabs only show; they never change your review. Buttons such as *Screen* or *Check claim*
 write a suggested message into the chat box, and nothing happens until you press Enter. Press
-Ctrl+C in the terminal where you started it to stop. Hard to read? **Appearance** at the bottom
-of the sidebar switches between Light, Dark and Match my computer; the browser remembers it.
+Ctrl+C in the terminal where you started it to stop. Hard to read? The sun/moon button at the right
+of the top bar switches between light (the default) and dark; the choice is kept across restarts.
 
 Empty projects say so in grey with what to do next. A project with no records yet shows
 *No screening records in this project yet. Ask the agent to find or import papers, and the

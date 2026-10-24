@@ -1,12 +1,9 @@
-import { type ThemePreference, useThemePreference } from "@oh-my-pi/collab-web/src/lib/theme";
 import { GitFork, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ProjectSummary } from "../data";
 import type { SessionListItem } from "../protocol";
-import type { AgentState, ModelRef } from "./agent";
+import type { AgentState } from "./agent";
 import { relativeTime } from "./api";
-
-const THINKING_LEVELS = ["off", "minimal", "low", "medium", "high", "xhigh"];
 
 export interface SidebarProps {
 	projects: readonly ProjectSummary[];
@@ -15,12 +12,9 @@ export interface SidebarProps {
 	onSelectProject(slug: string): void;
 	sessions: readonly SessionListItem[];
 	agentState: AgentState | null;
-	models: readonly ModelRef[];
 	onNewSession(): void;
 	onForkSession(): void;
 	onSwitchSession(path: string): void;
-	onSetModel(model: ModelRef): void;
-	onSetThinking(level: string): void;
 	/** Closed off-canvas drawer: out of the tab order and the accessibility tree. */
 	inert: boolean;
 }
@@ -34,16 +28,7 @@ export function progress(counts: Record<string, number>): { done: number; total:
 }
 
 export function Sidebar(props: SidebarProps): ReactNode {
-	const { agentState, models } = props;
-	const modelIndex = models.findIndex(
-		m => m.provider === agentState?.model?.provider && m.id === agentState?.model?.id,
-	);
-	const byProvider = new Map<string, number[]>();
-	models.forEach((model, i) => {
-		const group = byProvider.get(model.provider);
-		if (group) group.push(i);
-		else byProvider.set(model.provider, [i]);
-	});
+	const { agentState } = props;
 	return (
 		<aside className="rw-sidebar" id="rw-sidebar" aria-label="Projects and sessions" inert={props.inert}>
 			<section>
@@ -123,56 +108,6 @@ export function Sidebar(props: SidebarProps): ReactNode {
 					})}
 				</ul>
 			</section>
-			<details className="rw-settings">
-				<summary>Model &amp; appearance</summary>
-				<label>
-					Model
-					<select
-						id="rw-model"
-						value={modelIndex}
-						onChange={e => {
-							const model = models[Number(e.target.value)];
-							if (model) props.onSetModel(model);
-						}}
-					>
-						{modelIndex < 0 && <option value={-1}>{agentState?.model?.id ?? "—"}</option>}
-						{[...byProvider].map(([provider, indices]) => (
-							<optgroup key={provider} label={provider}>
-								{indices.map(i => (
-									<option key={i} value={i}>
-										{models[i]?.id}
-									</option>
-								))}
-							</optgroup>
-						))}
-					</select>
-				</label>
-				<label>
-					Thinking
-					<select value={agentState?.thinkingLevel ?? "off"} onChange={e => props.onSetThinking(e.target.value)}>
-						{THINKING_LEVELS.map(level => (
-							<option key={level} value={level}>
-								{level}
-							</option>
-						))}
-					</select>
-				</label>
-				<ThemeSelect />
-			</details>
 		</aside>
-	);
-}
-
-function ThemeSelect(): ReactNode {
-	const { preference, setPreference } = useThemePreference();
-	return (
-		<label>
-			Theme
-			<select value={preference} onChange={e => setPreference(e.target.value as ThemePreference)}>
-				<option value="system">Match my computer</option>
-				<option value="light">Light</option>
-				<option value="dark">Dark</option>
-			</select>
-		</label>
 	);
 }
