@@ -169,6 +169,30 @@ checkout's omp version, which can differ from the installed `omp` that `research
 reports on its first line. **An installed compiled `omp` shows the stock screen until it is
 rebuilt from this fork** - that is expected, not a fault.
 
+### Prefer a browser? `research web`
+
+```sh
+research web                        # opens the harness in your browser
+RESEARCH_WEB_PORT=7788 research web # same, on a fixed address: http://127.0.0.1:7788/
+```
+
+The same research agent, in a browser tab instead of the terminal. The **Chat** tab works like
+the TUI, and the sidebar on the left lists your projects with their screening progress, your
+past sessions, and the model. The other tabs show your work without typing commands: **Graph**
+(the paper graph), **Reviews** (your written reviews, with clickable citations), **Reading list**
+(every record with its verdict and PDF) and **PRISMA** (the flow diagram).
+
+The tabs only show; they never change your review. Buttons such as *Screen* or *Check claim*
+write a suggested message into the chat box, and nothing happens until you press Enter. Press
+Ctrl+C in the terminal where you started it to stop. Hard to read? **Appearance** at the bottom
+of the sidebar switches between Light, Dark and Match my computer; the browser remembers it.
+
+Empty projects say so in grey with what to do next. A project with no records yet shows
+*No screening records in this project yet. Ask the agent to find or import papers, and the
+PRISMA diagram will appear here.* on the PRISMA tab. Red text means something actually
+failed; the UI never shows code or error dumps, and the technical detail goes to
+`~/.omp/logs/omp.<date>.log`. It runs only on your own machine (`127.0.0.1`) and needs the
+checkout's dependencies installed (`bun install` in the harness folder).
 ---
 
 ## Part 1 — The worked pass on a real review
@@ -610,6 +634,8 @@ Observed: `1 author(s): ['Borkowski AA, Ben-Ari A.']` — two people in one stri
 | PRISMA numbers look wrong | a record is in the wrong state | fix the record (a verdict or a state change), never the diagram; re-run `/prisma` |
 | You want to start the test over | state lives in `~/.research-harness/` | delete the project folder `~/.research-harness/projects/<slug>/` — the review store, the fetched PDFs and the searches all live inside it. The paper graph is separate (`~/.research-harness/papers.db`) |
 | You want the review isolated from your main graph | per-project graph | tell the chat "keep this review's graph separate" — it prefixes the graph commands with a project-local database |
+| `research web` stops with "needs bun and the repo's node_modules" | the browser UI runs from the checkout | run `bun install` in the harness folder, then `research web` again |
+| The browser says *The research agent stopped unexpectedly* right after opening | usually an omp plugin printing to the screen in the background (`pi-warp` 1.0.1 does) | `omp plugin disable pi-warp`, then reconnect; the reason is in `~/.omp/logs/omp.<date>.log` |
 
 ---
 
