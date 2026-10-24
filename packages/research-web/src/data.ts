@@ -297,6 +297,22 @@ export function dataRoutes(config: ResearchConfig): Record<string, DataHandler> 
 				await fs.rm(tmp, { force: true });
 			}
 		},
+
+		// The port is random per launch, so the browser's per-origin storage can't remember the theme.
+		"/api/theme": async req => {
+			const file = path.join(config.home, "web-theme");
+			if (req.method === "POST") {
+				const theme = await req.text();
+				if (theme !== "light" && theme !== "dark") throw new HttpError(400, "That theme isn't recognised.");
+				await Bun.write(file, theme);
+				return new Response(null, { status: 204 });
+			}
+			let theme = "light";
+			try {
+				if ((await Bun.file(file).text()).trim() === "dark") theme = "dark";
+			} catch {}
+			return Response.json({ theme });
+		},
 	};
 	return Object.fromEntries(Object.entries(routes).map(([k, fn]) => [k, guarded(fn)]));
 }
