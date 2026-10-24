@@ -53,6 +53,8 @@ function activeTool(): ActiveTool {
 
 function renderTranscript(props: {
 	entries?: readonly SessionEntry[];
+	committedEntries?: readonly SessionEntry[];
+	pendingEntryId?: string;
 	activeTools?: ReadonlyMap<string, ActiveTool>;
 	working: boolean;
 	foldActivity?: boolean;
@@ -60,6 +62,8 @@ function renderTranscript(props: {
 	return renderToStaticMarkup(
 		<Transcript
 			entries={props.entries ?? []}
+			committedEntries={props.committedEntries}
+			pendingEntryId={props.pendingEntryId}
 			stream={null}
 			streamDone={true}
 			activeTools={props.activeTools ?? new Map()}
@@ -106,6 +110,18 @@ describe("Transcript live tool rendering", () => {
 		expect(html).not.toContain("thinking…");
 		expect(html).toContain(ACTIVE_TOOL_TARGET);
 		expect(html).not.toContain(RAW_ASSISTANT_TARGET);
+	});
+
+	it("renders one running card for a tool call only the streaming pending row carries", () => {
+		const html = renderTranscript({
+			entries: [committedAssistantToolCall()],
+			committedEntries: [],
+			pendingEntryId: "assistant-entry-1",
+			activeTools: new Map([[TOOL_CALL_ID, activeTool()]]),
+			working: true,
+		});
+
+		expect(countElements(html, ".tv-card")).toBe(1);
 	});
 
 	it("keeps the working shimmer when no tool is active", () => {
@@ -174,8 +190,8 @@ describe("Transcript activity folding", () => {
 		const folded = renderTranscript({ entries: [entry], working: false, foldActivity: true });
 		expect(countElements(folded, ".tv-card")).toBe(0);
 		expect(countElements(folded, ".tr-think-head")).toBe(2);
-		expect(folded).toContain("thinking · 2 steps");
-		expect(folded).toContain("thinking · 1 step");
+		// Each fold reports how many steps it hides.
+		expect([...folded.matchAll(/(\d+) steps?\b/g)].map(match => Number(match[1]))).toEqual([2, 1]);
 		expect(countElements(folded, ".tr-md strong")).toBe(1);
 
 		const unfolded = renderTranscript({ entries: [entry], working: false });

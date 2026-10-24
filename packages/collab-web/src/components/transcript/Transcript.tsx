@@ -24,6 +24,11 @@ export interface TranscriptProps {
 	foldActivity?: boolean;
 	/** Entry still streaming in place (a host that folds the live reply into `entries` instead of `stream`). */
 	pendingEntryId?: string;
+	/**
+	 * `entries` as committed, before the host folded the live reply into the `pendingEntryId` row. Tool-call
+	 * bookkeeping scans this list, so a streamed token does not rescan the session. Defaults to `entries`.
+	 */
+	committedEntries?: readonly SessionEntry[];
 }
 
 interface ScrollGeometry {
@@ -349,8 +354,19 @@ const WINDOW = 100;
 const EARLIER_TRIGGER_PX = 200;
 
 export function Transcript(props: TranscriptProps): ReactNode {
-	const { entries, stream, streamDone, activeTools, working, compact, host, phase, foldActivity, pendingEntryId } =
-		props;
+	const {
+		entries,
+		committedEntries = entries,
+		stream,
+		streamDone,
+		activeTools,
+		working,
+		compact,
+		host,
+		phase,
+		foldActivity,
+		pendingEntryId,
+	} = props;
 
 	// null follows the tail. A number pins the first mounted entry while the
 	// reader is scrolled away from the bottom, so appended entries never
@@ -419,29 +435,36 @@ export function Transcript(props: TranscriptProps): ReactNode {
 		setPinnedStart(Math.max(0, start - WINDOW));
 	};
 
-	// Tool calls committed anywhere in the session: rescanned when entries change,
+	// Tool calls committed anywhere in the session: rescanned when committed entries change,
 	// not per streaming token or tool output update.
 	const committedToolIds = useMemo(() => {
 		const ids = new Set<string>();
-		for (const entry of entries) {
+		for (const entry of committedEntries) {
 			if (entry.type !== "message" || entry.message.role !== "assistant") continue;
 			for (const block of entry.message.content) {
 				if (block.type === "toolCall") ids.add(block.id);
 			}
 		}
 		return ids;
-	}, [entries]);
+	}, [committedEntries]);
 
-	// Active tools not already represented as toolCall blocks in committed rows or the stream ghost.
+	// Like the stream ghost, a row streaming in place may carry tool calls not committed yet.
+	const pendingEntry =
+		pendingEntryId === undefined ? undefined : visible.findLast(entry => entry.id === pendingEntryId);
+	const pendingReply =
+		pendingEntry?.type === "message" && pendingEntry.message.role === "assistant" ? pendingEntry.message : null;
+
+	// Active tools not already represented as toolCall blocks in committed rows, the pending row or the stream ghost.
 	const tailTools = useMemo(() => {
 		const tail: ActiveTool[] = [];
+		const live = [stream, pendingReply];
 		for (const tool of activeTools.values()) {
 			if (committedToolIds.has(tool.toolCallId)) continue;
-			if (stream?.content.some(block => block.type === "toolCall" && block.id === tool.toolCallId)) continue;
+			if (live.some(reply => reply?.content.some(b => b.type === "toolCall" && b.id === tool.toolCallId))) continue;
 			tail.push(tool);
 		}
 		return tail;
-	}, [committedToolIds, stream, activeTools]);
+	}, [committedToolIds, stream, pendingReply, activeTools]);
 
 	// While the snapshot downloads the banner reports progress; an empty transcript isn't "no activity".
 	const settled = phase === undefined || phase === "live";
