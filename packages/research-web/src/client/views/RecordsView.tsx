@@ -343,7 +343,7 @@ export function RecordsView({
 			{step && (
 				<div className="rw-next">
 					<span>
-						{step.count} {step.text}
+						<span className="rw-next-n">{step.count}</span> {step.text}
 					</span>
 					<button type="button" onClick={() => prefill(active ? step.slash : `${step.prose} in project ${slug}`)}>
 						{step.label}
