@@ -193,6 +193,19 @@ except sqlite3.Error:
 	echo "        type /help in the TUI to see every command"
 }
 
+# setup.sh is idempotent: re-running it is how the installed copies under
+# $OMP_AGENT_DIR and the registered plugin are refreshed from this checkout.
+refresh_install() {
+	local repo="$1" setup_out
+	echo "Refreshing the install..."
+	if setup_out="$(bash "$repo/setup.sh" </dev/null 2>&1)"; then
+		return 0
+	fi
+	printf '%s\n' "$setup_out" >&2
+	echo "research update: the install step failed (see above). The files are updated; retry with: bash \"$repo/setup.sh\"" >&2
+	return 1
+}
+
 # `research update`: fetch the latest harness from GitHub and refresh the install.
 # Git-based on purpose: the harness runs from this checkout, which `omp update` skips.
 update() {
@@ -268,7 +281,13 @@ update() {
 
 	if [ "$new" = "$old" ]; then
 		echo "research-harness is already up to date: $(harness_version)."
-		return 0
+		# Still refresh: the checkout can be current while the installed copies
+		# drift (an earlier pull, a hand-edited agent). --check changes nothing.
+		[ "$check" -eq 0 ] || return 0
+		refresh_install "$repo" || return 1
+		local uptodate_rc=0
+		doctor || uptodate_rc=$?
+		return "$uptodate_rc"
 	fi
 
 	# After a force-push `old..new` counts the whole rebased stack, so count only
@@ -336,13 +355,7 @@ update() {
 		fi
 	fi
 
-	echo "Refreshing the install..."
-	local setup_out
-	if ! setup_out="$(bash "$repo/setup.sh" </dev/null 2>&1)"; then
-		printf '%s\n' "$setup_out" >&2
-		echo "research update: the install step failed (see above). The files are updated; retry with: bash \"$repo/setup.sh\"" >&2
-		return 1
-	fi
+	refresh_install "$repo" || return 1
 
 	local rc=0
 	doctor || rc=$?
