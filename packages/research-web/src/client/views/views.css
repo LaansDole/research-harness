@@ -215,6 +215,7 @@
 	padding: 12px 8px;
 }
 
+/* A stage badge: where a record stands when no verdict is recorded for it yet. */
 .rw-badge {
 	display: inline-block;
 	padding: 2px 8px;
@@ -223,17 +224,38 @@
 	white-space: nowrap;
 }
 
-/* Text mixed toward --fg so every badge clears 4.5:1 in both themes. */
-.rw-badge-ok {
-	background: color-mix(in srgb, var(--ok) 14%, transparent);
-	color: color-mix(in srgb, var(--ok) 55%, var(--fg));
+
+/* Highlighter verdict mark: the word on a band over the lower part of the line, with its icon.
+ * The uneven corner radii read as the ends of a drawn stroke; the band never carries meaning alone. */
+.rw-mark {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 6px 2px;
+	border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px;
+	background: linear-gradient(to top, var(--rw-hl) 66%, transparent 66%);
+	color: var(--rw-hl-fg);
+	font-size: 12px;
+	white-space: nowrap;
 }
 
-.rw-badge-err {
-	background: color-mix(in srgb, var(--err) 14%, transparent);
-	color: color-mix(in srgb, var(--err) 55%, var(--fg));
+.rw-mark svg {
+	flex: none;
 }
 
+.rw-mark-include {
+	--rw-hl: var(--rw-hl-include);
+}
+
+.rw-mark-exclude {
+	--rw-hl: var(--rw-hl-exclude);
+}
+
+.rw-mark-maybe {
+	--rw-hl: var(--rw-hl-maybe);
+}
+
+/* Badge text mixed toward --fg so it clears 4.5:1 in both themes. */
 .rw-badge-accent {
 	background: var(--accent-muted);
 	color: color-mix(in srgb, var(--accent) 70%, var(--fg));
