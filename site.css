@@ -343,7 +343,6 @@ svg {
 
 .hero {
 	padding: 64px 0 56px;
-	max-width: 760px;
 }
 
 .hero h1 {
@@ -362,7 +361,6 @@ svg {
 
 .hero .lede {
 	margin: 20px 0 0;
-	max-width: 62ch;
 	font-size: 1.08rem;
 	color: var(--fg-muted);
 	text-wrap: pretty;
@@ -635,7 +633,6 @@ svg {
 }
 
 .block-head {
-	max-width: 720px;
 	margin-bottom: 28px;
 }
 
@@ -651,7 +648,6 @@ svg {
 .block-head p {
 	margin: 12px 0 0;
 	color: var(--fg-muted);
-	max-width: 64ch;
 	text-wrap: pretty;
 }
 
@@ -697,7 +693,6 @@ svg {
 
 .ledger dd {
 	margin: 0;
-	max-width: 78ch;
 	color: var(--fg-muted);
 	font-size: 0.95rem;
 	text-wrap: pretty;
@@ -772,7 +767,6 @@ svg {
 	grid-column: 1;
 	color: var(--fg-muted);
 	font-size: 0.95rem;
-	max-width: 70ch;
 }
 
 .doc-rows .go {
@@ -791,7 +785,6 @@ svg {
 
 .footnote {
 	margin-top: 56px;
-	max-width: 78ch;
 	font-size: 0.86rem;
 	color: var(--fg-faint);
 }
@@ -957,10 +950,6 @@ svg {
 	max-width: 900px;
 	font-size: 16.5px;
 	line-height: 1.7;
-}
-
-.prose > :is(p, ul, ol, h1, h2, h3, h4, blockquote, hr) {
-	max-width: 72ch;
 }
 
 .prose > :first-child {
