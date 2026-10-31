@@ -2,6 +2,8 @@ import { createRoot } from "react-dom/client";
 import { setThemePreference } from "@oh-my-pi/collab-web/src/lib/theme";
 import "@oh-my-pi/collab-web/src/styles/tokens.css";
 import "@oh-my-pi/collab-web/src/styles/base.css";
+// After collab-web's tokens: research web's own palette overrides them.
+import "./theme.css";
 import { App } from "./App";
 import "./app.css";
 
