@@ -87,6 +87,14 @@ You never need these — plain sentences work — but they are there if you like
 | `/export` | Export RIS or BibTeX |
 | `/litreview` | Do a quick review end to end in one go |
 
+In the terminal, three more:
+
+| Command | In plain words |
+|---|---|
+| `research update` | Get the latest version of the harness from GitHub and reinstall it (`research update --check` only tells you what is new) |
+| `research doctor` | Check the install and say what is missing |
+| `research web` | Open the workspace in your browser |
+
 ## Optional: a faster first screening pass
 
 If you add a TypeSafe key (`TYPESAFE_API_KEY="..."` in `~/.research-harness/config.env`), the Jev model screens the clear-cut records first: very likely includes and very likely excludes are decided automatically, and everything in between — plus any record without an abstract — is left for the assistant and you. Each automatic verdict records the model version and its scores, so you can check or overturn it. Off by default. Walkthrough: [docs/RUNBOOK.md](../docs/RUNBOOK.md).

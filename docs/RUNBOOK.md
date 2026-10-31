@@ -85,12 +85,42 @@ bash research/tests/run.sh
 Last three lines should be:
 
 ```text
-Ran 111 tests in 0.915s
+Ran 119 tests in 1.129s
 
 OK (skipped=1)
 ```
 
 It takes about a second. **Any `FAIL`/`ERROR` here means the scripts themselves are broken** — do not start a review on top of that; report it.
+
+### Step 0.4 — Keeping the harness up to date
+
+```bash
+research update --check   # what's new, changes nothing
+research update           # get it, then reinstall and health-check
+```
+
+`research update` pulls the latest version from GitHub (`LaansDole/research-harness`, branch
+`main`), re-runs `setup.sh` so the prompts, agents and plugin match the new code, and finishes
+with `research doctor`. The last line is `research-harness updated <old> -> <new> (N commits)`.
+Run it from anywhere; it works on the folder you cloned.
+
+It stops and changes nothing when:
+
+- **the folder has edits you have not saved in git** — it prints the files; undo or commit them first;
+- **you are on another branch** — switch back to `main`;
+- **you made your own commits** on `main` that are not on GitHub — it lists them and tells you how
+  to park them on their own branch first. Your work is never thrown away.
+
+The project rebuilds its history on GitHub most days (that is how the fork follows upstream), so an
+update often replaces your copy's history rather than adding to it. When that happens the update
+prints the version you were on:
+
+```text
+GitHub rebuilt the history; this copy now matches it.
+  previous version: 1efb80b (go back with: git -C "<folder>" reset --keep 1efb80b)
+```
+
+Copy that `reset --keep` line if the new version misbehaves and you want the old one back.
 
 ---
 
