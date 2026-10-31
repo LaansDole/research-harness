@@ -8,6 +8,8 @@
 - Added a light/dark toggle (sun/moon) in the top bar; light by default, and the choice survives restarts. The paper graph follows it.
 - Added a context bar showing the viewed project vs the agent's project and agent status; starter prompts in an empty chat; the view and project persist in the URL.
 - Added reading-list state filters with counts, search, keyboard triage and a record detail panel with abstract and screening rationale; review contents, citation previews and per-section Check; PRISMA SVG download.
+- Added a PRISMA strip in the header: identified, screened, sought, assessed and included counts for the viewed project, with what is still pending under each, and each one opens the reading list on that stage.
+- Added margin notes in a review: select a sentence on a wide screen and the Check claim action appears beside it, keeping the sentence marked until the request is sent.
 
 ### Changed
 
@@ -17,6 +19,8 @@
 - Failed or stopped agent replies now explain what happened and what to do next (sign in again, usage limit, conversation too long, provider busy) instead of showing raw provider errors such as `401 {"type":"error",...}`; agent warnings that carry file paths, error codes or raw error bodies toast a plain sentence instead, while plain warnings (model fallback, truncated reply, advisor quota) show as written.
 - The web UI now works on phones (sidebar drawer, modal record sheet) and collapses the sidebar with ⌘/Ctrl+B; text meets WCAG AA contrast and tabs are keyboard-navigable.
 - The paper graph settles instead of drifting, labels only the hovered or selected paper and its neighbours, and supports Enter-to-select in search.
+- Screening verdicts now read as highlighter marks — green include, vermilion exclude, yellow maybe — each with its own icon and word, in the reading list and the record panel.
+- The web UI now has its own look: deep-teal ink on cool paper (light) or soft charcoal (dark), hairline boxes and tabular counts, replacing the inherited cyan/pink theme.
 
 ### Fixed
 
