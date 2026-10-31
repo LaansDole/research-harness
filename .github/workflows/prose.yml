@@ -5,8 +5,12 @@ name: Prose check (advisory)
 #
 # Scope: docs/ is mostly upstream oh-my-pi documentation (synced weekly from can1357/oh-my-pi), so
 # scanning all of it would report findings this fork does not own and would churn on every sync.
-# The scanned list below is the set of prose files the fork added, from:
+# The scanned list below is a curated subset of the prose files the fork added; the full list is
 #   git diff --name-only --diff-filter=A $(git merge-base HEAD upstream/main) HEAD
+# (34 markdown files on 2026-10-31). Agent prompts, plans and changelogs are excluded on purpose:
+# a prompt that quotes the tells it bans scores like a document full of them, e.g.
+# research/skills/literature-search/references/PROSE.md scores 28. A newly added fork-owned doc
+# stays out of scope until it is added to BOTH `paths:` lists and the DOCS env var below.
 
 on:
   pull_request:
@@ -26,13 +30,20 @@ on:
       - .github/workflows/prose.yml
   workflow_dispatch:
 
+concurrency:
+  group: prose-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 env:
+  # pass is findings <= THRESHOLD. docs/ARCHITECTURE.md measures 6/6 today, so the next em dash in
+  # it flips that cell to NO -- which is a warning annotation here, never a failed build.
   THRESHOLD: "6"
   CONTEXT: technical
   SOURCE_MODE: rendered-markdown
+  DOCS: ".github/README.md docs/ARCHITECTURE.md docs/RUNBOOK.md packages/research-web/README.md"
 
 jobs:
   prose:
@@ -51,17 +62,21 @@ jobs:
           persist-credentials: false
 
       - name: Score fork-owned docs
+        if: always()
         env:
           AAW_DIR: ${{ github.workspace }}/.avoid-ai-writing
         run: |
           set -u
+          gate="$AAW_DIR/bin/avoid-ai-writing-gate.js"
+          if [ ! -f "$gate" ]; then
+            echo "::warning::detector checkout missing ($gate); prose check skipped"
+            exit 0
+          fi
           set +e
-          node "$AAW_DIR/bin/avoid-ai-writing-gate.js" --json \
+          # shellcheck disable=SC2086 # DOCS is a deliberate space-separated file list
+          node "$gate" --json \
             --threshold "$THRESHOLD" --context "$CONTEXT" --source-mode "$SOURCE_MODE" \
-            .github/README.md \
-            docs/ARCHITECTURE.md \
-            docs/RUNBOOK.md \
-            packages/research-web/README.md > "$RUNNER_TEMP/prose.json"
+            $DOCS > "$RUNNER_TEMP/prose.json"
           status=$?
           set -e
           # Advisory: an unusable scan is a warning, never a red X.
