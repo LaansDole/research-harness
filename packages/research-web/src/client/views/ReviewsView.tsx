@@ -32,6 +32,25 @@ function sections(markdown: string): Section[] {
 	});
 }
 
+/** The claim the researcher asked about keeps a tint while the note is up; browsers without the
+ * Custom Highlight API simply show no tint. */
+const CLAIM_HIGHLIGHT = "rw-claim";
+function tintClaim(range: Range | null): void {
+	const highlights = CSS.highlights as HighlightRegistry | undefined;
+	if (highlights === undefined) return;
+	if (range === null) highlights.delete(CLAIM_HIGHLIGHT);
+	else highlights.set(CLAIM_HIGHLIGHT, new Highlight(range));
+}
+
+/** A margin note: the Check claim action for the current selection, beside the line it starts on. */
+interface MarginNote {
+	/** Offset of the selection's first line from the top of the review body, in px. */
+	top: number;
+	text: string;
+	/** The request is in the message box; the researcher still has to send it. */
+	sent: boolean;
+}
+
 export function ReviewsView({
 	slug,
 	active,
@@ -54,7 +73,10 @@ export function ReviewsView({
 	);
 	const parts = useMemo(() => sections(review.data ?? ""), [review.data]);
 	const bodyRef = useRef<HTMLDivElement | null>(null);
+	const layoutRef = useRef<HTMLDivElement | null>(null);
+	const claimRange = useRef<Range | null>(null);
 	const [selection, setSelection] = useState("");
+	const [note, setNote] = useState<MarginNote | null>(null);
 
 	// Number the reference list (n-th item under the last references heading → #ref-n),
 	// and give every citation its reference text as a native hover preview.
@@ -90,14 +112,38 @@ export function ReviewsView({
 			if (sel === null || root === null) return;
 			if (sel.isCollapsed) {
 				// Pressing the Check claim button may collapse the selection; keep the claim until then.
-				if (!(document.activeElement as Element | null)?.closest(".rw-reviews .rw-toolbar")) setSelection("");
+				if (!(document.activeElement as Element | null)?.closest(".rw-reviews .rw-toolbar, .rw-margin-note")) {
+					setSelection("");
+					// A note whose request is already in the message box stays until the file changes.
+					setNote(previous => (previous?.sent === true ? previous : null));
+				}
 				return;
 			}
-			if (root.contains(sel.anchorNode)) setSelection(sel.toString().trim());
+			if (!root.contains(sel.anchorNode)) return;
+			const text = sel.toString().trim();
+			setSelection(text);
+			const range = sel.getRangeAt(0);
+			claimRange.current = range.cloneRange();
+			const layout = layoutRef.current;
+			if (layout !== null && text !== "") {
+				// Both rects are viewport-relative, so the offset holds however far the panel is scrolled.
+				setNote({ top: range.getBoundingClientRect().top - layout.getBoundingClientRect().top, text, sent: false });
+			}
 		};
 		document.addEventListener("selectionchange", onChange);
 		return () => document.removeEventListener("selectionchange", onChange);
 	}, []);
+
+	// A different review file is a different document: its claim note and tint mean nothing here.
+	useEffect(() => {
+		setNote(null);
+		setSelection("");
+		claimRange.current = null;
+		tintClaim(null);
+	}, [file]);
+
+	// Leaving the view (or the whole app) must not leave a tinted sentence behind.
+	useEffect(() => () => tintClaim(null), []);
 
 	if (list.error) return <p className={problemClass(list)}>{list.error}</p>;
 	if (list.data === null) return <p className="rw-faint">Loading reviews…</p>;
@@ -132,6 +178,13 @@ export function ReviewsView({
 		</li>
 	));
 
+	// One route for both the toolbar button and the margin note: the same request, word for word.
+	const checkClaim = (text: string): void => {
+		prefill(`Check this claim in ${file} (project ${slug}) against the cited papers: "${text}"`);
+		setNote(previous => (previous === null ? null : { ...previous, sent: true }));
+		tintClaim(claimRange.current);
+	};
+
 	return (
 		<div className="rw-reviews">
 			<div className="rw-toolbar">
@@ -142,13 +195,7 @@ export function ReviewsView({
 						</option>
 					))}
 				</select>
-				<button
-					type="button"
-					disabled={selection === ""}
-					onClick={() =>
-						prefill(`Check this claim in ${file} (project ${slug}) against the cited papers: "${selection}"`)
-					}
-				>
+				<button type="button" disabled={selection === ""} onClick={() => checkClaim(selection)}>
 					Check claim
 				</button>
 				{selection === "" && <span className="rw-faint">Select a sentence first</span>}
@@ -161,7 +208,7 @@ export function ReviewsView({
 					<ol>{tocLinks}</ol>
 				</details>
 			)}
-			<div className="rw-reviews-body">
+			<div className="rw-reviews-body" ref={layoutRef}>
 				{toc.length > 0 && (
 					<nav className="rw-toc" aria-label="Contents">
 						<ol>{tocLinks}</ol>
@@ -202,6 +249,23 @@ export function ReviewsView({
 							<Markdown text={part.body} />
 						</section>
 					))}
+				</div>
+				{/* The margin: wide screens only (views.css), where the review column leaves room for it. */}
+				<div className="rw-margin">
+					{note !== null && (
+						<aside className="rw-margin-note" style={{ top: `${Math.max(0, note.top)}px` }}>
+							<p className="rw-margin-quote">
+								“{note.text.length > 80 ? `${note.text.slice(0, 80).trimEnd()}…` : note.text}”
+							</p>
+							{note.sent ? (
+								<p className="rw-faint">In the message box - send it to ask the agent</p>
+							) : (
+								<button type="button" onClick={() => checkClaim(note.text)}>
+									Check claim
+								</button>
+							)}
+						</aside>
+					)}
 				</div>
 			</div>
 		</div>
