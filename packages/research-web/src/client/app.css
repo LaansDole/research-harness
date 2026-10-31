@@ -270,6 +270,98 @@
 	}
 }
 
+/* The PRISMA strip: the header's second row, five hairline boxes joined by arrows. */
+.rw-strip {
+	display: flex;
+	flex-basis: 100%;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: 4px;
+	min-width: 0;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	scrollbar-width: none;
+}
+
+/* Three classes: beats the generic `.rw-app button:not(...)` control styling. */
+.rw-app .rw-strip .rw-strip-box {
+	display: flex;
+	flex: none;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0;
+	padding: 2px 8px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	background: none;
+	line-height: 1.25;
+}
+
+.rw-app .rw-strip .rw-strip-box:hover {
+	background: var(--accent-muted);
+}
+
+.rw-strip-n {
+	color: var(--rw-ink);
+	font-size: 13px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.rw-strip-label {
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+.rw-strip-pending {
+	color: var(--fg-muted);
+	font-size: 10px;
+	font-style: italic;
+}
+
+.rw-strip-arrow {
+	flex: none;
+	align-self: center;
+	color: var(--rw-ink);
+}
+
+/* Narrow: one line of the three counts a researcher quotes, no boxes, no arrows. */
+@media (max-width: 899px) {
+	.rw-strip {
+		gap: 0;
+		font-size: 12px;
+	}
+
+	.rw-strip-arrow,
+	.rw-strip-pending,
+	.rw-app .rw-strip .rw-strip-box[data-stage="identified"],
+	.rw-app .rw-strip .rw-strip-box[data-stage="assessed"] {
+		display: none;
+	}
+
+	.rw-app .rw-strip .rw-strip-box {
+		flex-direction: row;
+		gap: 4px;
+		padding: 2px 4px;
+		border-color: transparent;
+	}
+
+	.rw-strip-box[data-stage="screened"]::after,
+	.rw-strip-box[data-stage="sought"]::after {
+		content: "·";
+		color: var(--fg-faint);
+	}
+
+	.rw-strip-n,
+	.rw-strip-label {
+		font-size: 12px;
+	}
+
+	.rw-strip-label {
+		text-transform: lowercase;
+	}
+}
+
 .rw-app .rw-tabs button {
 	flex: none;
 	border-color: transparent;
