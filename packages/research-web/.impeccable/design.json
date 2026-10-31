@@ -1,0 +1,1006 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-31T17:27:48+07:00",
+  "title": "Design System: research web",
+  "extensions": {
+    "colorMeta": {
+      "cool-paper": {
+        "role": "neutral",
+        "displayName": "Cool Paper",
+        "canonical": "oklch(96.9% 0.002 146)",
+        "usage": "Light page ground; sticky table and drawer headers.",
+        "tonalRamp": [
+          "oklch(15% 0.002 146)",
+          "oklch(26% 0.002 146)",
+          "oklch(37% 0.002 146)",
+          "oklch(48% 0.002 146)",
+          "oklch(60% 0.002 146)",
+          "oklch(72% 0.002 146)",
+          "oklch(84% 0.002 146)",
+          "oklch(95% 0.002 146)"
+        ]
+      },
+      "sheet-white": {
+        "role": "neutral",
+        "displayName": "Sheet White",
+        "canonical": "oklch(100.0% 0.000 90)",
+        "usage": "Light sidebar, controls, composer, callouts, notes, toasts.",
+        "tonalRamp": [
+          "oklch(15% 0.0 90)",
+          "oklch(26% 0.0 90)",
+          "oklch(37% 0.0 90)",
+          "oklch(48% 0.0 90)",
+          "oklch(60% 0.0 90)",
+          "oklch(72% 0.0 90)",
+          "oklch(84% 0.0 90)",
+          "oklch(95% 0.0 90)"
+        ]
+      },
+      "inset-paper": {
+        "role": "neutral",
+        "displayName": "Inset Paper",
+        "canonical": "oklch(95.3% 0.003 146)",
+        "usage": "Recessed search field fill (light).",
+        "tonalRamp": [
+          "oklch(15% 0.003 146)",
+          "oklch(26% 0.003 146)",
+          "oklch(37% 0.003 146)",
+          "oklch(48% 0.003 146)",
+          "oklch(60% 0.003 146)",
+          "oklch(72% 0.003 146)",
+          "oklch(84% 0.003 146)",
+          "oklch(95% 0.003 146)"
+        ]
+      },
+      "graphite-ink": {
+        "role": "neutral",
+        "displayName": "Graphite Ink",
+        "canonical": "oklch(20.8% 0.005 248)",
+        "usage": "Light-theme body text; verdict-mark text.",
+        "tonalRamp": [
+          "oklch(15% 0.005 248)",
+          "oklch(26% 0.005 248)",
+          "oklch(37% 0.005 248)",
+          "oklch(48% 0.005 248)",
+          "oklch(60% 0.005 248)",
+          "oklch(72% 0.005 248)",
+          "oklch(84% 0.005 248)",
+          "oklch(95% 0.005 248)"
+        ]
+      },
+      "graphite-muted": {
+        "role": "neutral",
+        "displayName": "Graphite Muted",
+        "canonical": "oklch(46.4% 0.011 243)",
+        "usage": "Labels, metadata, table headers (light).",
+        "tonalRamp": [
+          "oklch(15% 0.005 243)",
+          "oklch(26% 0.007 243)",
+          "oklch(37% 0.008 243)",
+          "oklch(48% 0.01 243)",
+          "oklch(60% 0.01 243)",
+          "oklch(72% 0.009 243)",
+          "oklch(84% 0.007 243)",
+          "oklch(95% 0.005 243)"
+        ]
+      },
+      "graphite-faint": {
+        "role": "neutral",
+        "displayName": "Graphite Faint",
+        "canonical": "oklch(53.9% 0.012 248)",
+        "usage": "Separators only (light).",
+        "tonalRamp": [
+          "oklch(15% 0.005 248)",
+          "oklch(26% 0.007 248)",
+          "oklch(37% 0.009 248)",
+          "oklch(48% 0.011 248)",
+          "oklch(60% 0.011 248)",
+          "oklch(72% 0.009 248)",
+          "oklch(84% 0.007 248)",
+          "oklch(95% 0.005 248)"
+        ]
+      },
+      "deep-teal": {
+        "role": "primary",
+        "displayName": "Deep Teal",
+        "canonical": "oklch(51.1% 0.086 186)",
+        "usage": "The one ink (light): counts, arrows, focus, selection borders, send, links.",
+        "tonalRamp": [
+          "oklch(15% 0.039 186)",
+          "oklch(26% 0.052 186)",
+          "oklch(37% 0.065 186)",
+          "oklch(48% 0.078 186)",
+          "oklch(60% 0.08 186)",
+          "oklch(72% 0.066 186)",
+          "oklch(84% 0.052 186)",
+          "oklch(95% 0.039 186)"
+        ]
+      },
+      "deep-teal-shade": {
+        "role": "primary",
+        "displayName": "Deep Teal Shade",
+        "canonical": "oklch(41.3% 0.069 186)",
+        "usage": "Second accent stop (light); defined so collab-web's --accent-gradient resolves teal, but no shipped research-web surface paints the gradient.",
+        "tonalRamp": [
+          "oklch(15% 0.031 186)",
+          "oklch(26% 0.041 186)",
+          "oklch(37% 0.052 186)",
+          "oklch(48% 0.062 186)",
+          "oklch(60% 0.064 186)",
+          "oklch(72% 0.053 186)",
+          "oklch(84% 0.041 186)",
+          "oklch(95% 0.031 186)"
+        ]
+      },
+      "teal-hover-wash": {
+        "role": "primary",
+        "displayName": "Teal Hover Wash",
+        "canonical": "oklch(51.1% 0.086 186 / 6%)",
+        "usage": "Hover fill (light).",
+        "tonalRamp": [
+          "oklch(15% 0.039 186)",
+          "oklch(26% 0.052 186)",
+          "oklch(37% 0.065 186)",
+          "oklch(48% 0.078 186)",
+          "oklch(60% 0.08 186)",
+          "oklch(72% 0.066 186)",
+          "oklch(84% 0.052 186)",
+          "oklch(95% 0.039 186)"
+        ]
+      },
+      "teal-selected-wash": {
+        "role": "primary",
+        "displayName": "Teal Selected Wash",
+        "canonical": "oklch(51.1% 0.086 186 / 11%)",
+        "usage": "Selected tab, row, chip fill (light).",
+        "tonalRamp": [
+          "oklch(15% 0.039 186)",
+          "oklch(26% 0.052 186)",
+          "oklch(37% 0.065 186)",
+          "oklch(48% 0.078 186)",
+          "oklch(60% 0.08 186)",
+          "oklch(72% 0.066 186)",
+          "oklch(84% 0.052 186)",
+          "oklch(95% 0.039 186)"
+        ]
+      },
+      "teal-accent-wash": {
+        "role": "primary",
+        "displayName": "Teal Accent Wash",
+        "canonical": "oklch(51.1% 0.086 186 / 12%)",
+        "usage": "Current strip box, badges, agent chip, emphasised button (light).",
+        "tonalRamp": [
+          "oklch(15% 0.039 186)",
+          "oklch(26% 0.052 186)",
+          "oklch(37% 0.065 186)",
+          "oklch(48% 0.078 186)",
+          "oklch(60% 0.08 186)",
+          "oklch(72% 0.066 186)",
+          "oklch(84% 0.052 186)",
+          "oklch(95% 0.039 186)"
+        ]
+      },
+      "claim-tint": {
+        "role": "primary",
+        "displayName": "Claim Tint",
+        "canonical": "oklch(51.1% 0.086 186 / 18%)",
+        "usage": "Highlight on the sentence a claim check is about (light).",
+        "tonalRamp": [
+          "oklch(15% 0.039 186)",
+          "oklch(26% 0.052 186)",
+          "oklch(37% 0.065 186)",
+          "oklch(48% 0.078 186)",
+          "oklch(60% 0.08 186)",
+          "oklch(72% 0.066 186)",
+          "oklch(84% 0.052 186)",
+          "oklch(95% 0.039 186)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.0% 0.000 0 / 10%)",
+        "usage": "Default dividers (light).",
+        "tonalRamp": [
+          "oklch(15% 0.0 0)",
+          "oklch(26% 0.0 0)",
+          "oklch(37% 0.0 0)",
+          "oklch(48% 0.0 0)",
+          "oklch(60% 0.0 0)",
+          "oklch(72% 0.0 0)",
+          "oklch(84% 0.0 0)",
+          "oklch(95% 0.0 0)"
+        ]
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "canonical": "oklch(0.0% 0.000 0 / 16%)",
+        "usage": "Borders of controls, boxes, notes (light).",
+        "tonalRamp": [
+          "oklch(15% 0.0 0)",
+          "oklch(26% 0.0 0)",
+          "oklch(37% 0.0 0)",
+          "oklch(48% 0.0 0)",
+          "oklch(60% 0.0 0)",
+          "oklch(72% 0.0 0)",
+          "oklch(84% 0.0 0)",
+          "oklch(95% 0.0 0)"
+        ]
+      },
+      "highlighter-include": {
+        "role": "tertiary",
+        "displayName": "Include Green",
+        "canonical": "oklch(89.3% 0.060 152)",
+        "usage": "Include verdict band (light).",
+        "tonalRamp": [
+          "oklch(15% 0.027 152)",
+          "oklch(26% 0.036 152)",
+          "oklch(37% 0.045 152)",
+          "oklch(48% 0.054 152)",
+          "oklch(60% 0.056 152)",
+          "oklch(72% 0.046 152)",
+          "oklch(84% 0.036 152)",
+          "oklch(95% 0.027 152)"
+        ]
+      },
+      "highlighter-exclude": {
+        "role": "tertiary",
+        "displayName": "Exclude Vermilion",
+        "canonical": "oklch(85.9% 0.066 41)",
+        "usage": "Exclude verdict band (light); orange-leaning, never pink.",
+        "tonalRamp": [
+          "oklch(15% 0.03 41)",
+          "oklch(26% 0.04 41)",
+          "oklch(37% 0.05 41)",
+          "oklch(48% 0.06 41)",
+          "oklch(60% 0.062 41)",
+          "oklch(72% 0.051 41)",
+          "oklch(84% 0.04 41)",
+          "oklch(95% 0.03 41)"
+        ]
+      },
+      "highlighter-maybe": {
+        "role": "tertiary",
+        "displayName": "Maybe Yellow",
+        "canonical": "oklch(91.4% 0.112 98)",
+        "usage": "Maybe verdict band (light).",
+        "tonalRamp": [
+          "oklch(15% 0.051 98)",
+          "oklch(26% 0.068 98)",
+          "oklch(37% 0.085 98)",
+          "oklch(48% 0.102 98)",
+          "oklch(60% 0.105 98)",
+          "oklch(72% 0.086 98)",
+          "oklch(84% 0.068 98)",
+          "oklch(95% 0.051 98)"
+        ]
+      },
+      "status-ok": {
+        "role": "status",
+        "displayName": "Status Green",
+        "canonical": "oklch(51.3% 0.113 159)",
+        "usage": "Connected dot (light).",
+        "tonalRamp": [
+          "oklch(15% 0.051 159)",
+          "oklch(26% 0.068 159)",
+          "oklch(37% 0.085 159)",
+          "oklch(48% 0.102 159)",
+          "oklch(60% 0.105 159)",
+          "oklch(72% 0.087 159)",
+          "oklch(84% 0.068 159)",
+          "oklch(95% 0.051 159)"
+        ]
+      },
+      "status-warn": {
+        "role": "status",
+        "displayName": "Status Amber",
+        "canonical": "oklch(55.5% 0.146 49)",
+        "usage": "Warnings (light).",
+        "tonalRamp": [
+          "oklch(15% 0.066 49)",
+          "oklch(26% 0.088 49)",
+          "oklch(37% 0.11 49)",
+          "oklch(48% 0.132 49)",
+          "oklch(60% 0.136 49)",
+          "oklch(72% 0.112 49)",
+          "oklch(84% 0.088 49)",
+          "oklch(95% 0.066 49)"
+        ]
+      },
+      "status-err": {
+        "role": "status",
+        "displayName": "Status Red",
+        "canonical": "oklch(55.1% 0.183 29)",
+        "usage": "Real failures: banner, toasts, stop (light).",
+        "tonalRamp": [
+          "oklch(15% 0.083 29)",
+          "oklch(26% 0.11 29)",
+          "oklch(37% 0.138 29)",
+          "oklch(48% 0.165 29)",
+          "oklch(60% 0.17 29)",
+          "oklch(72% 0.14 29)",
+          "oklch(84% 0.11 29)",
+          "oklch(95% 0.083 29)"
+        ]
+      },
+      "soft-charcoal": {
+        "role": "neutral",
+        "displayName": "Soft Charcoal",
+        "canonical": "oklch(19.5% 0.004 264)",
+        "usage": "Dark page ground; never pure black.",
+        "tonalRamp": [
+          "oklch(15% 0.004 264)",
+          "oklch(26% 0.004 264)",
+          "oklch(37% 0.004 264)",
+          "oklch(48% 0.004 264)",
+          "oklch(60% 0.004 264)",
+          "oklch(72% 0.004 264)",
+          "oklch(84% 0.004 264)",
+          "oklch(95% 0.004 264)"
+        ]
+      },
+      "charcoal-panel": {
+        "role": "neutral",
+        "displayName": "Charcoal Panel",
+        "canonical": "oklch(22.7% 0.006 271)",
+        "usage": "Dark sidebar, controls, composer.",
+        "tonalRamp": [
+          "oklch(15% 0.006 271)",
+          "oklch(26% 0.006 271)",
+          "oklch(37% 0.006 271)",
+          "oklch(48% 0.006 271)",
+          "oklch(60% 0.006 271)",
+          "oklch(72% 0.006 271)",
+          "oklch(84% 0.006 271)",
+          "oklch(95% 0.006 271)"
+        ]
+      },
+      "charcoal-inset": {
+        "role": "neutral",
+        "displayName": "Charcoal Inset",
+        "canonical": "oklch(25.2% 0.008 264)",
+        "usage": "Dark recessed fields.",
+        "tonalRamp": [
+          "oklch(15% 0.008 264)",
+          "oklch(26% 0.008 264)",
+          "oklch(37% 0.008 264)",
+          "oklch(48% 0.008 264)",
+          "oklch(60% 0.008 264)",
+          "oklch(72% 0.008 264)",
+          "oklch(84% 0.008 264)",
+          "oklch(95% 0.008 264)"
+        ]
+      },
+      "charcoal-overlay": {
+        "role": "neutral",
+        "displayName": "Charcoal Overlay",
+        "canonical": "oklch(26.1% 0.012 271)",
+        "usage": "Dark toasts and floating layers.",
+        "tonalRamp": [
+          "oklch(15% 0.005 271)",
+          "oklch(26% 0.007 271)",
+          "oklch(37% 0.009 271)",
+          "oklch(48% 0.01 271)",
+          "oklch(60% 0.011 271)",
+          "oklch(72% 0.009 271)",
+          "oklch(84% 0.007 271)",
+          "oklch(95% 0.005 271)"
+        ]
+      },
+      "fog-ink": {
+        "role": "neutral",
+        "displayName": "Fog Ink",
+        "canonical": "oklch(92.7% 0.002 248)",
+        "usage": "Dark-theme body text.",
+        "tonalRamp": [
+          "oklch(15% 0.002 248)",
+          "oklch(26% 0.002 248)",
+          "oklch(37% 0.002 248)",
+          "oklch(48% 0.002 248)",
+          "oklch(60% 0.002 248)",
+          "oklch(72% 0.002 248)",
+          "oklch(84% 0.002 248)",
+          "oklch(95% 0.002 248)"
+        ]
+      },
+      "fog-muted": {
+        "role": "neutral",
+        "displayName": "Fog Muted",
+        "canonical": "oklch(74.6% 0.007 248)",
+        "usage": "Dark-theme labels and metadata.",
+        "tonalRamp": [
+          "oklch(15% 0.007 248)",
+          "oklch(26% 0.007 248)",
+          "oklch(37% 0.007 248)",
+          "oklch(48% 0.007 248)",
+          "oklch(60% 0.007 248)",
+          "oklch(72% 0.007 248)",
+          "oklch(84% 0.007 248)",
+          "oklch(95% 0.007 248)"
+        ]
+      },
+      "fog-faint": {
+        "role": "neutral",
+        "displayName": "Fog Faint",
+        "canonical": "oklch(63.4% 0.010 248)",
+        "usage": "Dark-theme separators.",
+        "tonalRamp": [
+          "oklch(15% 0.01 248)",
+          "oklch(26% 0.01 248)",
+          "oklch(37% 0.01 248)",
+          "oklch(48% 0.01 248)",
+          "oklch(60% 0.01 248)",
+          "oklch(72% 0.01 248)",
+          "oklch(84% 0.01 248)",
+          "oklch(95% 0.01 248)"
+        ]
+      },
+      "sea-teal": {
+        "role": "primary",
+        "displayName": "Sea Teal",
+        "canonical": "oklch(71.1% 0.084 185)",
+        "usage": "The one ink (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.038 185)",
+          "oklch(26% 0.051 185)",
+          "oklch(37% 0.063 185)",
+          "oklch(48% 0.076 185)",
+          "oklch(60% 0.078 185)",
+          "oklch(72% 0.064 185)",
+          "oklch(84% 0.051 185)",
+          "oklch(95% 0.038 185)"
+        ]
+      },
+      "sea-teal-shade": {
+        "role": "primary",
+        "displayName": "Sea Teal Shade",
+        "canonical": "oklch(58.3% 0.088 183)",
+        "usage": "Second accent stop (dark); same role as deep-teal-shade.",
+        "tonalRamp": [
+          "oklch(15% 0.04 183)",
+          "oklch(26% 0.053 183)",
+          "oklch(37% 0.066 183)",
+          "oklch(48% 0.08 183)",
+          "oklch(60% 0.082 183)",
+          "oklch(72% 0.068 183)",
+          "oklch(84% 0.053 183)",
+          "oklch(95% 0.04 183)"
+        ]
+      },
+      "sea-teal-ink-on": {
+        "role": "primary",
+        "displayName": "Teal Night",
+        "canonical": "oklch(24.2% 0.035 186)",
+        "usage": "Text/icon on a sea-teal fill (send button, dark).",
+        "tonalRamp": [
+          "oklch(15% 0.016 186)",
+          "oklch(26% 0.021 186)",
+          "oklch(37% 0.026 186)",
+          "oklch(48% 0.031 186)",
+          "oklch(60% 0.032 186)",
+          "oklch(72% 0.027 186)",
+          "oklch(84% 0.021 186)",
+          "oklch(95% 0.016 186)"
+        ]
+      },
+      "sea-teal-selected-wash": {
+        "role": "primary",
+        "displayName": "Sea Teal Selected Wash",
+        "canonical": "oklch(71.1% 0.084 185 / 14%)",
+        "usage": "Selection fill (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.038 185)",
+          "oklch(26% 0.051 185)",
+          "oklch(37% 0.063 185)",
+          "oklch(48% 0.076 185)",
+          "oklch(60% 0.078 185)",
+          "oklch(72% 0.064 185)",
+          "oklch(84% 0.051 185)",
+          "oklch(95% 0.038 185)"
+        ]
+      },
+      "sea-teal-accent-wash": {
+        "role": "primary",
+        "displayName": "Sea Teal Accent Wash",
+        "canonical": "oklch(71.1% 0.084 185 / 16%)",
+        "usage": "Accent fill (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.038 185)",
+          "oklch(26% 0.051 185)",
+          "oklch(37% 0.063 185)",
+          "oklch(48% 0.076 185)",
+          "oklch(60% 0.078 185)",
+          "oklch(72% 0.064 185)",
+          "oklch(84% 0.051 185)",
+          "oklch(95% 0.038 185)"
+        ]
+      },
+      "claim-tint-dark": {
+        "role": "primary",
+        "displayName": "Claim Tint (dark)",
+        "canonical": "oklch(71.1% 0.084 185 / 26%)",
+        "usage": "Claim highlight (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.038 185)",
+          "oklch(26% 0.051 185)",
+          "oklch(37% 0.063 185)",
+          "oklch(48% 0.076 185)",
+          "oklch(60% 0.078 185)",
+          "oklch(72% 0.064 185)",
+          "oklch(84% 0.051 185)",
+          "oklch(95% 0.038 185)"
+        ]
+      },
+      "hairline-dark": {
+        "role": "neutral",
+        "displayName": "Hairline (dark)",
+        "canonical": "oklch(100.0% 0.000 90 / 9%)",
+        "usage": "Default dividers (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.0 90)",
+          "oklch(26% 0.0 90)",
+          "oklch(37% 0.0 90)",
+          "oklch(48% 0.0 90)",
+          "oklch(60% 0.0 90)",
+          "oklch(72% 0.0 90)",
+          "oklch(84% 0.0 90)",
+          "oklch(95% 0.0 90)"
+        ]
+      },
+      "hairline-strong-dark": {
+        "role": "neutral",
+        "displayName": "Hairline Strong (dark)",
+        "canonical": "oklch(100.0% 0.000 90 / 15%)",
+        "usage": "Control and box borders (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.0 90)",
+          "oklch(26% 0.0 90)",
+          "oklch(37% 0.0 90)",
+          "oklch(48% 0.0 90)",
+          "oklch(60% 0.0 90)",
+          "oklch(72% 0.0 90)",
+          "oklch(84% 0.0 90)",
+          "oklch(95% 0.0 90)"
+        ]
+      },
+      "highlighter-include-dark": {
+        "role": "tertiary",
+        "displayName": "Include Green (dark)",
+        "canonical": "oklch(69.0% 0.142 152 / 30%)",
+        "usage": "Include band, 30% alpha (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.065 152)",
+          "oklch(26% 0.086 152)",
+          "oklch(37% 0.107 152)",
+          "oklch(48% 0.129 152)",
+          "oklch(60% 0.132 152)",
+          "oklch(72% 0.109 152)",
+          "oklch(84% 0.086 152)",
+          "oklch(95% 0.065 152)"
+        ]
+      },
+      "highlighter-exclude-dark": {
+        "role": "tertiary",
+        "displayName": "Exclude Vermilion (dark)",
+        "canonical": "oklch(67.4% 0.159 39 / 30%)",
+        "usage": "Exclude band, 30% alpha (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.072 39)",
+          "oklch(26% 0.096 39)",
+          "oklch(37% 0.12 39)",
+          "oklch(48% 0.144 39)",
+          "oklch(60% 0.148 39)",
+          "oklch(72% 0.122 39)",
+          "oklch(84% 0.096 39)",
+          "oklch(95% 0.072 39)"
+        ]
+      },
+      "highlighter-maybe-dark": {
+        "role": "tertiary",
+        "displayName": "Maybe Yellow (dark)",
+        "canonical": "oklch(80.5% 0.146 96 / 28%)",
+        "usage": "Maybe band, 28% alpha (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.066 96)",
+          "oklch(26% 0.088 96)",
+          "oklch(37% 0.11 96)",
+          "oklch(48% 0.132 96)",
+          "oklch(60% 0.136 96)",
+          "oklch(72% 0.112 96)",
+          "oklch(84% 0.088 96)",
+          "oklch(95% 0.066 96)"
+        ]
+      },
+      "status-ok-dark": {
+        "role": "status",
+        "displayName": "Status Green (dark)",
+        "canonical": "oklch(69.0% 0.142 152)",
+        "usage": "Connected dot (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.065 152)",
+          "oklch(26% 0.086 152)",
+          "oklch(37% 0.107 152)",
+          "oklch(48% 0.129 152)",
+          "oklch(60% 0.132 152)",
+          "oklch(72% 0.109 152)",
+          "oklch(84% 0.086 152)",
+          "oklch(95% 0.065 152)"
+        ]
+      },
+      "status-warn-dark": {
+        "role": "status",
+        "displayName": "Status Amber (dark)",
+        "canonical": "oklch(74.7% 0.132 80)",
+        "usage": "Warnings (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.06 80)",
+          "oklch(26% 0.08 80)",
+          "oklch(37% 0.1 80)",
+          "oklch(48% 0.119 80)",
+          "oklch(60% 0.123 80)",
+          "oklch(72% 0.101 80)",
+          "oklch(84% 0.08 80)",
+          "oklch(95% 0.06 80)"
+        ]
+      },
+      "status-err-dark": {
+        "role": "status",
+        "displayName": "Status Red (dark)",
+        "canonical": "oklch(68.5% 0.167 27)",
+        "usage": "Failures (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.076 27)",
+          "oklch(26% 0.101 27)",
+          "oklch(37% 0.126 27)",
+          "oklch(48% 0.151 27)",
+          "oklch(60% 0.155 27)",
+          "oklch(72% 0.128 27)",
+          "oklch(84% 0.101 27)",
+          "oklch(95% 0.076 27)"
+        ]
+      },
+      "prisma-paper-dark": {
+        "role": "neutral",
+        "displayName": "PRISMA Paper",
+        "canonical": "oklch(92.0% 0.005 135)",
+        "usage": "Off-white card under the dimmed server PRISMA SVG (dark).",
+        "tonalRamp": [
+          "oklch(15% 0.005 135)",
+          "oklch(26% 0.005 135)",
+          "oklch(37% 0.005 135)",
+          "oklch(48% 0.005 135)",
+          "oklch(60% 0.005 135)",
+          "oklch(72% 0.005 135)",
+          "oklch(84% 0.005 135)",
+          "oklch(95% 0.005 135)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Chat empty-state question; the largest step in the app."
+      },
+      "title-document": {
+        "displayName": "Document Title",
+        "purpose": "Section headings inside a synthesized review."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Record title in the detail drawer; empty-state headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "App default (14px over base.css 13.5px)."
+      },
+      "body-reading": {
+        "displayName": "Reading Body",
+        "purpose": "Review prose in an 860px column."
+      },
+      "body-composer": {
+        "displayName": "Composer",
+        "purpose": "The message box."
+      },
+      "count": {
+        "displayName": "Count",
+        "purpose": "PRISMA strip numbers, tabular."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Strip labels, badges, verdict marks, metadata, margin notes."
+      },
+      "label-small": {
+        "displayName": "Small Label",
+        "purpose": "Pending counts, agent chip, composer hint."
+      },
+      "section-label": {
+        "displayName": "Sidebar Section Label",
+        "purpose": "Uppercase sidebar section headings (Projects, Sessions) only."
+      },
+      "command": {
+        "displayName": "Command",
+        "purpose": "Slash-command names on starter cards, in teal."
+      }
+    },
+    "themes": {
+      "default": "light (main.tsx sets light before the stored preference is fetched; dark only when the server has dark saved)",
+      "selectors": [
+        "[data-theme=\"light\"]",
+        "@media (prefers-color-scheme: light) :root:not([data-theme])",
+        ":root (dark)"
+      ],
+      "source": "packages/research-web/src/client/theme.css (overrides packages/collab-web/src/styles/tokens.css)"
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 1px 2px rgba(0, 0, 0, 0.05)",
+        "valueDark": "0 1px 2px rgba(0, 0, 0, 0.4)",
+        "purpose": "Hairline lift under the composer only."
+      },
+      {
+        "name": "composer-lift",
+        "value": "var(--shadow-card), 0 6px 20px color-mix(in srgb, var(--fg) 7%, transparent)",
+        "purpose": "Composer at rest."
+      },
+      {
+        "name": "composer-focus",
+        "value": "0 0 0 3px var(--accent-muted), 0 6px 20px color-mix(in srgb, var(--fg) 7%, transparent)",
+        "purpose": "Composer focus-within, with a teal border."
+      },
+      {
+        "name": "overlay",
+        "value": "0 18px 48px rgba(0, 0, 0, 0.14)",
+        "valueDark": "0 24px 64px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 255, 255, 0.05) inset",
+        "purpose": "Toasts and the mobile sidebar drawer."
+      },
+      {
+        "name": "backdrop",
+        "value": "rgba(20, 21, 23, 0.25)",
+        "valueDark": "rgba(0, 0, 0, 0.5)",
+        "purpose": "Scrim behind the mobile sidebar drawer."
+      }
+    ],
+    "focus": [
+      {
+        "name": "focus-ring",
+        "value": "outline: 2px solid var(--accent); outline-offset: -2px",
+        "purpose": "All focusable elements; inset so scroll containers never clip it."
+      },
+      {
+        "name": "focus-ring-frame",
+        "value": "outline: 2px solid var(--ring); outline-offset: 2px",
+        "purpose": "The graph iframe, drawn outside because the frame paints over an inset ring."
+      },
+      {
+        "name": "citation-target",
+        "value": "background: var(--accent-muted); outline: 2px solid var(--accent); outline-offset: 2px",
+        "purpose": "The reference a citation link jumped to."
+      }
+    ],
+    "shapes": [
+      {
+        "name": "highlighter-stroke",
+        "value": "inset: 34% 0 0; border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px",
+        "purpose": "Verdict mark band: lower two-thirds of the line, uneven ends of a drawn stroke."
+      },
+      {
+        "name": "strip-arrow",
+        "value": "lucide ArrowRight, 12px, color var(--rw-ink)",
+        "purpose": "Connector between PRISMA strip boxes."
+      },
+      {
+        "name": "margin-connector",
+        "value": "26px × 1px solid var(--rw-ink), top 12px",
+        "purpose": "Margin note back to its line."
+      }
+    ],
+    "filters": [
+      {
+        "name": "prisma-dim",
+        "value": "brightness(0.86)",
+        "valueLight": "none",
+        "purpose": "Dims the server PRISMA SVG on its paper card in dark mode."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Mobile sidebar drawer slide (transform 0.2s); inherited from collab-web."
+      },
+      {
+        "name": "composer-ring",
+        "value": "border-color 150ms, box-shadow 150ms",
+        "purpose": "Composer focus transition."
+      },
+      {
+        "name": "busy-pulse",
+        "value": "rw-pulse 1.2s ease-in-out infinite (opacity to 0.3)",
+        "purpose": "Status dot while the agent works; removed under prefers-reduced-motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "tabs-scroll",
+        "value": "599px",
+        "purpose": "max-width: tab row fades and scrolls; toasts move above the composer; composer pickers narrow."
+      },
+      {
+        "name": "wide-columns",
+        "value": "639px",
+        "purpose": "max-width: PDF/action table columns hide."
+      },
+      {
+        "name": "drawer",
+        "value": "899px",
+        "purpose": "max-width: sidebar off-canvas, strip collapses to one line, record detail becomes a full-screen dialog, TOC becomes a disclosure."
+      },
+      {
+        "name": "margin-notes",
+        "value": "1100px",
+        "purpose": "min-width: the review margin column and its notes appear."
+      }
+    ],
+    "layout": {
+      "sidebarWidth": "280px",
+      "drawerWidth": "min(380px, 42%)",
+      "readingColumnMax": "860px",
+      "composerMax": "820px",
+      "tocWidth": "180px",
+      "marginColumn": "210px",
+      "panelPadding": "12px 16px"
+    }
+  },
+  "components": [
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button",
+      "description": "Baseline for every button and select: white sheet, strong hairline, 6px corners; teal wash on hover.",
+      "html": "<button class=\"ds-btn\" type=\"button\">Screen them</button>",
+      "css": ".ds-btn { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); font-size: 14px; padding: 4px 10px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius, 6px); background: var(--bg-raised, #fff); color: var(--fg, #16181a); cursor: pointer; } .ds-btn:hover { background: var(--hover, rgba(15,118,110,0.06)); } .ds-btn:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; }"
+    },
+    {
+      "name": "Send Button",
+      "kind": "button",
+      "refersTo": "send-button",
+      "description": "The composer's round teal send button; the only filled accent control.",
+      "html": "<button class=\"ds-send\" type=\"button\" aria-label=\"Send\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"/><path d=\"M6 12h16\"/></svg></button>",
+      "css": ".ds-send { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; min-height: 34px; padding: 6px; border: 0; border-radius: 999px; background: var(--accent, #0f766e); color: var(--accent-fg, #fff); cursor: pointer; } .ds-send:hover { background: color-mix(in srgb, var(--accent, #0f766e) 85%, var(--fg, #16181a)); } .ds-send:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: 2px; } .ds-send[aria-disabled=\"true\"] { opacity: 0.35; cursor: default; }"
+    },
+    {
+      "name": "Header Tabs",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Borderless muted tabs; the selected tab is a teal-bordered box on the selected wash.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Chat</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Graph</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Reviews</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">Reading list</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">PRISMA</button></div>",
+      "css": ".ds-tabs { display: flex; gap: 4px; } .ds-tab { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); font-size: 14px; padding: 4px 10px; border: 1px solid transparent; border-radius: var(--radius, 6px); background: none; color: var(--fg-muted, #545a5f); cursor: pointer; } .ds-tab:hover { background: var(--hover, rgba(15,118,110,0.06)); } .ds-tab[aria-selected=\"true\"] { background: var(--selected, rgba(15,118,110,0.11)); border-color: var(--accent, #0f766e); color: var(--fg, #16181a); } .ds-tab:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; }"
+    },
+    {
+      "name": "PRISMA Strip",
+      "kind": "custom",
+      "refersTo": "prisma-strip-box",
+      "description": "Signature: five hairline boxed counts joined by teal arrows, in diagram order, with pending work beneath; the current stage is teal-bordered.",
+      "html": "<div class=\"ds-strip\" role=\"group\" aria-label=\"PRISMA flow\"><button class=\"ds-strip-box\" aria-current=\"true\"><span class=\"ds-strip-n\">50</span><span class=\"ds-strip-label\">Identified</span></button><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ds-strip-arrow\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg><button class=\"ds-strip-box\"><span class=\"ds-strip-n\">46</span><span class=\"ds-strip-label\">Screened</span><span class=\"ds-strip-pending\"><span class=\"ds-strip-pending-n\">3</span> to screen</span></button><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ds-strip-arrow\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg><button class=\"ds-strip-box\"><span class=\"ds-strip-n\">25</span><span class=\"ds-strip-label\">Sought</span><span class=\"ds-strip-pending\"><span class=\"ds-strip-pending-n\">8</span> to retrieve</span></button><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ds-strip-arrow\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg><button class=\"ds-strip-box\"><span class=\"ds-strip-n\">15</span><span class=\"ds-strip-label\">Assessed</span><span class=\"ds-strip-pending\"><span class=\"ds-strip-pending-n\">4</span> to assess</span></button><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" class=\"ds-strip-arrow\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg><button class=\"ds-strip-box\"><span class=\"ds-strip-n\">8</span><span class=\"ds-strip-label\">Included</span></button></div>",
+      "css": ".ds-strip { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); display: flex; align-items: stretch; gap: 4px; font-variant-numeric: tabular-nums; } .ds-strip-box { display: flex; flex-direction: column; align-items: flex-start; padding: 2px 8px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius-sm, 4px); background: none; line-height: 1.25; cursor: pointer; font: inherit; } .ds-strip-box:hover { background: var(--accent-muted, rgba(15,118,110,0.12)); } .ds-strip-box[aria-current=\"true\"] { border-color: var(--accent, #0f766e); background: var(--accent-muted, rgba(15,118,110,0.12)); } .ds-strip-box:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; } .ds-strip-n { color: color-mix(in srgb, var(--rw-ink, #0f766e) 80%, var(--fg, #16181a)); font-size: 13px; font-weight: 600; } .ds-strip-label { color: var(--fg-muted, #545a5f); font-size: 12px; } .ds-strip-pending { color: var(--fg-muted, #545a5f); font-size: 11px; } .ds-strip-pending-n { color: var(--rw-ink, #0f766e); font-weight: 600; } .ds-strip-arrow { flex: none; align-self: center; color: var(--rw-ink, #0f766e); }"
+    },
+    {
+      "name": "Verdict Marks",
+      "kind": "custom",
+      "refersTo": "verdict-mark-include",
+      "description": "Signature: verdicts as highlighter strokes on the lower part of the line, always icon + word.",
+      "html": "<span class=\"ds-mark ds-mark-include\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg>Include</span> <span class=\"ds-mark ds-mark-exclude\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/></svg>Exclude</span> <span class=\"ds-mark ds-mark-maybe\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"/><path d=\"M12 17h.01\"/></svg>Maybe</span>",
+      "css": ".ds-mark { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); position: relative; z-index: 0; display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 2px; color: var(--rw-hl-fg, #16181a); font-size: 12px; font-weight: 400; white-space: nowrap; margin-right: 8px; } .ds-mark::before { content: \"\"; position: absolute; z-index: -1; inset: 34% 0 0; border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px; background: var(--ds-hl); } .ds-mark svg { flex: none; } .ds-mark-include { --ds-hl: var(--rw-hl-include, #bfe8c9); } .ds-mark-exclude { --ds-hl: var(--rw-hl-exclude, #f8c3b0); } .ds-mark-maybe { --ds-hl: var(--rw-hl-maybe, #f6e48a); }"
+    },
+    {
+      "name": "Stage Badge",
+      "kind": "chip",
+      "refersTo": "stage-badge",
+      "description": "Where a record stands when no verdict is recorded: small teal-wash label; muted variant for duplicates.",
+      "html": "<span class=\"ds-badge\">Not screened</span> <span class=\"ds-badge ds-badge-muted\">Duplicate</span>",
+      "css": ".ds-badge { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); display: inline-block; padding: 2px 8px; border-radius: var(--radius-sm, 4px); background: var(--accent-muted, rgba(15,118,110,0.12)); color: color-mix(in srgb, var(--accent, #0f766e) 70%, var(--fg, #16181a)); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; } .ds-badge-muted { background: var(--selected, rgba(15,118,110,0.11)); color: var(--fg-muted, #545a5f); }"
+    },
+    {
+      "name": "Filter Chips",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "Reading-list state filters: 32px pills with a muted tabular count; the checked chip is teal-bordered on the selected wash.",
+      "html": "<div class=\"ds-chips\" role=\"radiogroup\"><button class=\"ds-chip\" role=\"radio\" aria-checked=\"true\">All <span class=\"ds-count\">50</span></button><button class=\"ds-chip\" role=\"radio\" aria-checked=\"false\">Not screened <span class=\"ds-count\">3</span></button><button class=\"ds-chip\" role=\"radio\" aria-checked=\"false\">Included <span class=\"ds-count\">8</span></button></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; } .ds-chip { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); min-height: 32px; padding: 4px 10px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: 999px; background: var(--bg-raised, #fff); color: var(--fg, #16181a); font-size: 13px; cursor: pointer; } .ds-chip:hover { background: var(--hover, rgba(15,118,110,0.06)); } .ds-chip[aria-checked=\"true\"] { border-color: var(--accent, #0f766e); background: var(--selected, rgba(15,118,110,0.11)); } .ds-chip:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; } .ds-count { margin-left: 2px; color: var(--fg-muted, #545a5f); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-input",
+      "description": "Recessed inset-paper field with a strong hairline; teal inset focus ring.",
+      "html": "<input class=\"ds-search\" type=\"search\" placeholder=\"Search title, author, DOI\" aria-label=\"Search records\">",
+      "css": ".ds-search { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); width: 320px; max-width: 360px; min-height: 32px; padding: 4px 10px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius, 6px); background: var(--bg-inset, #eef0ee); color: var(--fg, #16181a); font-size: 14px; } .ds-search::placeholder { color: var(--fg-muted, #545a5f); } .ds-search:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; }"
+    },
+    {
+      "name": "Composer",
+      "kind": "input",
+      "refersTo": "composer",
+      "description": "The primary control: a 12px-cornered raised sheet, borderless textarea over a toolbar, teal ring on focus-within.",
+      "html": "<div class=\"ds-composer\"><textarea class=\"ds-composer-input\" rows=\"2\" placeholder=\"Ask the research agent…\" aria-label=\"Message\"></textarea><div class=\"ds-composer-bar\"><span class=\"ds-pick\">Model</span><span class=\"ds-pick\">Thinking: off</span><span style=\"flex:1\"></span><button class=\"ds-composer-send\" type=\"button\" aria-label=\"Send\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"/><path d=\"M6 12h16\"/></svg></button></div></div>",
+      "css": ".ds-composer { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); display: flex; flex-direction: column; max-width: 560px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius-xl, 12px); background: var(--bg-raised, #fff); box-shadow: var(--shadow-card, 0 1px 2px rgba(0,0,0,0.05)), 0 6px 20px color-mix(in srgb, var(--fg, #16181a) 7%, transparent); transition: border-color 150ms, box-shadow 150ms; } .ds-composer:focus-within { border-color: var(--accent, #0f766e); box-shadow: 0 0 0 3px var(--accent-muted, rgba(15,118,110,0.12)), 0 6px 20px color-mix(in srgb, var(--fg, #16181a) 7%, transparent); } .ds-composer-input { min-height: calc(2lh + 16px); resize: none; padding: 12px 14px 4px; border: 0; background: none; color: var(--fg, #16181a); font: inherit; font-size: 15px; outline: none; } .ds-composer-bar { display: flex; align-items: center; gap: 2px; padding: 4px 8px 8px; } .ds-pick { padding: 4px 6px; color: var(--fg-muted, #545a5f); font-size: 12.5px; border-radius: var(--radius, 6px); } .ds-pick:hover { background: var(--hover, rgba(15,118,110,0.06)); color: var(--fg, #16181a); } .ds-composer-send { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; min-height: 34px; border: 0; border-radius: 999px; background: var(--accent, #0f766e); color: var(--accent-fg, #fff); cursor: pointer; } .ds-composer-send:hover { background: color-mix(in srgb, var(--accent, #0f766e) 85%, var(--fg, #16181a)); }"
+    },
+    {
+      "name": "Margin Note",
+      "kind": "card",
+      "refersTo": "margin-note",
+      "description": "Signature: a claim-check note in the review margin, tied to its line by a 1px teal connector.",
+      "html": "<div class=\"ds-margin\"><aside class=\"ds-note\"><p class=\"ds-note-quote\">“Reported accuracy gains over a single-model”</p><button class=\"ds-note-btn\" type=\"button\">Check claim</button></aside></div>",
+      "css": ".ds-margin { position: relative; padding-left: 32px; width: 210px; } .ds-note { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); position: relative; padding: 8px 10px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius-sm, 4px); background: var(--bg-raised, #fff); font-size: 12px; line-height: 1.45; color: var(--fg, #16181a); } .ds-note::before { content: \"\"; position: absolute; top: 12px; right: 100%; width: 26px; border-top: 1px solid var(--rw-ink, #0f766e); } .ds-note-quote { margin: 0 0 6px; color: var(--fg-muted, #545a5f); } .ds-note-btn { font: inherit; padding: 2px 8px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius, 6px); background: var(--bg-raised, #fff); color: var(--fg, #16181a); cursor: pointer; } .ds-note-btn:hover { background: var(--hover, rgba(15,118,110,0.06)); } .ds-note-btn:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; }"
+    },
+    {
+      "name": "Next-step Callout",
+      "kind": "card",
+      "refersTo": "next-step-callout",
+      "description": "The Reading list's next action: hairline box, count in teal ink, emphasised teal-wash button.",
+      "html": "<div class=\"ds-next\"><span><span class=\"ds-next-n\">3</span> not screened</span><button class=\"ds-next-btn\" type=\"button\">Screen them</button></div>",
+      "css": ".ds-next { font-family: var(--font-ui, ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif); display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--border-strong, rgba(0,0,0,0.16)); border-radius: var(--radius, 6px); background: var(--bg-raised, #fff); color: var(--fg, #16181a); font-size: 14px; } .ds-next-n { color: var(--rw-ink, #0f766e); font-weight: 600; font-variant-numeric: tabular-nums; } .ds-next-btn { font: inherit; padding: 4px 10px; border: 1px solid var(--accent, #0f766e); border-radius: var(--radius, 6px); background: var(--accent-muted, rgba(15,118,110,0.12)); color: var(--fg, #16181a); font-weight: 500; cursor: pointer; } .ds-next-btn:hover { background: var(--selected, rgba(15,118,110,0.11)); } .ds-next-btn:focus-visible { outline: 2px solid var(--accent, #0f766e); outline-offset: -2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Evidence Trail",
+    "overview": "research web is a working desk for a long screening session, and the review's own paperwork is its visual language. The PRISMA flow diagram a researcher will print in her manuscript is redrawn in the header as five hairline boxes joined by thin arrows; her highlighter marks become the verdict marks in the Reading list; a selected sentence in a review gets a margin note tied back to the line by a hairline connector. Everything else (sidebar, tabs, transcript, composer) stays quiet, flat and conventional so those three devices carry the identity.\n\nThe ground is cool paper (light, the default) or soft charcoal (dark), never pure black. One ink, deep teal, carries structure, counts, focus, selection and the agent's controls; there is no second accent and no gradient in use. Colour beyond teal is reserved for meaning: three highlighter bands for verdicts and the status trio for real system state. Density is Operate-grade: 14px body, 4–12px steps, hairline borders, small corners, tabular figures wherever counts are compared.\n\nThe world is built as an override layer: `theme.css` replaces every colour and radius token of collab-web's upstream `tokens.css` (whose cyan-to-pink accent and pure-black chassis are fully overridden) so the inherited transcript and composer read in the same world without editing upstream files.",
+    "keyCharacteristics": [
+      "PRISMA flow notation as chrome: boxed counts, 1px borders, 4px corners, arrow connectors.",
+      "One deep-teal ink (light #0f766e / dark #5fb3a8) for structure, counts, focus and the agent.",
+      "Verdicts as highlighter strokes: band + lucide icon + word, never colour alone.",
+      "Tabular numerals on every count, badge, table and status line.",
+      "Flat surfaces separated by hairlines; shadow only on the composer and floating layers.",
+      "Light by default for daylight reading; soft charcoal dark theme with a dimmed paper card for the PRISMA figure."
+    ],
+    "rules": [
+      {
+        "name": "The One Ink Rule",
+        "body": "Teal is the only accent. Structure, counts, focus and the agent share it; no second brand hue, no gradient, no pink or magenta anywhere.",
+        "section": "colors"
+      },
+      {
+        "name": "The Highlighter Rule",
+        "body": "Green, vermilion and yellow mean include, exclude and maybe, and nothing else. Every band carries its lucide icon (Check, X, CircleHelp) and the word.",
+        "section": "colors"
+      },
+      {
+        "name": "The Override Layer Rule",
+        "body": "Raw colour values live only in `theme.css`; every other stylesheet uses variables. Change the two light blocks together.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Count Rule",
+        "body": "Every number a researcher compares down a column or across the strip uses tabular figures (`.rw-count`, strip, badges, table, status, chips). Review prose keeps proportional figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight-Not-Size Rule",
+        "body": "Emphasis is 600 weight at an existing size; no step above 20px exists.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Desk Rule",
+        "body": "Boxes, cards, notes, callouts and the PRISMA card take a 1px border and no shadow. Only the composer and floating layers lift.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use the deep teal (light #0f766e, dark #5fb3a8) as the only accent, for structure, counts, focus, selection and the agent's controls.",
+      "**Do** draw boxes the PRISMA way: 1px `hairline-strong` border, 4–6px corners, no shadow.",
+      "**Do** render every verdict with the highlighter band, its lucide icon and the word.",
+      "**Do** set every compared count in tabular figures.",
+      "**Do** put raw colour values only in `theme.css`, overriding collab-web's tokens rather than editing them, and change both light blocks together.",
+      "**Do** keep focus visible as a 2px teal outline, inset by 2px inside scroll containers.",
+      "**Do** keep the dark ground a soft charcoal (#141517) and set the PRISMA figure on its dimmed paper card in dark mode."
+    ],
+    "donts": [
+      "**Don't** use pink or magenta anywhere: no accent, gradient, mark or icon in that hue.",
+      "**Don't** use a pure black (#000) ground.",
+      "**Don't** let a highlighter colour stand alone, or use green, vermilion or yellow for anything but a verdict.",
+      "**Don't** add shadows to boxes, cards or notes; only the composer and floating layers lift.",
+      "**Don't** mark state with a grey fill; hover and selection use teal washes."
+    ]
+  }
+}
