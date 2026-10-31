@@ -113,6 +113,8 @@ $pg export --format html     # one-file interactive viz
 
 Requirements beyond the above: `python3` standard library only (no pip installs); network access for arXiv/OpenAlex (a local folder of PDFs works offline).
 
+CI scores the docs this fork owns (this README, `docs/ARCHITECTURE.md`, `docs/RUNBOOK.md`, `packages/research-web/README.md`) with the [avoid-ai-writing](https://github.com/conorbronsdon/avoid-ai-writing) detector in [.github/workflows/prose.yml](workflows/prose.yml). It is advisory: findings show up in the job summary and never fail a build.
+
 </details>
 
 ## Credits
