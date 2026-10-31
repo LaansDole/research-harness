@@ -1,4 +1,4 @@
-/* research web layout on collab-web's theme tokens (tokens.css). */
+/* research web layout on the tokens of theme.css (over collab-web's tokens.css). */
 [hidden] {
 	display: none !important;
 }
@@ -11,6 +11,11 @@
 	color: var(--fg);
 	font-family: var(--font-ui);
 	font-size: 14px;
+}
+
+/* Every count a researcher compares down a column lines up; review prose keeps proportional figures. */
+.rw-app :is(.rw-count, .rw-strip, .rw-badge, .rw-faint, .rw-table, .rw-status, .rw-chip) {
+	font-variant-numeric: tabular-nums;
 }
 
 /* Inset ring so scroll containers never clip it; accent clears 3:1 in both themes. */
@@ -522,12 +527,12 @@
 	min-height: 34px;
 	border-radius: 999px;
 	background: var(--accent);
-	color: var(--accent-fg, #fff);
+	color: var(--accent-fg);
 }
 
 .rw-app .rw-send:hover {
 	background: color-mix(in srgb, var(--accent) 85%, var(--fg));
-	color: var(--accent-fg, #fff);
+	color: var(--accent-fg);
 }
 
 .rw-send[aria-disabled="true"] {

@@ -1,4 +1,4 @@
-/* Research views (Reading list, Reviews, Graph, PRISMA) on collab-web tokens. Shared utilities stay in app.css. */
+/* Research views (Reading list, Reviews, Graph, PRISMA) on theme.css tokens. Shared utilities stay in app.css. */
 
 :is(.rw-records, .rw-reviews, .rw-graph, .rw-prisma, .rw-empty) :focus-visible {
 	outline: 2px solid var(--ring);
