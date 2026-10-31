@@ -85,7 +85,7 @@ bash research/tests/run.sh
 Last three lines should be:
 
 ```text
-Ran 109 tests in 1.129s
+Ran 111 tests in 0.915s
 
 OK (skipped=1)
 ```
@@ -523,7 +523,7 @@ Measured 2026-09-19 on a 50-record PubMed CSV and a 43-PDF folder.
 | Checkpoint | Expected | What a different result means |
 |---|---|---|
 | `bash bin/research doctor` | no `FAIL` line, `status: ready` (the Jev line is a `warn` until you opt in) | a `FAIL` line → re-run `bash setup.sh` |
-| `bash research/tests/run.sh` | `Ran 109 tests ... OK (skipped=1)`, ~1 s | the scripts are broken; stop and report |
+| `bash research/tests/run.sh` | `Ran 111 tests ... OK (skipped=1)`, ~1 s | the scripts are broken; stop and report |
 | `/import` of the 50-record CSV | `added: 50, already_present: 0, skipped: 0` | `skipped > 0` → rows without a title; `added: 0` → format not recognised |
 | Re-run the same `/import` | `added: 0, already_present: 50` | duplicates created → the store is not idempotent; report it |
 | Field completeness after CSV import | 50 titles, 48 DOIs, 50 years, **0 abstracts, 0 journals** | more abstracts is better (a richer export); fewer titles means a parsing problem |
