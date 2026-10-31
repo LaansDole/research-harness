@@ -3,7 +3,8 @@
   "include": [
     "src/client",
     "test/reducer.test.ts",
-    "test/transcript-session.test.tsx"
+    "test/transcript-session.test.tsx",
+    "test/verdict.test.ts"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
