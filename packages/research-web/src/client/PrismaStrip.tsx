@@ -25,9 +25,12 @@ const PENDING: Partial<Record<PrismaStage, string>> = {
  */
 export function PrismaStrip({
 	counts,
+	active,
 	onOpen,
 }: {
 	counts: Record<ReviewState, number>;
+	/** The stage the reading list is currently filtered to, marked in the strip. */
+	active: PrismaStage | null;
 	onOpen(chip: ReviewState | ""): void;
 }): ReactNode {
 	const stages = prismaStrip(counts);
@@ -43,12 +46,17 @@ export function PrismaStrip({
 							type="button"
 							className="rw-strip-box"
 							data-stage={s.stage}
+							aria-current={s.stage === active ? "true" : undefined}
 							aria-label={`${LABELS[s.stage]}: ${s.count}.${pending ? ` ${pending}.` : ""} Show in reading list`}
 							onClick={() => onOpen(s.chip)}
 						>
 							<span className="rw-strip-n">{s.count}</span>
 							<span className="rw-strip-label">{LABELS[s.stage]}</span>
-							{pending && <span className="rw-strip-pending">{pending}</span>}
+							{pending && (
+								<span className="rw-strip-pending">
+									<span className="rw-strip-pending-n">{s.pending}</span> {PENDING[s.stage]}
+								</span>
+							)}
 						</button>
 					</Fragment>
 				);

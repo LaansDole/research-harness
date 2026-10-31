@@ -77,6 +77,11 @@
 	--rw-hl-fg: #e6e7e8;
 	/* The sentence a claim check was asked about. */
 	--rw-claim-tint: rgba(95, 179, 168, 0.26);
+	/* The PRISMA figure is drawn for paper: in dark mode it sits on a light card, dimmed so it is
+	 * not the brightest thing on screen. */
+	--rw-paper: #e3e5e2;
+	--rw-paper-border: rgba(0, 0, 0, 0.22);
+	--rw-prisma-dim: brightness(0.86);
 }
 
 /* Light — explicit preference (research web writes data-theme on every load). */
@@ -133,6 +138,9 @@
 	--rw-hl-maybe: #f6e48a;
 	--rw-hl-fg: #16181a;
 	--rw-claim-tint: rgba(15, 118, 110, 0.18);
+	--rw-paper: #fff;
+	--rw-paper-border: rgba(0, 0, 0, 0.16);
+	--rw-prisma-dim: none;
 }
 
 /* Light — system fallback before/without a stored preference. Keep in sync with the block above. */
@@ -190,5 +198,8 @@
 		--rw-hl-maybe: #f6e48a;
 		--rw-hl-fg: #16181a;
 		--rw-claim-tint: rgba(15, 118, 110, 0.18);
+		--rw-paper: #fff;
+		--rw-paper-border: rgba(0, 0, 0, 0.16);
+		--rw-prisma-dim: none;
 	}
 }
