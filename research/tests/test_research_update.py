@@ -6,6 +6,7 @@ scratch HOME and a stub `omp` on PATH — so nothing outside the temp dir is rea
 or written and the whole thing stays offline (the remote is a local path).
 """
 import os
+import shlex
 import shutil
 import subprocess
 import unittest
@@ -15,6 +16,9 @@ import helpers
 REPO_ROOT = os.path.abspath(os.path.join(helpers.TESTS_DIR, "..", ".."))
 # bin/research doctor fails unless these four agents are installed.
 AGENTS = ("scholar", "screener", "synthesizer", "librarian")
+# A tracked build artifact: the root `bun install` postinstall rewrites it per
+# machine, so `research update` must treat it as regenerable, not as a user edit.
+GENERATED_REL = "packages/coding-agent/src/export/html/viewer.generated.json"
 OMP_STUB = """#!/bin/sh
 if [ "$1" = plugin ] && [ "$2" = list ]; then echo research-harness-tools; fi
 if [ "$1" = --version ]; then echo 0.0.0-test; fi
@@ -44,11 +48,12 @@ class ResearchUpdateTest(helpers.ResearchCase):
         write(os.path.join(self.home, ".omp/plugins/node_modules/"
                            "research-harness-tools/extensions/research-mode/index.ts"),
               "// stub\n")
-        stub_bin = os.path.join(root, "stub-bin")
-        write(os.path.join(stub_bin, "omp"), OMP_STUB, 0o755)
+        self.stub_bin = os.path.join(root, "stub-bin")
+        self.bun_log = os.path.join(root, "bun.log")
+        write(os.path.join(self.stub_bin, "omp"), OMP_STUB, 0o755)
 
         self.env = dict(os.environ, HOME=self.home,
-                        PATH=stub_bin + os.pathsep + os.environ["PATH"],
+                        PATH=self.stub_bin + os.pathsep + os.environ["PATH"],
                         GIT_AUTHOR_NAME="test", GIT_AUTHOR_EMAIL="test@example.com",
                         GIT_COMMITTER_NAME="test", GIT_COMMITTER_EMAIL="test@example.com")
         for k in ("RESEARCH_HARNESS_HOME", "PAPER_GRAPH_DB", "RESEARCH_CORPUS_DIR",
@@ -71,6 +76,8 @@ class ResearchUpdateTest(helpers.ResearchCase):
                   "# %s\n" % agent)
         write(os.path.join(self.upstream, "research/prompts/lit-review.md"), "# lit\n")
         write(os.path.join(self.upstream, "research/mode/system.md"), "# mode\n")
+        write(os.path.join(self.upstream, GENERATED_REL),
+              '{"bundle": "viewer-committed.js"}\n')
         self.git("add", "-A", cwd=self.upstream)
         self.git("commit", "-q", "-m", "initial", cwd=self.upstream)
         self.git("remote", "add", "origin", self.remote, cwd=self.upstream)
@@ -97,6 +104,20 @@ class ResearchUpdateTest(helpers.ResearchCase):
         self.git("commit", "-q", "-m", subject, cwd=self.upstream)
         self.git("push", "-q", "origin", "main", cwd=self.upstream)
         return self.head(self.upstream)
+
+    def fake_bun(self, rewrites_generated=False, fails=False):
+        """A `bun` on PATH that logs its args, optionally mimicking the real
+        postinstall (rewrites the tracked artifact) or a failing install."""
+        lines = ["#!/bin/sh", 'echo "bun $*" >> %s' % shlex.quote(self.bun_log)]
+        if rewrites_generated:
+            lines.append("printf '{\"bundle\": \"viewer-local.js\"}\\n' > %s"
+                         % shlex.quote(os.path.join(self.repo, GENERATED_REL)))
+        if fails:
+            lines += ['echo "error: lockfile needs --frozen-lockfile" >&2', "exit 1"]
+        write(os.path.join(self.stub_bin, "bun"), "\n".join(lines) + "\nexit 0\n", 0o755)
+
+    def dirty_generated(self, bundle="viewer-local.js"):
+        write(os.path.join(self.repo, GENERATED_REL), '{"bundle": "%s"}\n' % bundle)
 
     def rebuild_history(self):
         """Force-push a rewritten main, as the fork's daily rebase-stack sync does."""
@@ -209,6 +230,95 @@ class ResearchUpdateTest(helpers.ResearchCase):
         text = read(self.config)
         self.assertIn('TYPESAFE_API_KEY="secret-key"', text)
         self.assertIn('RESEARCH_HARNESS_HOME="%s"' % self.repo, text)
+
+    def test_generated_build_artifact_is_rebuilt_instead_of_blocking(self):
+        self.fake_bun()
+        self.dirty_generated()
+        # the incoming commit ships a new manifest for the same file: without the
+        # discard, git refuses the move rather than overwriting the local copy.
+        write(os.path.join(self.upstream, GENERATED_REL), '{"bundle": "viewer-next.js"}\n')
+        tip = self.push_commit()
+
+        proc = self.research("update")
+
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(self.head(), tip)
+        self.assertEqual(read(os.path.join(self.repo, GENERATED_REL)),
+                         '{"bundle": "viewer-next.js"}\n')
+        # then rebuilt for this machine
+        self.assertIn("bun install", read(self.bun_log))
+
+    def test_generated_artifact_plus_a_real_edit_still_blocks(self):
+        self.fake_bun()
+        before = self.head()
+        self.dirty_generated()
+        edited = os.path.join(self.repo, "research/mode/system.md")
+        write(edited, "# my edit\n")
+        self.push_commit()
+
+        proc = self.research("update")
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertEqual(self.head(), before)
+        self.assertEqual(read(edited), "# my edit\n")
+        self.assertEqual(read(os.path.join(self.repo, GENERATED_REL)),
+                         '{"bundle": "viewer-local.js"}\n')
+        self.assertIn("system.md", proc.stderr)
+        self.assertFalse(os.path.exists(self.bun_log))
+
+    def test_regression_generated_artifact_does_not_block_next_update(self):
+        """`bun install` rewrites the tracked viewer manifest on machines whose
+        bundle differs from the committed one; that made every later
+        `research update` refuse with "edits that are not saved in git"."""
+        self.fake_bun(rewrites_generated=True)
+        self.dirty_generated("viewer-stale.js")
+        first = self.push_commit(name="first")
+
+        one = self.research("update")
+
+        self.assertEqual(one.returncode, 0, one.stdout + one.stderr)
+        self.assertEqual(self.head(), first)
+        self.assertEqual(read(os.path.join(self.repo, GENERATED_REL)),
+                         '{"bundle": "viewer-local.js"}\n', "postinstall must re-dirty it")
+
+        second = self.push_commit(name="second")
+        two = self.research("update")
+
+        self.assertEqual(two.returncode, 0, two.stdout + two.stderr)
+        self.assertEqual(self.head(), second)
+        self.assertNotIn("not saved in git", two.stderr)
+
+    def test_failed_bun_install_shows_bun_own_error(self):
+        self.fake_bun(fails=True)
+        before = self.head()
+        self.dirty_generated()
+        self.push_commit()
+
+        proc = self.research("update")
+
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("lockfile needs --frozen-lockfile", proc.stderr)
+        self.assertIn("run it there by hand", proc.stderr)
+        self.assertNotEqual(self.head(), before, "HEAD already moved when install failed")
+
+    def test_force_push_counts_only_the_commits_that_are_new(self):
+        self.push_commit(subject="shared work", name="shared")
+        self.assertEqual(self.research("update").returncode, 0)
+        # the rebase-stack sync re-creates the same commit under a new sha...
+        self.git("commit", "-q", "--amend", "-m", "shared work (rebuilt)",
+                 cwd=self.upstream)
+        # ...and adds one commit that is genuinely new.
+        write(os.path.join(self.upstream, "research/prompts/fresh.md"), "# fresh\n")
+        self.git("add", "-A", cwd=self.upstream)
+        self.git("commit", "-q", "-m", "only new work", cwd=self.upstream)
+        self.git("push", "-q", "--force", "origin", "main", cwd=self.upstream)
+        tip = self.head(self.upstream)
+
+        proc = self.research("update")
+
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertEqual(self.head(), tip)
+        self.assertIn("(1 new commits)", proc.stdout)
 
 
 if __name__ == "__main__":
