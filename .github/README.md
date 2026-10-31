@@ -29,7 +29,7 @@ _[Watch the 6-minute demo ↗](https://laansdole.github.io/research-harness/#res
 ```sh
 git clone https://github.com/LaansDole/research-harness
 cd research-harness
-./setup.sh        # one-time setup; safe to run again after you pull
+./setup.sh        # one-time setup; later, 'research update' refreshes it
 research web      # opens your research workspace in the browser
 ```
 

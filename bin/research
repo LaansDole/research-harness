@@ -77,14 +77,14 @@ doctor() {
 	if command -v omp >/dev/null 2>&1 && omp plugin list 2>/dev/null | grep -q "research-harness-tools"; then
 		ok "plugin research-harness-tools installed"
 	else
-		fail "plugin research-harness-tools not installed (run setup.sh)"
+		fail "plugin research-harness-tools not installed (run 'research update')"
 	fi
 
 	ext="$HOME/.omp/plugins/node_modules/research-harness-tools/extensions/research-mode/index.ts"
 	if [ -f "$ext" ]; then
 		ok "extension research-mode (/help guide + statusline)"
 	else
-		fail "extension research-mode missing from the installed plugin (run setup.sh)"
+		fail "extension research-mode missing from the installed plugin (run 'research update')"
 	fi
 
 	for a in scholar screener synthesizer librarian; do
@@ -108,6 +108,39 @@ doctor() {
 		ok "prompts ($n_prompts commands installed)"
 	fi
 
+	# The installed copies must match the checkout: setup.sh copies agents and
+	# prompts out of the repo, so they go stale when a pull lands new content.
+	# The plugin dir is registered in place from the repo and cannot drift.
+	local protected n_sync=0 kind dest shown
+	local -a stale=()
+	protected=" $(sed -n 's/^PROTECTED_AGENTS="\([^"]*\)".*/\1/p' "$RESEARCH_HARNESS_HOME/setup.sh" 2>/dev/null || true) "
+	for kind in agents prompts; do
+		for f in "$RESEARCH_HARNESS_HOME/research/$kind"/*.md; do
+			base="$(basename "$f")"
+			if [ "$kind" = agents ]; then
+				# setup.sh never overwrites these, so they are not expected to match.
+				case "$protected" in
+				*" $base "*) continue ;;
+				esac
+			fi
+			dest="$OMP_AGENT_DIR/$kind/$base"
+			if [ -f "$dest" ] && cmp -s "$f" "$dest"; then
+				n_sync=$((n_sync + 1))
+			else
+				stale+=("$kind/$base")
+			fi
+		done
+	done
+	if [ "${#stale[@]}" -eq 0 ]; then
+		ok "installed agents/prompts match the checkout ($n_sync files)"
+	else
+		shown="${stale[*]:0:5}"
+		if [ "${#stale[@]}" -gt 5 ]; then
+			shown="$shown +$((${#stale[@]} - 5)) more"
+		fi
+		warn "${#stale[@]} installed file(s) differ from the checkout: $shown (run 'research update')"
+	fi
+
 	if [ -f "$SYSTEM_PROMPT" ]; then
 		ok "mode system prompt $SYSTEM_PROMPT"
 	else
@@ -117,7 +150,7 @@ doctor() {
 	if [ -f "$CONFIG" ]; then
 		ok "config $CONFIG"
 	else
-		warn "config missing: $CONFIG (run setup.sh)"
+		warn "config missing: $CONFIG (run 'research update')"
 	fi
 
 	if [ -f "${RESEARCHHARNESS_BRAND_LOGO:-}" ] && [ -f "${RESEARCHHARNESS_BRAND_TIPS:-}" ]; then
@@ -182,15 +215,28 @@ except sqlite3.Error:
 		fi
 		ok "projects $count under $projects_dir$active"
 	else
-		warn "projects dir missing (run setup.sh)"
+		warn "projects dir missing (run 'research update')"
 	fi
 
 	if [ "$DOCTOR_FAILED" -ne 0 ]; then
-		echo "status: NOT READY — fix the FAIL lines above (usually: bash setup.sh)"
+		echo "status: NOT READY — fix the FAIL lines above (usually: research update)"
 		return 1
 	fi
 	echo "status: ready — run 'research' to start"
 	echo "        type /help in the TUI to see every command"
+}
+
+# setup.sh is idempotent: re-running it is how the installed copies under
+# $OMP_AGENT_DIR and the registered plugin are refreshed from this checkout.
+refresh_install() {
+	local repo="$1" setup_out
+	echo "Refreshing the install..."
+	if setup_out="$(bash "$repo/setup.sh" </dev/null 2>&1)"; then
+		return 0
+	fi
+	printf '%s\n' "$setup_out" >&2
+	echo "research update: the install step failed (see above). The checkout is current; retry with: research update" >&2
+	return 1
 }
 
 # `research update`: fetch the latest harness from GitHub and refresh the install.
@@ -268,7 +314,13 @@ update() {
 
 	if [ "$new" = "$old" ]; then
 		echo "research-harness is already up to date: $(harness_version)."
-		return 0
+		# Still refresh: the checkout can be current while the installed copies
+		# drift (an earlier pull, a hand-edited agent). --check changes nothing.
+		[ "$check" -eq 0 ] || return 0
+		refresh_install "$repo" || return 1
+		local uptodate_rc=0
+		doctor || uptodate_rc=$?
+		return "$uptodate_rc"
 	fi
 
 	# After a force-push `old..new` counts the whole rebased stack, so count only
@@ -336,13 +388,7 @@ update() {
 		fi
 	fi
 
-	echo "Refreshing the install..."
-	local setup_out
-	if ! setup_out="$(bash "$repo/setup.sh" </dev/null 2>&1)"; then
-		printf '%s\n' "$setup_out" >&2
-		echo "research update: the install step failed (see above). The files are updated; retry with: bash \"$repo/setup.sh\"" >&2
-		return 1
-	fi
+	refresh_install "$repo" || return 1
 
 	local rc=0
 	doctor || rc=$?
@@ -381,7 +427,7 @@ web)
 		exit 1
 	fi
 	if [ ! -f "$SYSTEM_PROMPT" ]; then
-		echo "research: mode system prompt not found at $SYSTEM_PROMPT — run setup.sh" >&2
+		echo "research: mode system prompt not found at $SYSTEM_PROMPT — run 'research update'" >&2
 		exit 1
 	fi
 	export RESEARCH_WEB_OMP="$OMP_BIN"
@@ -391,7 +437,7 @@ web)
 esac
 
 if [ ! -f "$SYSTEM_PROMPT" ]; then
-	echo "research: mode system prompt not found at $SYSTEM_PROMPT — run setup.sh" >&2
+	echo "research: mode system prompt not found at $SYSTEM_PROMPT — run 'research update'" >&2
 	exit 1
 fi
 
