@@ -2,7 +2,7 @@
 # Research-mode launcher: loads persisted settings, exports the research env,
 # and starts omp (the fork's dev wrapper when runnable, else the installed omp)
 # with the research system prompt.
-# Usage: research [omp args...] | research doctor | research web | research update [--check]
+# Usage: research [omp args...] | research doctor | research web | research update [--check] | research version
 set -euo pipefail
 
 CONFIG="$HOME/.research-harness/config.env"
@@ -44,12 +44,29 @@ fail() {
 	DOCTOR_FAILED=1
 }
 
+# Harness version: research/VERSION at a commit (default HEAD) plus its short sha.
+# A file, not a git tag: the daily rebase-stack sync rewrites main, orphaning tags.
+# Only the no-arg form falls back to the working tree (non-git installs); an
+# explicit commit without the file is "unknown", never the local version.
+harness_version() {
+	local rev="${1:-HEAD}" v sha
+	if ! v="$(git -C "$RESEARCH_HARNESS_HOME" show "$rev:research/VERSION" 2>/dev/null)"; then
+		v=unknown
+		if [ "$#" -eq 0 ] && [ -f "$RESEARCH_HARNESS_HOME/research/VERSION" ]; then
+			v="$(cat "$RESEARCH_HARNESS_HOME/research/VERSION")"
+		fi
+	fi
+	sha="$(git -C "$RESEARCH_HARNESS_HOME" rev-parse --short "$rev" 2>/dev/null || true)"
+	echo "$v${sha:+ ($sha)}"
+}
+
 doctor() {
 	# All locals: doctor runs inside update(), where a leaked `count` would
 	# overwrite the new-commit count printed after it.
 	local a f ext base stats count active
 	DOCTOR_FAILED=0
 	echo "research doctor"
+	ok "research-harness $(harness_version)"
 
 	if command -v omp >/dev/null 2>&1; then
 		ok "omp $(omp --version 2>/dev/null | head -1) at $(command -v omp)"
@@ -250,7 +267,7 @@ update() {
 	new="$(git -C "$repo" rev-parse FETCH_HEAD)"
 
 	if [ "$new" = "$old" ]; then
-		echo "research-harness is already up to date."
+		echo "research-harness is already up to date: $(harness_version)."
 		return 0
 	fi
 
@@ -264,7 +281,7 @@ update() {
 		count="$(git -C "$repo" rev-list --count --cherry-pick --right-only "$old...$new")"
 	fi
 	if [ "$check" -eq 1 ]; then
-		echo "$count new commits available — run 'research update' to install them."
+		echo "$count new commits available ($(harness_version "$old") -> $(harness_version "$new")) — run 'research update' to install them."
 		echo "  latest: $(git -C "$repo" log -1 --format=%s "$new")"
 		return 0
 	fi
@@ -329,7 +346,7 @@ update() {
 
 	local rc=0
 	doctor || rc=$?
-	echo "research-harness updated ${old:0:7} -> ${new:0:7} ($count new commits)"
+	echo "research-harness updated $(harness_version "$old") -> $(harness_version "$new") ($count new commits)"
 	return "$rc"
 }
 
@@ -348,6 +365,10 @@ case "${1:-}" in
 doctor)
 	doctor
 	exit $?
+	;;
+version | --version)
+	echo "research-harness $(harness_version)"
+	exit 0
 	;;
 update)
 	shift

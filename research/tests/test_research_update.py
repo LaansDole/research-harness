@@ -156,6 +156,19 @@ class ResearchUpdateTest(helpers.ResearchCase):
         self.assertTrue(os.path.exists(self.installed_prompt("newcmd")))
         self.assertIn("research-harness updated", proc.stdout)
 
+    def test_update_reports_old_and_new_harness_version(self):
+        # The pre-VERSION commit must read "unknown", not borrow the local file.
+        write(os.path.join(self.upstream, "research/VERSION"), "0.2.0\n")
+        tip = self.push_commit()
+
+        proc = self.research("update")
+
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("updated unknown (", proc.stdout)
+        self.assertIn("-> 0.2.0 (%s)" % tip[:7], proc.stdout)
+        up = self.research("update")
+        self.assertIn("already up to date: 0.2.0 (%s)" % tip[:7], up.stdout)
+
     def test_force_pushed_remote_lands_on_new_tip_and_prints_the_old_sha(self):
         old = self.head()
         tip = self.rebuild_history()
