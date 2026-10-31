@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RecordRow, ReviewState } from "../../data";
 import { problemClass, useFetch } from "../api";
 import { EmptyState } from "./EmptyState";
+import { VerdictMark } from "./VerdictMark";
 import "./views.css";
 
 /** Human labels in review.py STATES order (the chip order). */
@@ -40,10 +41,18 @@ const NEEDS_FULLTEXT: Partial<Record<ReviewState, true>> = {
 	fulltext_retrieved: true,
 };
 
-function tone(state: ReviewState): string {
-	if (state === "included") return "ok";
-	if (state.endsWith("_excluded")) return "err";
-	return state === "duplicate" ? "muted" : "accent";
+/** The states that record a screening verdict: those read as highlighter marks, the rest as badges. */
+const STATE_VERDICT: Partial<Record<ReviewState, string>> = {
+	screened_excluded: "exclude",
+	fulltext_excluded: "exclude",
+	included: "include",
+};
+
+/** A record's state: its verdict in highlighter, or a neutral badge for a stage it is passing through. */
+function stateMark(state: ReviewState): ReactNode {
+	const verdict = STATE_VERDICT[state];
+	if (verdict !== undefined) return <VerdictMark verdict={verdict} label={LABELS[state]} />;
+	return <span className={`rw-badge rw-badge-${state === "duplicate" ? "muted" : "accent"}`}>{LABELS[state]}</span>;
 }
 
 /** Prefill actions for one record, most relevant first (the row shows the first). */
@@ -227,7 +236,7 @@ export function RecordsView({
 	const details = selected && (
 		<>
 			<div className="rw-drawer-head">
-				<span className={`rw-badge rw-badge-${tone(selected.state)}`}>{LABELS[selected.state]}</span>
+				{stateMark(selected.state)}
 				<span className="rw-drawer-nav">
 					<button
 						type="button"
@@ -293,13 +302,17 @@ export function RecordsView({
 			<dl>
 				{selected.ta_verdict && (
 					<>
-						<dt>Title/abstract verdict: {selected.ta_verdict}</dt>
+						<dt>
+							Title/abstract verdict: <VerdictMark verdict={selected.ta_verdict} />
+						</dt>
 						<dd>{selected.ta_rationale ?? "No rationale recorded."}</dd>
 					</>
 				)}
 				{selected.ft_verdict && (
 					<>
-						<dt>Full-text verdict: {selected.ft_verdict}</dt>
+						<dt>
+							Full-text verdict: <VerdictMark verdict={selected.ft_verdict} />
+						</dt>
 						<dd>{selected.ft_rationale ?? "No rationale recorded."}</dd>
 					</>
 				)}
@@ -402,9 +415,7 @@ export function RecordsView({
 												{[r.authors, r.year, r.venue].filter(Boolean).join(" · ")}
 											</div>
 										</td>
-										<td>
-											<span className={`rw-badge rw-badge-${tone(r.state)}`}>{LABELS[r.state]}</span>
-										</td>
+										<td>{stateMark(r.state)}</td>
 										<td className="rw-wide">
 											{r.has_pdf ? (
 												<a

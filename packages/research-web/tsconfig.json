@@ -1,5 +1,11 @@
 {
 	"extends": "../tsconfig.workspace.json",
 	"include": ["src", "test"],
-	"exclude": ["src/client", "test/reducer.test.ts", "test/transcript-session.test.tsx", "node_modules"]
+	"exclude": [
+		"src/client",
+		"test/reducer.test.ts",
+		"test/transcript-session.test.tsx",
+		"test/verdict.test.ts",
+		"node_modules"
+	]
 }
