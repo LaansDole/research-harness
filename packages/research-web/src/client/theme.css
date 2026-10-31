@@ -12,13 +12,17 @@
  *
  * The ONLY file in research web allowed to contain raw colour values; app.css/views.css use vars. */
 
-/* Geometry (theme-independent, so it lives in the dark block that light never resets):
- * PRISMA-diagram boxes — hairline borders and small corners, not pill-rounded cards. */
+/* Theme-independent overrides of tokens.css (which declares both on :root only).
+ * Geometry: PRISMA-diagram boxes — hairline borders and small corners, not pill-rounded cards.
+ * Type: the plain system UI sans; collab-web's stack asks for Inter first, which research web
+ * does not load and does not want. */
 :root {
 	--radius-sm: 4px;
 	--radius: 6px;
 	--radius-lg: 8px;
 	--radius-xl: 12px;
+
+	--font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 /* Dark — collab-web's default. */
