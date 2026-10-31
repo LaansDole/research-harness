@@ -62,6 +62,7 @@ research doctor
   ok    agent synthesizer
   ok    agent librarian
   ok    prompts (13 commands installed)
+  ok    installed agents/prompts match the checkout (17 files)
   ok    mode system prompt ~/Projects/research-harness/research/mode/system.md
   ok    config ~/.research-harness/config.env
   ok    brand "Research Harness", logo ok, tips ok
@@ -73,7 +74,7 @@ status: ready — run 'research' to start
         type /help in the TUI to see every command
 ```
 
-**A `FAIL` line means the fix is almost always `bash setup.sh`.** A `warn` about the corpus, the paper graph or the Jev first pass is fine — it means you haven't set a PDF folder, the graph file doesn't exist yet (it is created the first time you file a paper), or you haven't opted into the optional first pass (Part 1, after Step 4).
+**A `FAIL` line, or a `warn` that installed files differ from the checkout, means the fix is almost always `research update`** — it re-runs the install, so the agents and prompts under `~/.omp/agent/` match your checkout again. A `warn` about the corpus, the paper graph or the Jev first pass is fine — it means you haven't set a PDF folder, the graph file doesn't exist yet (it is created the first time you file a paper), or you haven't opted into the optional first pass (Part 1, after Step 4).
 
 ### Step 0.3 — Run the test suite
 
@@ -86,7 +87,7 @@ bash research/tests/run.sh
 Last three lines should be:
 
 ```text
-Ran 126 tests in 10.144s
+Ran 129 tests in 10.144s
 
 OK (skipped=1)
 ```
@@ -102,7 +103,9 @@ research update           # get it, then reinstall and health-check
 
 `research update` pulls the latest version from GitHub (`LaansDole/research-harness`, branch
 `main`), re-runs `setup.sh` so the prompts, agents and plugin match the new code, and finishes
-with `research doctor`. The last line is `research-harness updated <old> -> <new> (N new commits)`,
+with `research doctor`. It re-runs the install even when the checkout is already current, so it is
+also the command to run when `doctor` says installed files differ from the checkout.
+The last line is `research-harness updated <old> -> <new> (N new commits)`,
 where `<old>`/`<new>` read `<version> (<sha>)` (`unknown` for commits that predate `research/VERSION`) and
 `N` counts only work that is actually new to your copy (after a history rebuild, commits you
 already have are not counted again). `research version` prints the installed version.
@@ -561,8 +564,8 @@ Measured 2026-09-19 on a 50-record PubMed CSV and a 43-PDF folder.
 
 | Checkpoint | Expected | What a different result means |
 |---|---|---|
-| `bash bin/research doctor` | no `FAIL` line, `status: ready` (the Jev line is a `warn` until you opt in) | a `FAIL` line → re-run `bash setup.sh` |
-| `bash research/tests/run.sh` | `Ran 126 tests ... OK (skipped=1)`, ~10 s | the scripts are broken; stop and report |
+| `bash bin/research doctor` | no `FAIL` line, `status: ready` (the Jev line is a `warn` until you opt in) | a `FAIL` line → `research update` |
+| `bash research/tests/run.sh` | `Ran 129 tests ... OK (skipped=1)`, ~10 s | the scripts are broken; stop and report |
 | `/import` of the 50-record CSV | `added: 50, already_present: 0, skipped: 0` | `skipped > 0` → rows without a title; `added: 0` → format not recognised |
 | Re-run the same `/import` | `added: 0, already_present: 50` | duplicates created → the store is not idempotent; report it |
 | Field completeness after CSV import | 50 titles, 48 DOIs, 50 years, **0 abstracts, 0 journals** | more abstracts is better (a richer export); fewer titles means a parsing problem |
@@ -664,7 +667,7 @@ Observed: `1 author(s): ['Borkowski AA, Ben-Ari A.']` — two people in one stri
 
 | Symptom | What it means | What to do |
 |---|---|---|
-| `doctor` reports a missing prompt or agent | the install drifted | `bash setup.sh`, then `doctor` again |
+| `doctor` reports a missing prompt or agent, or installed files that differ from the checkout | the install drifted | `research update`, then `doctor` again |
 | `_http: HTTP Error 429 ...; retry 1/3 in 3s` | arXiv/OpenAlex is rate-limiting you | nothing — the backoff is 3s, 9s, 27s and it honours `Retry-After`. **Don't re-run the command while it's waiting**; that's what got you throttled |
 | `skipping Unpaywall — set UNPAYWALL_EMAIL` | Unpaywall needs a real contact address | add `UNPAYWALL_EMAIL="you@example.org"` to `~/.research-harness/config.env`, or accept that one cascade step is skipped |
 | `"needs_human_review": true` with a `candidate_url` | no open-access copy was found | open the link yourself; if you find a legitimate OA copy, approve it and it will be fetched and recorded |
