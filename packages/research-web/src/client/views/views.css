@@ -417,6 +417,45 @@ dialog.rw-drawer {
 	overflow-wrap: anywhere;
 }
 
+/* Claim checks as margin notes: the review column reserves a right margin wide enough for a card,
+ * and the note sits beside the line the selection starts on. Below 1100px the toolbar carries the
+ * action alone, as before. */
+.rw-margin {
+	display: none;
+}
+
+@media (min-width: 1100px) {
+	.rw-margin {
+		position: relative;
+		display: block;
+		flex: 0 0 210px;
+		align-self: stretch;
+	}
+}
+
+.rw-margin-note {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	padding: 8px 10px;
+	border: 1px solid var(--border-strong);
+	border-left: 3px solid var(--accent);
+	border-radius: var(--radius-sm);
+	background: var(--bg-raised);
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.rw-margin-quote {
+	margin: 0 0 6px;
+	color: var(--fg-muted);
+}
+
+/* The sentence a claim check was asked about stays marked while its note is up. */
+::highlight(rw-claim) {
+	background-color: var(--rw-claim-tint);
+}
+
 .rw-doc section {
 	scroll-margin-top: 8px;
 }
