@@ -7,13 +7,14 @@ Run: python3 -m unittest discover -s .github/tests -v
 """
 
 import os
+import shutil
 import stat
 import subprocess
 import tempfile
 import textwrap
 import unittest
 
-from test_sync_upstream import SCRIPTS, Fixture, git
+from test_sync_upstream import REPO_ROOT, SCRIPTS, Fixture, git
 
 CHECK_MARKERS = os.path.join(SCRIPTS, "check-sync-markers.sh")
 PR_BODY = os.path.join(SCRIPTS, "sync-pr-body.sh")
@@ -131,6 +132,30 @@ class AiTests(unittest.TestCase):
         self.assertIn(f"<!-- fork-sync-old: {self.old} -->", body.splitlines()[0])
         self.assertIn("| `src/app.txt` | fork: branding | **UNRESOLVED** |", body)
         self.assertIn("fork: branding", body.split("range-diff")[1])
+
+    def test_rebase_stop_at_older_commit_still_runs_current_helpers(self):
+        # CI runs the scripts from the worktree the rebase rewrites. Put a stale
+        # ai-resolve.sh in the stack BELOW the conflicting commit; the current one on top.
+        fork = self.fx.fork
+        git("-C", fork, "reset", "-q", "--hard", "HEAD~1")
+        self.fx.commit(fork, ".github/scripts/ai-resolve.sh", "echo AI-SKIPPED stale helper\n", "ci: old helper")
+        self.fx.commit(fork, "src/app.txt", "app v1\nfork branding\n", "fork: branding")
+        for d in ("scripts", "prompts"):
+            shutil.copytree(os.path.join(REPO_ROOT, ".github", d), os.path.join(fork, ".github", d), dirs_exist_ok=True)
+        git("-C", fork, "add", ".github")
+        git("-C", fork, "commit", "-qm", "ci: current helpers")
+        git("-C", fork, "push", "-qf", "origin", "main")
+        out = self.fx.run(
+            os.path.join(fork, ".github", "scripts", "sync-upstream.sh"),
+            f"PATH={self.bin}:{os.environ['PATH']}",
+            "STUB_MODE=ok",
+            f"STUB_LOG={self.log}",
+            f"OPENCODE_API_KEY={KEY}",
+        )
+        self.assertEqual(out.returncode, 0, out.stdout + out.stderr)
+        self.assertNotIn("stale helper", out.stdout)
+        self.assertEqual(self.fx.result()["U"], "0")
+        self.assertEqual(self.tip("src/app.txt"), "resolved src/app.txt\n")
 
 
 class MarkerGuardTests(unittest.TestCase):
