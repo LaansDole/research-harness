@@ -20,14 +20,15 @@ of those four are wrong for a review. See the calibration table.
 
 The pass may not break any of these. If a fix would break one, leave the sentence as it is.
 
-a. **No evidence moves.** No claim, finding, number, count, date, sample size, or effect size is
-   added, removed, or altered. Editing is limited to wording, sentence boundaries, and sentence order
+a. **No evidence moves.** No finding, number, count, date, sample size, effect size, or any claim a
+   `[n]` marker supports is added, removed, or altered. Unevidenced appraisal that the review itself
+   added ("groundbreaking", "transformative", "not merely technical") is wording, not evidence, and
+   may be cut. Editing is otherwise limited to wording, sentence boundaries, and sentence order
    inside a paragraph.
-b. **Citation markers are conserved.** The multiset of `[n]` markers in the body is identical before
-   and after, and every sentence keeps the markers it carried. A marker may move inside its own
-   sentence (for example to sit next to the clause it supports). It may never move to another
-   sentence, and none is added or dropped. Merging two sentences carries both sets of markers into
-   the merged sentence; splitting one sentence keeps every marker with the clause it came from.
+b. **No marker crosses a claim boundary.** Merging two sentences carries both sets of markers into
+   the merged sentence; splitting one keeps every marker with the clause it came from. The multiset
+   of `[n]` markers in the body is identical before and after: none is added or dropped, and a
+   marker moves only inside its own sentence, to sit next to the clause it supports.
 c. **References are byte-identical.** The `## References` section is not edited at all: not its
    ordering, numbering, punctuation, capitalization, or whitespace.
 d. **Method counts are untouched.** Candidate, included, and excluded counts, the named databases,
@@ -37,6 +38,8 @@ e. **Quoted text is untouched.** Wording quoted from a paper stays verbatim, AI 
 f. **No invention.** If a sentence can only be improved by supplying a detail the included papers do
    not provide (a sample size, a year, a mechanism), leave it alone. A vague sentence is a much
    smaller defect than a fabricated one.
+g. **Structure is unchanged.** The headings, their order, and the section each sentence sits in are
+   the drafted ones.
 
 ## Academic calibration
 
@@ -77,11 +80,11 @@ transformative, or paradigm-shifting; a single study called "a major advance".
 | intricate | complex, or name what is complex |
 | showcase | show, report, demonstrate |
 | leverage, utilize | use |
-| robust | keep for the statistical sense (robust standard errors, robust to specification); otherwise state what held |
-| seamless, seamlessly | delete, or state the integration |
-| significant | keep only for statistical significance with a reported test; otherwise "large", "substantial", or the number |
+| robust | keep for the statistical sense (robust standard errors, robust to specification); otherwise state what held, or delete; if the draft does not contain the detail, leave the word (invariant f) |
+| seamless, seamlessly | delete, or state the integration; if the draft does not contain the detail, leave the word (invariant f) |
+| significant | keep for statistical significance with a reported test; in review voice, replace it with the reported number, never with another magnitude word |
 | notably, importantly, interestingly | delete |
-| furthermore, moreover, additionally (in chains) | delete, or join the sentences |
+| furthermore, moreover, additionally (in chains) | delete the connective; join the sentences only when both halves are supported by the same markers |
 | comprehensive, exhaustive | delete unless the search met a stated definition of coverage |
 | myriad, plethora | many, or the count |
 | it is worth noting that, it is important to note that | delete |
@@ -103,8 +106,8 @@ keep it inside the same sentence so it stays under that sentence's markers. Othe
 
 **Vague attribution.** "Studies show", "researchers argue", "it is widely recognized", "the
 literature suggests", with no marker. An uncited generalization in a review is an evidence defect,
-not a style defect. Either fold it into an adjacent sentence that already carries the markers
-supporting it, or cut it. Never attach a marker that was not already there (invariant b).
+not a style defect. Fold it into an adjacent sentence only when that sentence already states the
+claim; otherwise cut it. Never attach a marker that was not already there (invariant b).
 - Before: Studies show that multi-agent designs improve reliability. Two evaluations report fewer unsupported recommendations [3][8].
 - After: Two evaluations report fewer unsupported recommendations from multi-agent designs [3][8].
 
@@ -136,26 +139,26 @@ finding instead, but never at the cost of precision.
 ## Procedure
 
 1. Finish the review first. The pass needs a complete draft; do not interleave it with drafting.
-2. Keep the pre-pass text available for comparison. Re-read the file before editing if it is no
-   longer in context.
+2. Edit in place with `edit`, one sentence per patch, so every untouched sentence stays its own
+   baseline. Never rewrite the file with `write`: `## References` and `## Method` are then outside
+   the pass by construction.
 3. List the tells section by section, each with the sentence it appears in. Do not edit yet.
-4. Revise one sentence at a time. After each edit, check invariants a, b, and e on that sentence
-   before moving to the next.
+4. Patch one sentence at a time. After each patch, re-read the patched lines and check invariants
+   a, b, and e on that sentence before moving to the next.
 5. Verify, and report the result:
-   - Markers: search the body for `\[[0-9]+\]` and compare the counts per section against the
-     pre-pass draft. Equal multisets, not just equal totals.
-   - `## References`: compare line by line against the pre-pass text. Any difference is a bug in the
-     pass; restore the original section.
-   - `## Method`: the counts, database names, and dates are the pre-pass values.
-   - Scan the diff for any number, year, or claim that was not in the pre-pass draft.
+   - Markers: re-read each edited sentence and confirm it carries the same `[n]` markers the patch
+     replaced. Equal multisets per sentence, not just equal totals.
+   - `## References` and `## Method`: no patch targeted either section. If one did, revert it.
+   - Re-read each edited sentence: no number, year, or claim is new.
 6. If a check fails, restore the pre-pass sentence and leave the tell in place. A review that still
    says "underscores" is acceptable. A review with a moved citation is not.
 
 ## Attribution
 
 Pattern families adapted from the `avoid-ai-writing` skill by Conor Bronsdon (MIT,
-https://github.com/conorbronsdon/avoid-ai-writing) and from Wikipedia's "Signs of AI writing"
-(WikiProject AI Cleanup, https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing, CC BY-SA 4.0).
+https://github.com/conorbronsdon/avoid-ai-writing). Informed by Wikipedia's "Signs of AI writing"
+(WikiProject AI Cleanup, https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing); no text is
+reused from it.
 The invariants, the academic calibration, and all examples here are this repository's own. Text from
 the academic-research-skills plugin is deliberately not reused: it is CC BY-NC 4.0, which is
 incompatible with this MIT-licensed repository.
