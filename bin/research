@@ -45,6 +45,9 @@ fail() {
 }
 
 doctor() {
+	# All locals: doctor runs inside update(), where a leaked `count` would
+	# overwrite the new-commit count printed after it.
+	local a f ext base stats count active
 	DOCTOR_FAILED=0
 	echo "research doctor"
 
@@ -203,11 +206,23 @@ update() {
 		return 1
 	fi
 
-	local dirty
+	# Files the build regenerates (*.generated.*) are not user edits: the local
+	# `bun install` postinstall rewrites them per machine. They get discarded and
+	# rebuilt below instead of blocking the update; any other edit still blocks.
+	local dirty blocking="" line entry regen=0
+	local -a generated=()
 	dirty="$(git -C "$repo" status --porcelain --untracked-files=no)"
-	if [ -n "$dirty" ]; then
+	while IFS= read -r line; do
+		[ -n "$line" ] || continue
+		entry="${line:3}"
+		case "$entry" in
+		*.generated.*) generated+=("$entry") ;;
+		*) blocking+="$line"$'\n' ;;
+		esac
+	done <<<"$dirty"
+	if [ -n "$blocking" ]; then
 		echo "research update: $repo has edits that are not saved in git:" >&2
-		printf '%s\n' "$dirty" | sed 's/^.\{3\}/  /' >&2
+		printf '%s' "$blocking" | sed 's/^.\{3\}/  /' >&2
 		echo "Undo or commit them first, then run 'research update' again." >&2
 		return 1
 	fi
@@ -239,15 +254,27 @@ update() {
 		return 0
 	fi
 
-	local count
-	count="$(git -C "$repo" rev-list --count "$old..$new")"
+	# After a force-push `old..new` counts the whole rebased stack, so count only
+	# the commits whose content is not already in this copy.
+	local count ff=0
+	if git -C "$repo" merge-base --is-ancestor "$old" "$new"; then
+		ff=1
+		count="$(git -C "$repo" rev-list --count "$old..$new")"
+	else
+		count="$(git -C "$repo" rev-list --count --cherry-pick --right-only "$old...$new")"
+	fi
 	if [ "$check" -eq 1 ]; then
 		echo "$count new commits available — run 'research update' to install them."
 		echo "  latest: $(git -C "$repo" log -1 --format=%s "$new")"
 		return 0
 	fi
 
-	if git -C "$repo" merge-base --is-ancestor "$old" "$new"; then
+	if [ "${#generated[@]}" -gt 0 ]; then
+		git -C "$repo" checkout HEAD -- "${generated[@]}"
+		regen=1
+	fi
+
+	if [ "$ff" -eq 1 ]; then
 		git -C "$repo" merge --ff-only --quiet "$new"
 	else
 		# Expected: the daily rebase-stack sync force-pushes main and keeps the
@@ -278,11 +305,17 @@ update() {
 
 	local deps
 	deps="$(git -C "$repo" diff --name-only "$old" "$new" -- package.json bun.lock)"
-	if [ -n "$deps" ] && command -v bun >/dev/null 2>&1; then
-		echo "Updating dependencies..."
-		if ! (cd "$repo" && bun install >/dev/null 2>&1); then
-			echo "research update: 'bun install' failed in $repo — run it there by hand to see why." >&2
-			return 1
+	if [ -n "$deps" ] || [ "$regen" -eq 1 ]; then
+		if ! command -v bun >/dev/null 2>&1; then
+			echo "research update: bun is not installed, so dependencies and build files were not rebuilt — install bun and run 'bun install' in $repo." >&2
+		else
+			echo "Updating dependencies..."
+			local bun_out
+			if ! bun_out="$(cd "$repo" && bun install 2>&1)"; then
+				printf '%s\n' "$bun_out" | tail -20 >&2
+				echo "research update: 'bun install' failed in $repo — run it there by hand to see why." >&2
+				return 1
+			fi
 		fi
 	fi
 
