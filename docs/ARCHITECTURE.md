@@ -75,7 +75,7 @@ flowchart TB
 | pi-package manifest | `research/package.json` | Registers the two skills and thirteen prompt templates with omp (`omp` key, lines 6-23) and upstream pi (`pi` key, lines 24-41) via `omp plugin install` |
 | scholar agent | `research/agents/scholar.md` | Read-only search: runs arXiv/OpenAlex scripts and/or scans the local corpus, dedupes, returns ranked candidates as a typed schema |
 | screener agent | `research/agents/screener.md` | Applies include/exclude criteria per SCREENING.md; one verdict per candidate, same order as input |
-| synthesizer agent | `research/agents/synthesizer.md` | Writes `review-<slug>.md` citing only papers present in its input — never fabricates citations |
+| synthesizer agent | `research/agents/synthesizer.md` | Writes `review-<slug>.md` citing only papers present in its input — never fabricates citations; runs the PROSE.md prose pass over its own draft before finishing |
 | librarian agent | `research/agents/librarian.md` | Curates the paper graph: add/link, OpenAlex auto-edges, connection queries, viz export |
 | prompt commands | `research/prompts/*.md` | The 13 `/` commands: `litreview`, `scope`, `databases`, `searchstring`, `find`, `import`, `dedupe`, `screen`, `fulltext`, `review`, `graph`, `prisma`, `export` |
 | mode system prompt | `research/mode/system.md` | Operating posture (proactive workflow, OA-only, no paywalled-database scraping), project layout, and per-command semantics |
@@ -94,7 +94,7 @@ flowchart TB
 | — `_http.py` | `scripts/_http.py` | Shared HTTP GET with rate-limit-aware retries — the single network chokepoint |
 | — `jev_client.py` | `scripts/jev_client.py` | Optional TypeSafe Jev (System One) client: one POST per fan-out, same retry contract as `_http.py` (`jev_client.py:21-23`) |
 | — `jev_screen.py` | `scripts/jev_screen.py` | Optional calibrated first pass at title/abstract screening (section 6.1); writes verdicts only through the `review.py` CLI |
-| — references | `references/SCREENING.md`, `references/DATABASES.md` | Screening methodology (source of truth for verdicts) and database selection + per-database search syntax |
+| — references | `references/SCREENING.md`, `references/DATABASES.md`, `references/PROSE.md` | Screening methodology (source of truth for verdicts), database selection + per-database search syntax, and the academic-register prose pass the synthesizer runs on its finished draft |
 | paper-graph skill | `research/skills/paper-graph/` | The second-brain graph |
 | — `paper_graph.py` | `scripts/paper_graph.py` | SQLite graph CRUD, BFS neighbors, terminal `view`, OpenAlex `auto-edges`, export |
 | — `graph_viz.py` | `scripts/graph_viz.py` | One self-contained offline HTML file: canvas force-directed layout, zero external URLs |
@@ -255,6 +255,7 @@ A calibrated first pass at the title/abstract stage, off unless a TypeSafe API k
 | PRISMA counts are derived, never hand-typed | `prisma_scr.derive()` computes every box from `review.counts()` state sums and `assert`s the stages reconcile (`research/skills/literature-search/scripts/prisma_scr.py:22-52`, assertion at line 33) |
 | Every state change is auditable | `transition()` validates the edge against `ALLOWED` and appends `(record_id, from_state, to_state, note, at)` to `history` (`review.py:167-188`); multi-hop verdicts record the intermediate states too |
 | Citations are real | The synthesizer's prompt forbids fabricating citations — it cites only papers present in its input (`research/agents/synthesizer.md`) |
+| Prose editing cannot touch evidence | The synthesizer's final prose pass is bounded by PROSE.md's invariants: no claim/number/date changes, the `[n]` marker multiset is conserved sentence by sentence, `## References` stays byte-identical, `## Method` counts are untouched, and a sentence that would need new information is left alone (`research/skills/literature-search/references/PROSE.md`) |
 | No fabricated URLs | The cascade's last resort returns a search-page `candidate_url` flagged `needs_human_review`; closed access is recorded as `fulltext_not_retrieved`, never guessed at (`fetch_paper.py:137-143`) |
 | Offline-safe graph export | `graph_viz.py` emits one self-contained HTML file — embedded data, inline vanilla-JS canvas, zero external script/style/import sources — asserted by `test_exported_html_is_self_contained` (`research/tests/test_paper_graph.py:110-123`) |
 | Rate limits degrade instead of corrupting output | All network calls route through `_http.fetch`: 4 attempts on 429/500/502/503/504 and timeouts, exponential backoff 3s/9s/27s capped at 60s, numeric `Retry-After` honored; retry notices go to stderr so stdout stays pure JSON lines (`research/skills/literature-search/scripts/_http.py:13-15,44-55`) |
@@ -263,7 +264,7 @@ A calibrated first pass at the title/abstract stage, off unless a TypeSafe API k
 
 ## 8. Testing
 
-`research/tests/` is a python3 stdlib `unittest` suite — 109 tests, no third-party dependencies:
+`research/tests/` is a python3 stdlib `unittest` suite — 111 tests, no third-party dependencies:
 
 ```sh
 bash research/tests/run.sh    # python3 -m unittest discover -s research/tests -v
@@ -274,7 +275,7 @@ Guarantees built into the harness (`research/tests/helpers.py`):
 - **Offline by construction**: `urllib.request.urlopen` is replaced at import time with a guard that raises `NetworkGuard` — a `RuntimeError` on purpose, so `_http`'s retry handler (which catches `URLError`/`OSError`) can never swallow it (`helpers.py:30-40`).
 - **Corpus-independent**: every test runs in its own temp dir with env snapshot/restore (`ResearchCase`); the single corpus smoke test is `skipUnless(CORPUS_PDFS)` and skips cleanly when no corpus is configured.
 
-Coverage by file: `test_http.py` (retry/backoff/Retry-After contract), `test_refs_io.py` (RIS/BibTeX/CSV round-trips, malformed-entry resilience, author normalization), `test_review.py` (import idempotence, dedupe rules, every legal and illegal state transition, verdict semantics), `test_prisma_scr.py` (derived-count invariants across state distributions, all four renderers), `test_prisma.py` (legacy ledger + reconciliation warning), `test_fetch_paper.py` (cascade order and record outcomes), `test_local_library.py` (title/author/DOI heuristics, non-PDF safety), `test_paper_graph.py` (round-trip, edge CHECK, view, offline HTML export), `test_jev_client.py` (request shape, error mapping, retry, key resolution), `test_jev_screen.py` (bands, provenance, no-abstract skips, dry run, no-key exit 0).
+Coverage by file: `test_http.py` (retry/backoff/Retry-After contract), `test_refs_io.py` (RIS/BibTeX/CSV round-trips, malformed-entry resilience, author normalization), `test_review.py` (import idempotence, dedupe rules, every legal and illegal state transition, verdict semantics), `test_prisma_scr.py` (derived-count invariants across state distributions, all four renderers), `test_prisma.py` (legacy ledger + reconciliation warning), `test_fetch_paper.py` (cascade order and record outcomes), `test_local_library.py` (title/author/DOI heuristics, non-PDF safety), `test_paper_graph.py` (round-trip, edge CHECK, view, offline HTML export), `test_jev_client.py` (request shape, error mapping, retry, key resolution), `test_jev_screen.py` (bands, provenance, no-abstract skips, dry run, no-key exit 0), `test_agent_references.py` (every `references/<NAME>.md` an agent prompt names resolves under the skill's `references/`).
 
 Named regression tests and the bug each guards against:
 
