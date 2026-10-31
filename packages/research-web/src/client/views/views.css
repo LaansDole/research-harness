@@ -234,15 +234,26 @@
 /* Highlighter verdict mark: the word on a band over the lower part of the line, with its icon.
  * The uneven corner radii read as the ends of a drawn stroke; the band never carries meaning alone. */
 .rw-mark {
+	position: relative;
+	z-index: 0; /* own stacking context, so the band below stays above the row's background */
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
 	padding: 1px 6px 2px;
-	border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px;
-	background: linear-gradient(to top, var(--rw-hl) 66%, transparent 66%);
 	color: var(--rw-hl-fg);
 	font-size: 12px;
+	font-weight: 400; /* inside the detail panel's bold <dt> labels too */
 	white-space: nowrap;
+}
+
+/* The band itself: only the lower part of the line, so its rounded, uneven ends are visible. */
+.rw-mark::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 34% 0 0;
+	border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px;
+	background: var(--rw-hl);
 }
 
 .rw-mark svg {
@@ -585,19 +596,22 @@ dialog.rw-drawer {
 	gap: 4px;
 }
 
+/* The server-drawn SVG is black ink on white; dark mode frames it as a paper card instead of
+ * letting it glare (--rw-prisma-dim is `none` in light). */
 .rw-prisma-card {
 	max-width: 100%;
 	width: fit-content;
 	padding: 16px;
-	border: 1px solid var(--border-strong);
+	border: 1px solid var(--rw-paper-border);
 	border-radius: var(--radius-lg);
-	background: var(--panel);
+	background: var(--rw-paper);
 	overflow: auto;
 }
 
 .rw-prisma-card img {
 	display: block;
 	max-width: 100%;
+	filter: var(--rw-prisma-dim);
 }
 
 .rw-prisma-card.rw-actual img {

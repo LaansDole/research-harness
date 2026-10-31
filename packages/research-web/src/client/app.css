@@ -301,6 +301,12 @@
 	background: var(--accent-muted);
 }
 
+/* The stage the Reading list is filtered to (prisma.ts activeStage). */
+.rw-app .rw-strip .rw-strip-box[aria-current="true"] {
+	border-color: var(--accent);
+	background: var(--accent-muted);
+}
+
 .rw-strip-n {
 	color: var(--rw-ink);
 	font-size: 13px;
@@ -310,13 +316,19 @@
 
 .rw-strip-label {
 	color: var(--fg-muted);
-	font-size: 11px;
+	font-size: 12px;
 }
 
+/* Pending work reads as a count, not an aside: upright, tabular, with the number in ink. */
 .rw-strip-pending {
 	color: var(--fg-muted);
-	font-size: 10px;
-	font-style: italic;
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+.rw-strip-pending-n {
+	color: var(--rw-ink);
+	font-weight: 600;
 }
 
 .rw-strip-arrow {
