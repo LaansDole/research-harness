@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { REVIEW_STATES, type ReviewState } from "../src/data";
-import { derivePrisma, prismaStrip, stageChip } from "../src/client/prisma";
+import { activeStage, derivePrisma, prismaStrip, stageChip } from "../src/client/prisma";
 
 function counts(partial: Partial<Record<ReviewState, number>>): Record<ReviewState, number> {
 	const out = Object.fromEntries(REVIEW_STATES.map(s => [s, 0])) as Record<ReviewState, number>;
@@ -132,4 +132,18 @@ test("prismaStrip is empty for a project with no records and ordered for one wit
 		{ stage: "assessed", count: 4, pending: 0, chip: "" },
 		{ stage: "included", count: 4, pending: 0, chip: "included" },
 	]);
+});
+
+/** The strip marks where the Reading list stands; marking the wrong box (or every box at once,
+ * since several stages fall back to All) misreports the review's position. */
+test("the reading list's chip resolves to the one strip box that owns it", () => {
+	expect(activeStage("")).toBe("identified"); // All: only Identified asks for it
+	expect(activeStage("identified")).toBe("screened");
+	expect(activeStage("screened_included")).toBe("sought");
+	expect(activeStage("fulltext_sought")).toBe("sought");
+	expect(activeStage("fulltext_retrieved")).toBe("assessed");
+	expect(activeStage("included")).toBe("included");
+	// Chips the reading list offers that no stage box opens.
+	expect(activeStage("duplicate")).toBeNull();
+	expect(activeStage("screened_excluded")).toBeNull();
 });
