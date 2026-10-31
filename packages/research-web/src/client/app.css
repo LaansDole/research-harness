@@ -116,7 +116,6 @@
 
 .rw-list li.rw-selected {
 	background: var(--selected);
-	box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .rw-row {
