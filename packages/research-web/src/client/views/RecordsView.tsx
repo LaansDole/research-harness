@@ -72,12 +72,15 @@ export function RecordsView({
 	active,
 	tick,
 	prefill,
+	filter,
 }: {
 	slug: string;
 	/** Whether `slug` is the agent's active project: slash commands only target that one. */
 	active: boolean;
 	tick: number;
 	prefill(text: string): void;
+	/** A state filter asked for from outside (the header's PRISMA strip); `n` makes a repeat click land. */
+	filter: { state: ReviewState | ""; n: number } | null;
 }): ReactNode {
 	const base = `/api/projects/${encodeURIComponent(slug)}`;
 	// ponytail: one fetch, client-side filtering; server ?state= filtering if a project reaches thousands of rows.
@@ -104,6 +107,11 @@ export function RecordsView({
 		setSelectedId(null);
 		setOpen(false);
 	}, [slug]);
+
+	// Declared after the project reset so a strip click during a project switch still wins.
+	useEffect(() => {
+		if (filter !== null) setState(filter.state);
+	}, [filter]);
 
 	// Mobile: a native modal dialog, so everything behind the sheet is inert and Tab stays inside it.
 	useEffect(() => {
