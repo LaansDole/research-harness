@@ -156,6 +156,46 @@ class ResearchUpdateTest(helpers.ResearchCase):
         self.assertTrue(os.path.exists(self.installed_prompt("newcmd")))
         self.assertIn("research-harness updated", proc.stdout)
 
+    def test_up_to_date_update_still_refreshes_the_install(self):
+        """Regression: update() returned early when FETCH_HEAD == HEAD, so a
+        drifted installed agent stayed drifted until setup.sh was run by hand."""
+        installed = os.path.join(self.home, ".omp/agent/agents/scholar.md")
+        write(installed, "# drifted scholar\n")
+        before = self.head()
+
+        proc = self.research("update")
+
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        self.assertIn("already up to date", proc.stdout)
+        self.assertEqual(self.head(), before)
+        self.assertEqual(read(installed), "# scholar\n")
+
+    def test_check_installs_nothing_when_already_up_to_date(self):
+        proc = self.research("update", "--check")
+
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertIn("already up to date", proc.stdout)
+        self.assertFalse(os.path.exists(self.installed_prompt("lit-review")))
+
+    def test_doctor_flags_drifted_installed_files_until_update_refreshes_them(self):
+        self.assertEqual(self.research("update").returncode, 0)
+        write(os.path.join(self.home, ".omp/agent/agents/screener.md"), "# drifted\n")
+        os.remove(self.installed_prompt("lit-review"))
+
+        stale = self.research("doctor")
+
+        self.assertIn("2 installed file(s) differ from the checkout", stale.stdout)
+        self.assertIn("agents/screener.md", stale.stdout)
+        self.assertIn("prompts/lit-review.md", stale.stdout)
+        self.assertIn("run 'research update'", stale.stdout)
+
+        self.assertEqual(self.research("update").returncode, 0)
+        fresh = self.research("doctor")
+
+        self.assertEqual(fresh.returncode, 0, fresh.stdout + fresh.stderr)
+        self.assertIn("installed agents/prompts match the checkout (5 files)",
+                      fresh.stdout)
+
     def test_update_reports_old_and_new_harness_version(self):
         # The pre-VERSION commit must read "unknown", not borrow the local file.
         write(os.path.join(self.upstream, "research/VERSION"), "0.2.0\n")
