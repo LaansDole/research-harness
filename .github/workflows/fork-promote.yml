@@ -3,8 +3,11 @@ name: Fork promote
 # Label `promote` on the sync/rebase PR -> force-push sync/rebase to main, close the PR.
 # The merge button would merge upstream history into the old stack; this replaces it.
 # Spec: docs/superpowers/specs/2026-10-17-fork-rebase-stack-design.md §4
+# pull_request_target, not pull_request: GitHub skips pull_request workflows while the PR
+# conflicts with main, and the rebased-stack PR almost always does. The job only runs for
+# this repo's own sync/rebase branch (see `if:`), never a fork's code.
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled]
 
 permissions:
