@@ -1,8 +1,9 @@
 name: Fork sync
 
-# Daily rebase of this fork's commit stack onto can1357/oh-my-pi:main.
-# Clean + green -> main is force-pushed (old main kept as main-prev). Conflicts or red tests
-# -> the rebased stack goes to sync/rebase with a PR; the `promote` label lands it.
+# Every-other-day rebase of this fork's commit stack onto can1357/oh-my-pi:main.
+# Clean + green -> main is force-pushed (old main kept as main-prev). Conflicts all
+# AI-resolved + green -> the PR gets `promote` automatically. Markers left or red tests
+# -> the rebased stack waits on sync/rebase as a PR; a human adds `promote` to land it.
 # Spec: docs/superpowers/specs/2026-10-17-fork-rebase-stack-design.md
 # Scheduled workflows only run from the default branch; keep this on main.
 on:
@@ -132,6 +133,12 @@ jobs:
           }
           label "$K" sync-conflicts
           label "$AI_R" ai-resolved
+          # Every conflict AI-resolved and the gate green -> self-promote. The PAT-applied
+          # label fires fork-promote.yml, which re-checks markers before pushing main.
+          # Unresolved markers or red tests -> stays a PR for a human.
+          if [ "$U" = "0" ] && [ "$TESTS" = "pass" ]; then
+            gh api "repos/$GH_REPO/issues/$PR/labels" -f "labels[]=promote" --silent
+          fi
 
       - name: Upload sync report
         if: always() && steps.rebase.outcome != 'skipped'
