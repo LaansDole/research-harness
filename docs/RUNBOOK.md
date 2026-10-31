@@ -85,12 +85,12 @@ bash research/tests/run.sh
 Last three lines should be:
 
 ```text
-Ran 119 tests in 1.129s
+Ran 124 tests in 9.161s
 
 OK (skipped=1)
 ```
 
-It takes about a second. **Any `FAIL`/`ERROR` here means the scripts themselves are broken** — do not start a review on top of that; report it.
+It takes a few seconds. **Any `FAIL`/`ERROR` here means the scripts themselves are broken** — do not start a review on top of that; report it.
 
 ### Step 0.4 — Keeping the harness up to date
 
@@ -101,12 +101,16 @@ research update           # get it, then reinstall and health-check
 
 `research update` pulls the latest version from GitHub (`LaansDole/research-harness`, branch
 `main`), re-runs `setup.sh` so the prompts, agents and plugin match the new code, and finishes
-with `research doctor`. The last line is `research-harness updated <old> -> <new> (N commits)`.
+with `research doctor`. The last line is `research-harness updated <old> -> <new> (N new commits)`,
+where `N` counts only work that is actually new to your copy (after a history rebuild, commits you
+already have are not counted again).
 Run it from anywhere; it works on the folder you cloned.
 
 It stops and changes nothing when:
 
-- **the folder has edits you have not saved in git** — it prints the files; undo or commit them first;
+- **the folder has edits you have not saved in git** — it prints the files; undo or commit them first.
+  Files the build regenerates (named `*.generated.*`) do not count: the update resets them and
+  re-runs `bun install` so they match your machine;
 - **you are on another branch** — switch back to `main`;
 - **you made your own commits** on `main` that are not on GitHub — it lists them and tells you how
   to park them on their own branch first. Your work is never thrown away.
