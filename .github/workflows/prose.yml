@@ -1,0 +1,94 @@
+name: Prose check (advisory)
+
+# Scores the fork's own human-facing docs with the avoid-ai-writing deterministic detector and
+# reports the result. Advisory only: this workflow never fails a pull request or a push.
+#
+# Scope: docs/ is mostly upstream oh-my-pi documentation (synced weekly from can1357/oh-my-pi), so
+# scanning all of it would report findings this fork does not own and would churn on every sync.
+# The scanned list below is the set of prose files the fork added, from:
+#   git diff --name-only --diff-filter=A $(git merge-base HEAD upstream/main) HEAD
+
+on:
+  pull_request:
+    paths:
+      - .github/README.md
+      - docs/ARCHITECTURE.md
+      - docs/RUNBOOK.md
+      - packages/research-web/README.md
+      - .github/workflows/prose.yml
+  push:
+    branches: [main]
+    paths:
+      - .github/README.md
+      - docs/ARCHITECTURE.md
+      - docs/RUNBOOK.md
+      - packages/research-web/README.md
+      - .github/workflows/prose.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  THRESHOLD: "6"
+  CONTEXT: technical
+  SOURCE_MODE: rendered-markdown
+
+jobs:
+  prose:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@v7
+        with:
+          repository: conorbronsdon/avoid-ai-writing
+          ref: f9f626b74b64654788abed23823fb87b6980867d # v3.38.0
+          path: .avoid-ai-writing
+          persist-credentials: false
+
+      - name: Score fork-owned docs
+        env:
+          AAW_DIR: ${{ github.workspace }}/.avoid-ai-writing
+        run: |
+          set -u
+          set +e
+          node "$AAW_DIR/bin/avoid-ai-writing-gate.js" --json \
+            --threshold "$THRESHOLD" --context "$CONTEXT" --source-mode "$SOURCE_MODE" \
+            .github/README.md \
+            docs/ARCHITECTURE.md \
+            docs/RUNBOOK.md \
+            packages/research-web/README.md > "$RUNNER_TEMP/prose.json"
+          status=$?
+          set -e
+          # Advisory: an unusable scan is a warning, never a red X.
+          if [ "$status" -ge 2 ] || [ ! -s "$RUNNER_TEMP/prose.json" ]; then
+            echo "::warning::prose check could not run (avoid-ai-writing-gate exit $status)"
+            exit 0
+          fi
+          # shellcheck disable=SC2016 # JS template literals, not shell expansions
+          node -e '
+            const fs = require("fs");
+            const d = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            const md = [
+              "### Prose check (advisory, never blocking)",
+              "",
+              `avoid-ai-writing v3.38.0, threshold ${d.threshold}, context ${d.context}, ${d.sourceMode}.`,
+              "",
+              "| File | Findings | Within threshold | Types |",
+              "| --- | ---: | --- | --- |",
+              ...d.files.map((f) => `| \`${f.path}\` | ${f.findings} | ${f.pass ? "yes" : "NO"} | ${f.types.join(", ") || "-"} |`),
+              "",
+              `Total findings ${d.totalFindings}; files over threshold ${d.failedFiles}.`,
+              ""
+            ].join("\n");
+            if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, md + "\n");
+            process.stdout.write(md + "\n");
+            for (const f of d.files) {
+              if (f.pass) continue;
+              process.stdout.write(`::warning file=${f.path}::${f.findings} AI-writing findings, threshold ${d.threshold} [${f.types.join(", ")}]\n`);
+            }
+          ' "$RUNNER_TEMP/prose.json" || echo "::warning::prose check could not render its summary"
