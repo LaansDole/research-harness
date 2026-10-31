@@ -2,7 +2,7 @@
 # Research-mode launcher: loads persisted settings, exports the research env,
 # and starts omp (the fork's dev wrapper when runnable, else the installed omp)
 # with the research system prompt.
-# Usage: research [omp args...] | research doctor | research web
+# Usage: research [omp args...] | research doctor | research web | research update [--check]
 set -euo pipefail
 
 CONFIG="$HOME/.research-harness/config.env"
@@ -173,6 +173,133 @@ except sqlite3.Error:
 	echo "        type /help in the TUI to see every command"
 }
 
+# `research update`: fetch the latest harness from GitHub and refresh the install.
+# Git-based on purpose: the harness runs from this checkout, which `omp update` skips.
+update() {
+	local check=0
+	if [ "${1:-}" = "--check" ]; then
+		check=1
+		shift
+	fi
+	if [ "$#" -gt 0 ]; then
+		echo "research update: unexpected argument '$1' (usage: research update [--check])" >&2
+		return 1
+	fi
+
+	local repo="$RESEARCH_HARNESS_HOME"
+	if ! command -v git >/dev/null 2>&1; then
+		echo "research update: git is not installed, so the harness cannot update itself." >&2
+		return 1
+	fi
+	if ! git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		echo "research update: $repo is not a git checkout — reinstall from https://github.com/LaansDole/research-harness" >&2
+		return 1
+	fi
+
+	local branch
+	branch="$(git -C "$repo" rev-parse --abbrev-ref HEAD)"
+	if [ "$branch" != "main" ]; then
+		echo "research update: the harness is on branch '$branch', not 'main'. Switch back with: git -C \"$repo\" switch main" >&2
+		return 1
+	fi
+
+	local dirty
+	dirty="$(git -C "$repo" status --porcelain --untracked-files=no)"
+	if [ -n "$dirty" ]; then
+		echo "research update: $repo has edits that are not saved in git:" >&2
+		printf '%s\n' "$dirty" | sed 's/^.\{3\}/  /' >&2
+		echo "Undo or commit them first, then run 'research update' again." >&2
+		return 1
+	fi
+
+	# The fork's own remote wins; a plain clone only has origin.
+	local remote="" r url
+	for r in $(git -C "$repo" remote); do
+		url="$(git -C "$repo" remote get-url "$r" 2>/dev/null || true)"
+		case "$url" in
+		*LaansDole/research-harness*)
+			remote="$r"
+			break
+			;;
+		esac
+	done
+	[ -n "$remote" ] || remote=origin
+
+	local old pre new
+	old="$(git -C "$repo" rev-parse HEAD)"
+	pre="$(git -C "$repo" rev-parse --verify --quiet "refs/remotes/$remote/main" || true)"
+	if ! git -C "$repo" fetch --quiet "$remote" main 2>/dev/null; then
+		echo "research update: could not download the latest version from GitHub. Check your internet connection and try again." >&2
+		return 1
+	fi
+	new="$(git -C "$repo" rev-parse FETCH_HEAD)"
+
+	if [ "$new" = "$old" ]; then
+		echo "research-harness is already up to date."
+		return 0
+	fi
+
+	local count
+	count="$(git -C "$repo" rev-list --count "$old..$new")"
+	if [ "$check" -eq 1 ]; then
+		echo "$count new commits available — run 'research update' to install them."
+		echo "  latest: $(git -C "$repo" log -1 --format=%s "$new")"
+		return 0
+	fi
+
+	if git -C "$repo" merge-base --is-ancestor "$old" "$new"; then
+		git -C "$repo" merge --ff-only --quiet "$new"
+	else
+		# Expected: the daily rebase-stack sync force-pushes main and keeps the
+		# old tip as main-prev. Safe only if this copy added no commits of its own.
+		local prev="" safe=0
+		if [ -n "$pre" ] && git -C "$repo" merge-base --is-ancestor "$old" "$pre"; then
+			safe=1
+		else
+			if git -C "$repo" fetch --quiet "$remote" main-prev 2>/dev/null; then
+				prev="$(git -C "$repo" rev-parse FETCH_HEAD)"
+			fi
+			if [ -n "$prev" ] && git -C "$repo" merge-base --is-ancestor "$old" "$prev"; then
+				safe=1
+			fi
+		fi
+		if [ "$safe" -eq 0 ]; then
+			echo "research update: GitHub rebuilt the history, and this copy has work that is not on GitHub:" >&2
+			git -C "$repo" log --format='  %h %s' "$new..$old" >&2
+			echo "Nothing was changed. Keep that work on its own branch, then update:" >&2
+			echo "  git -C \"$repo\" branch my-work" >&2
+			echo "  git -C \"$repo\" reset --keep ${new:0:7}" >&2
+			return 1
+		fi
+		git -C "$repo" reset --keep "$new" >/dev/null
+		echo "GitHub rebuilt the history; this copy now matches it."
+		echo "  previous version: ${old:0:7} (go back with: git -C \"$repo\" reset --keep ${old:0:7})"
+	fi
+
+	local deps
+	deps="$(git -C "$repo" diff --name-only "$old" "$new" -- package.json bun.lock)"
+	if [ -n "$deps" ] && command -v bun >/dev/null 2>&1; then
+		echo "Updating dependencies..."
+		if ! (cd "$repo" && bun install >/dev/null 2>&1); then
+			echo "research update: 'bun install' failed in $repo — run it there by hand to see why." >&2
+			return 1
+		fi
+	fi
+
+	echo "Refreshing the install..."
+	local setup_out
+	if ! setup_out="$(bash "$repo/setup.sh" </dev/null 2>&1)"; then
+		printf '%s\n' "$setup_out" >&2
+		echo "research update: the install step failed (see above). The files are updated; retry with: bash \"$repo/setup.sh\"" >&2
+		return 1
+	fi
+
+	local rc=0
+	doctor || rc=$?
+	echo "research-harness updated ${old:0:7} -> ${new:0:7} ($count new commits)"
+	return "$rc"
+}
+
 # Prefer the fork's dev wrapper (runs src/ through bun) so fork-level features,
 # including branding, are live; RESEARCH_HARNESS_OMP overrides; without bun or
 # the repo's node_modules the wrapper cannot start, so use the installed omp.
@@ -187,6 +314,11 @@ fi
 case "${1:-}" in
 doctor)
 	doctor
+	exit $?
+	;;
+update)
+	shift
+	update "$@"
 	exit $?
 	;;
 web)
