@@ -67,6 +67,16 @@ export function stageChip(stage: PrismaStage, counts: Record<ReviewState, number
 	return STAGE_CHIPS[stage].find(state => counts[state] > 0) ?? "";
 }
 
+/**
+ * The strip box the reading list's current chip belongs to, so the header can mark where she is.
+ * `""` is the All chip, which only the Identified box asks for; a chip no box owns (duplicates,
+ * excluded, …) marks nothing.
+ */
+export function activeStage(chip: ReviewState | ""): PrismaStage | null {
+	if (chip === "") return "identified";
+	return PRISMA_STAGES.find(stage => STAGE_CHIPS[stage].includes(chip)) ?? null;
+}
+
 export interface PrismaStageView {
 	stage: PrismaStage;
 	count: number;
