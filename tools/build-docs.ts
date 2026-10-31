@@ -217,11 +217,46 @@ async function diagramFigure(doc: Doc, n: number): Promise<string> {
 	);
 }
 
+
+// ---------- logo ----------
+
+// The terminal app's welcome logo (research/branding/logo.txt on main) redrawn as vector cells:
+// a terminal cell is one unit wide and two tall, so ▀ / ▄ / █ fill its top, bottom or both halves.
+// The site paints logo.svg through a CSS mask in the theme accent; the favicon carries fixed colours.
+async function renderLogo(): Promise<void> {
+	const lines = (await gitShow(ref, "research/branding/logo.txt")).split("\n").filter((l) => l.trim());
+	const indent = Math.min(...lines.map((l) => l.length - l.trimStart().length));
+	const cells: [number, number][] = [];
+	for (const [row, line] of lines.entries()) {
+		for (const [col, ch] of [...line.slice(indent)].entries()) {
+			if (ch === "▀" || ch === "█") cells.push([col, row * 2]);
+			if (ch === "▄" || ch === "█") cells.push([col, row * 2 + 1]);
+		}
+	}
+	// Crop to the inked cells (▄ leaves the first half-row empty) and centre them in a square.
+	const xs = cells.map(([x]) => x);
+	const ys = cells.map(([, y]) => y);
+	const [x0, y0] = [Math.min(...xs), Math.min(...ys)];
+	const [w, h] = [Math.max(...xs) - x0 + 1, Math.max(...ys) - y0 + 1];
+	const side = Math.max(w, h);
+	const d = cells.map(([x, y]) => `M${x - x0} ${y - y0}h1v1h-1z`).join("");
+	const box = `${(w - side) / 2} ${(h - side) / 2} ${side} ${side}`;
+	const svg = (body: string) =>
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${box}" shape-rendering="crispEdges">${body}</svg>\n`;
+	await Bun.write(path.join(SITE, "logo.svg"), svg(`<path d="${d}"/>`));
+	await Bun.write(
+		path.join(SITE, "favicon.svg"),
+		svg(`<style>path{fill:#0f766e}@media (prefers-color-scheme:dark){path{fill:#5fb3a8}}</style><path d="${d}"/>`),
+	);
+	console.log(`logo.svg + favicon.svg  <- research/branding/logo.txt (${w}x${h} half-cells)`);
+}
+
 // ---------- main ----------
 
 const sha = (await $`git rev-parse --short=10 ${ref}`.cwd(SITE).quiet()).text().trim();
 const template = await Bun.file(path.join(import.meta.dir, "doc.html")).text();
 
+await renderLogo();
 if (withDiagrams) await renderReladraw();
 
 for (const doc of DOCS) {

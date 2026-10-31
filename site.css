@@ -1,8 +1,7 @@
 /* research-harness Pages site.
- * Light tokens are the research web app's own (packages/collab-web/src/styles/tokens.css),
- * so the site and the product read as one thing; light is the default the demo is recorded in.
- * Dark is deliberately calmer than the app's neon chassis: a soft charcoal ground and a
- * dusty-rose accent, for long reading. */
+ * Neutrals follow the research web app (packages/collab-web/src/styles/tokens.css); light is the
+ * default the demo is recorded in. The accent is a deep teal rather than the app's pink, and dark
+ * is a soft charcoal rather than black, for long reading. */
 
 :root {
 	color-scheme: light;
@@ -18,19 +17,19 @@
 	--fg-muted: #5a5a63;
 	--fg-faint: #75757e;
 
-	--accent: #c42596;
-	--accent-strong: #a81c80;
-	--accent-muted: rgba(212, 46, 163, 0.1);
+	--accent: #0f766e;
+	--accent-strong: #0b5c55;
+	--accent-muted: rgba(15, 118, 110, 0.1);
 	--on-accent: #fff;
 	--accent-track: rgba(0, 0, 0, 0.08);
-	--ring: #1fa9bb;
+	--ring: #0f766e;
 	--ok: #12a36b;
 
 	--border: rgba(0, 0, 0, 0.08);
 	--border-strong: rgba(0, 0, 0, 0.14);
 
 	--code-fg: #3b3b44;
-	--selection: rgba(212, 46, 163, 0.18);
+	--selection: rgba(15, 118, 110, 0.18);
 
 	--font-ui: "Inter var", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 	--font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
@@ -58,19 +57,19 @@
 	--fg-muted: #a3a3ab;
 	--fg-faint: #8a8a93;
 
-	--accent: #d6a4c1;
-	--accent-strong: #e4bdd3;
-	--accent-muted: rgba(214, 164, 193, 0.12);
-	--on-accent: #221019;
+	--accent: #5fb3a8;
+	--accent-strong: #80c6bc;
+	--accent-muted: rgba(95, 179, 168, 0.13);
+	--on-accent: #082522;
 	--accent-track: rgba(255, 255, 255, 0.1);
-	--ring: #9cc7cf;
+	--ring: #5fb3a8;
 	--ok: #7fc4a2;
 
 	--border: rgba(255, 255, 255, 0.08);
 	--border-strong: rgba(255, 255, 255, 0.14);
 
 	--code-fg: #d2d2d8;
-	--selection: rgba(214, 164, 193, 0.28);
+	--selection: rgba(95, 179, 168, 0.28);
 
 	--shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -88,16 +87,16 @@
 		--fg: #e4e4e7;
 		--fg-muted: #a3a3ab;
 		--fg-faint: #8a8a93;
-		--accent: #d6a4c1;
-		--accent-strong: #e4bdd3;
-		--accent-muted: rgba(214, 164, 193, 0.12);
-		--on-accent: #221019;
+		--accent: #5fb3a8;
+		--accent-strong: #80c6bc;
+		--accent-muted: rgba(95, 179, 168, 0.13);
+		--on-accent: #082522;
 		--accent-track: rgba(255, 255, 255, 0.1);
-		--ring: #9cc7cf;
+		--ring: #5fb3a8;
 		--border: rgba(255, 255, 255, 0.08);
 		--border-strong: rgba(255, 255, 255, 0.14);
 		--code-fg: #d2d2d8;
-		--selection: rgba(214, 164, 193, 0.28);
+		--selection: rgba(95, 179, 168, 0.28);
 	}
 }
 
@@ -232,10 +231,14 @@ svg {
 	white-space: nowrap;
 }
 
+/* The terminal app's logo (logo.svg, generated from research/branding/logo.txt) in the accent. */
 .brand-mark {
-	width: 18px;
-	height: 18px;
+	width: 20px;
+	height: 20px;
 	flex: none;
+	background: var(--accent);
+	-webkit-mask: url("logo.svg") center / contain no-repeat;
+	mask: url("logo.svg") center / contain no-repeat;
 }
 
 .tabs {
