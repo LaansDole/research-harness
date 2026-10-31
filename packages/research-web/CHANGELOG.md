@@ -21,6 +21,8 @@
 - The paper graph settles instead of drifting, labels only the hovered or selected paper and its neighbours, and supports Enter-to-select in search.
 - Screening verdicts now read as highlighter marks — green include, vermilion exclude, yellow maybe — each with its own icon and word, in the reading list and the record panel.
 - The web UI now has its own look: deep-teal ink on cool paper (light) or soft charcoal (dark), hairline boxes and tabular counts, replacing the inherited cyan/pink theme.
+- The header strip marks the stage the reading list is filtered to, and its pending counts read as counts rather than italic asides.
+- In dark mode the PRISMA diagram sits on a paper card, dimmed so it is no longer the brightest thing on screen.
 
 ### Fixed
 

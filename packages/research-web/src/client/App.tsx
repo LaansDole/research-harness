@@ -20,6 +20,7 @@ import {
 import { useFetch } from "./api";
 import { Composer } from "./Composer";
 import { PrismaStrip } from "./PrismaStrip";
+import { activeStage } from "./prisma";
 import { progress, Sidebar } from "./Sidebar";
 import { GraphView } from "./views/GraphView";
 import { PrismaView } from "./views/PrismaView";
@@ -129,9 +130,8 @@ export function App(): ReactNode {
 	// Desktop collapse persists; the mobile drawer always starts closed.
 	const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "1");
 	const [drawer, setDrawer] = useState(false);
-	// A PRISMA strip box asks the Reading list for one state filter; the counter re-applies the same
-	// stage when it is clicked twice.
-	const [recordsFilter, setRecordsFilter] = useState<{ state: ReviewState | ""; n: number } | null>(null);
+	// The Reading list's state filter lives here: the header strip both sets it and marks it.
+	const [recordsChip, setRecordsChip] = useState<ReviewState | "">("");
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	// Read synchronously in `run`'s catch: exit lands before the rejected requests settle.
 	const exitRef = useRef<ExitInfo | null>(null);
@@ -225,6 +225,8 @@ export function App(): ReactNode {
 
 	useEffect(() => {
 		document.title = slug ? `Research · ${slug}` : "Research";
+		// Another project's filter means nothing here.
+		setRecordsChip("");
 	}, [slug]);
 
 	useEffect(() => {
@@ -420,8 +422,9 @@ export function App(): ReactNode {
 					{viewed && (
 						<PrismaStrip
 							counts={viewed.counts}
+							active={activeStage(recordsChip)}
 							onOpen={chip => {
-								setRecordsFilter(prev => ({ state: chip, n: (prev?.n ?? 0) + 1 }));
+								setRecordsChip(chip);
 								setTab("records");
 							}}
 						/>
@@ -505,7 +508,14 @@ export function App(): ReactNode {
 					slug === null ? (
 						noProjects
 					) : (
-						<RecordsView slug={slug} active={active} tick={tick} prefill={prefill} filter={recordsFilter} />
+						<RecordsView
+							slug={slug}
+							active={active}
+							tick={tick}
+							prefill={prefill}
+							state={recordsChip}
+							onState={setRecordsChip}
+						/>
 					),
 				)}
 				{panel(
