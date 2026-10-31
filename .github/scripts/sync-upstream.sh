@@ -19,7 +19,13 @@
 set -euo pipefail
 export GIT_LITERAL_PATHSPECS=1 # conflict paths are data, never globs
 
-HERE=$(cd "$(dirname "$0")" && pwd)
+# The rebase rewrites the worktree, so a stop at an older stack commit would run THAT
+# commit's helpers (e.g. a stale ai-resolve.sh). Run snapshots of the current ones instead.
+SRC=$(cd "$(dirname "$0")/.." && pwd)
+HELPERS=$(mktemp -d)
+trap 'rm -rf "$HELPERS"' EXIT
+cp -R "$SRC/scripts" "$SRC/prompts" "$HELPERS/"
+HERE="$HELPERS/scripts"
 UPSTREAM_URL="${UPSTREAM_URL:-https://github.com/can1357/oh-my-pi.git}"
 SYNC_BRANCH="${SYNC_BRANCH:-sync/rebase}"
 GATE="${SYNC_GATE:-bash research/tests/run.sh && bash .github/tests/run_tests.sh}"

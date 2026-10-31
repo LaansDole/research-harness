@@ -310,7 +310,7 @@ Constraints every contributor must respect: **stdlib-only python** (optional bin
 
 `main` is always an upstream `can1357/oh-my-pi` commit plus a short stack of fork commits: the research layer, the web UI, the sync CI, and the branding seam (section 2.1). The stack is `git merge-base main upstream/main..main`; no other state is kept.
 
-`.github/workflows/fork-sync.yml` runs daily:
+`.github/workflows/fork-sync.yml` runs every other day (odd days of the month, 03:17 UTC):
 
 1. `.github/scripts/sync-upstream.sh` rebases the stack onto `upstream/main` on `sync/rebase`, with no GitHub write credential in the step. When the rebase stops on a conflict, `.github/scripts/ai-resolve.sh` has headless omp (`vars.SYNC_AI_MODEL`, default `opencode-go/deepseek-v4.1-flash`, only when the `OPENCODE_API_KEY` secret is set) resolve the conflicted files in place. It restores the index and every file it may not touch, and keeps a resolution only if no marker line is left and the key does not appear in it. Files it cannot resolve are committed **with their markers** so the rebase finishes. The gate (`research/tests/run.sh` and `.github/tests/run_tests.sh`) runs when no markers are left. The outcome goes to `.git/sync-report/result.env`.
 2. `.github/scripts/sync-push.sh` publishes it. A clean rebase with a green gate saves the old `main` as `main-prev` and force-pushes `main`, leased on the `main` the run started from, so a commit pushed mid-run is never overwritten. Anything else (conflicts, markers, red gate) is force-pushed to `sync/rebase`, and `.github/scripts/sync-pr-body.sh` writes the pull request: the conflict table per stack commit, the gate result, and `git range-diff` of the stack before and after.

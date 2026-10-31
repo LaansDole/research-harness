@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: fork-sync # never race the daily rebase
+  group: fork-sync # never race the scheduled rebase
   cancel-in-progress: false
 
 env:
