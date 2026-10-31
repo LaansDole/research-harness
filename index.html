@@ -3,199 +3,229 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>research-harness — the research web demo</title>
+    <title>research-harness: your scoping review, in your browser</title>
     <meta
       name="description"
-      content="A real-time demo of research-harness in the browser: a researcher makes her scoping review on multi-agent LLMs for clinical decision support the agent's project, asks it questions, works through her reading list, review, paper graph and PRISMA diagram, and reconnects a stopped agent. Plus how the pieces fit together."
+      content="A real-time demo of research-harness in the browser: a researcher makes her scoping review on multi-agent LLMs for clinical decision support the agent's project, asks it questions, works through her reading list, review, paper graph and PRISMA diagram, and reconnects a stopped agent. Plus how the pieces fit together, the architecture and the testing runbook."
     />
-    <style>
-      :root {
-        --bg: #1e1e2e;
-        --surface: #181825;
-        --edge: #313244;
-        --text: #cdd6f4;
-        --muted: #a6adc8;
-        --accent: #89b4fa;
-        --green: #a6e3a1;
-        --yellow: #f9e2af;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font: 16px/1.6 ui-sans-serif, -apple-system, "Segoe UI", Inter, sans-serif;
-      }
-      .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 20px 72px; }
-      header h1 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
-      header p { color: var(--muted); margin: 0 0 6px; }
-      header a { color: var(--accent); }
-      .pill {
-        display: inline-block;
-        font-size: 0.78rem;
-        color: var(--yellow);
-        border: 1px solid var(--edge);
-        border-radius: 999px;
-        padding: 2px 10px;
-        margin-top: 10px;
-      }
-      section {
-        margin-top: 44px;
-        background: var(--surface);
-        border: 1px solid var(--edge);
-        border-radius: 12px;
-        padding: 20px;
-      }
-      section h2 { font-size: 1.15rem; margin: 0 0 4px; }
-      section h3 { font-size: 0.95rem; margin: 18px 0 0; color: var(--muted); }
-      section .sub { color: var(--muted); font-size: 0.92rem; margin: 0 0 16px; }
-      video { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--edge); background: #11111b; display: block; }
-      .chapters {
-        list-style: none;
-        margin: 8px 0 0;
-        padding: 0;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 6px;
-      }
-      .chapters button {
-        width: 100%;
-        text-align: left;
-        font: inherit;
-        font-size: 0.86rem;
-        color: var(--text);
-        background: #11111b;
-        border: 1px solid var(--edge);
-        border-radius: 6px;
-        padding: 5px 9px;
-        cursor: pointer;
-      }
-      .chapters button:hover, .chapters button:focus-visible { border-color: var(--accent); outline: none; }
-      .chapters .ts { color: var(--accent); font-variant-numeric: tabular-nums; margin-right: 6px; }
-      .meta { margin-top: 14px; font-size: 0.88rem; color: var(--muted); }
-      section code {
-        background: #11111b;
-        border: 1px solid var(--edge);
-        border-radius: 5px;
-        padding: 1px 5px;
-        color: var(--green);
-        font-size: 0.85em;
-      }
-      ul { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 0.9rem; }
-      ul > li + li { margin-top: 6px; }
-      figure { margin: 0; }
-      figure img { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--edge); }
-      figcaption { margin-top: 10px; font-size: 0.88rem; color: var(--muted); }
-      footer { margin-top: 44px; color: var(--muted); font-size: 0.88rem; }
-      footer a, section a { color: var(--accent); }
-      .note { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); font-size: 0.88rem; margin-top: 18px; }
-      .turn { color: var(--text); }
-    </style>
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        let t = null;
+        try { t = localStorage.getItem("rh-theme"); } catch {}
+        document.documentElement.dataset.theme = t || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      })();
+    </script>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="site.css" />
   </head>
   <body>
-    <div class="wrap">
-      <header>
-        <h1>research-harness — the review, in your browser</h1>
-        <p>
-          A real-time recording of <a href="https://github.com/LaansDole/research-harness">research-harness</a>'s browser UI,
-          <code>research web</code>, with a real agent answering. The project is a seeded demo built from a real OpenAlex
-          search. In the research views, the buttons that ask the agent for something only write the request into the
-          message box; nothing runs until she sends it, so only the agent changes her project.
-        </p>
-        <span class="pill">6 min · 1440x900 · real time · real agent turns · light mode, one dark chapter · open-access PDFs only</span>
-      </header>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="./">
+          <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><use href="#mark" /></svg>
+          <span class="brand-name">research-harness</span>
+        </a>
+        <nav aria-label="Site">
+          <ul class="tabs">
+            <li><a href="./" aria-current="page">Demo</a></li>
+            <li><a href="docs/architecture.html">Architecture</a></li>
+            <li><a href="docs/runbook.html">Runbook</a></li>
+          </ul>
+        </nav>
+        <div class="topbar-end">
+          <a class="icon-btn" href="https://github.com/LaansDole/research-harness" aria-label="Repository on GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-github" /></svg>
+          </a>
+          <button class="icon-btn theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">
+            <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-moon" /></svg>
+            <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun" /></svg>
+          </button>
+        </div>
+      </div>
+    </header>
 
-      <section id="research-web">
-        <h2>1 · A researcher picks up her scoping review</h2>
-        <p class="sub">
-          She is reviewing how teams of LLM agents support clinical decisions. One command, <code>research web</code>, opens
-          the agent in her browser on her own machine (<code>127.0.0.1</code>), beside her projects. In the take she makes the
-          review the agent's project and asks which paper to read first, reopens an earlier session, triages the reading
-          list, reads the review and picks out a claim to check, explores the paper graph and the PRISMA diagram, recovers
-          from a stopped agent, and finishes on a phone-width screen.
+    <main class="page">
+      <section class="hero">
+        <h1>Your scoping review, <em>in your browser.</em></h1>
+        <p class="lede">
+          A real-time recording of <strong>research web</strong>, the browser side of
+          <a href="https://github.com/LaansDole/research-harness">research-harness</a>, with a real agent answering. The
+          project is a seeded demo built from a real OpenAlex search. In the research views, the buttons that ask the agent
+          for something only write the request into the message box; nothing runs until she sends it, so only the agent
+          changes her project.
         </p>
-        <video id="demo" controls preload="metadata" poster="posters/research-web-poster.png" width="1440" height="900">
-          <source src="research-web.mp4" type="video/mp4" />
-          Your browser cannot play this demo.
-          <a href="research-web.mp4">Download the MP4</a>.
-        </video>
-        <h3>Chapters</h3>
-        <ol class="chapters">
-          <li><button type="button" data-t="0"><span class="ts">0:00</span> Back to her scoping review</button></li>
-          <li><button type="button" data-t="12.2"><span class="ts">0:12</span> She hands the review to the agent</button></li>
-          <li><button type="button" data-t="60"><span class="ts">1:00</span> Images, model and thinking level</button></li>
-          <li><button type="button" data-t="72.4"><span class="ts">1:12</span> A second question, stopped with Esc</button></li>
-          <li><button type="button" data-t="81.9"><span class="ts">1:21</span> An earlier session, folded</button></li>
-          <li><button type="button" data-t="97.5"><span class="ts">1:37</span> Fork it, or start fresh</button></li>
-          <li><button type="button" data-t="115.2"><span class="ts">1:55</span> Reading list: next step and exclusions</button></li>
-          <li><button type="button" data-t="146"><span class="ts">2:26</span> Opening TriageAgent's PDF</button></li>
-          <li><button type="button" data-t="171.8"><span class="ts">2:51</span> Reading the review</button></li>
-          <li><button type="button" data-t="195.8"><span class="ts">3:15</span> Checking a claim, revising a section</button></li>
-          <li><button type="button" data-t="217.6"><span class="ts">3:37</span> How the papers connect</button></li>
-          <li><button type="button" data-t="264.8"><span class="ts">4:24</span> Dark mode, all the way into the graph</button></li>
-          <li><button type="button" data-t="271.3"><span class="ts">4:31</span> PRISMA flow diagram</button></li>
-          <li><button type="button" data-t="277.1"><span class="ts">4:37</span> A project with nothing in it yet</button></li>
-          <li><button type="button" data-t="297.3"><span class="ts">4:57</span> More room, and tabs by keyboard</button></li>
-          <li><button type="button" data-t="306.8"><span class="ts">5:06</span> An old link still lands on her review</button></li>
-          <li><button type="button" data-t="310.6"><span class="ts">5:10</span> If the agent stops, reconnect</button></li>
-          <li><button type="button" data-t="321.7"><span class="ts">5:21</span> On a phone-width screen</button></li>
-        </ol>
-        <p class="meta">
-          6 min 0 s, recorded live from headless Chrome with Puppeteer's <code>page.screencast()</code>
-          (<a href="research-web.ts.txt">script</a>) at 1440x900 and shown at 1x. The phone-width part is a second recording
-          at 430x900, letterboxed and joined after the first; that join is the only cut. research web and its agent ran with
-          a scratch home folder holding a copy of her project, so only sessions made there appear and nothing in the real
-          research folder changed. The agent's answers are real (<code>claude-opus-5-5</code>, thinking medium): three prompts are sent during
-          the take — the project switch, <em>Which paper should I read first?</em> and a summary request she stops with Esc —
-          and the earlier session she reopens is a real turn sent while preparing the scratch folder. A screencast can't
-          follow a new tab, so <em>Open PDF</em> is shown by loading the PDF in the same tab and coming back.
-        </p>
-        <ul>
-          <li><span class="turn">Header and tabs</span> — the header shows the project she is viewing, whether the agent works on it (an <em>Agent project</em> tag, or a <em>Make active</em> button when it doesn't), the agent's status (<em>Ready</em>, <em>Working…</em>, <em>Connecting…</em>, <em>Disconnected</em>) and a sun/moon button for dark mode. Arrow keys, Home and End move between the Chat, Graph, Reviews, Reading list and PRISMA tabs; the sidebar button hides the sidebar for more room and <code>Ctrl/⌘+B</code> brings it back.</li>
-          <li><span class="turn">Chat</span> — <em>Make active</em> writes the switch into the message box; she sends it with Enter, the status turns <em>Working…</em>, the agent's steps appear while it works, and the answer brings a table of where the review stands. Meanwhile she types <em>Which paper should I read first?</em>, which waits its turn and is answered next. A fork tried mid-answer gets a short notice that it couldn't be done, which she dismisses. Each answer keeps its thinking and tool steps folded under <em>thinking · N steps</em>, so the answer stays in front, and once the agent is done the header and sidebar show her review as the agent's project.</li>
-          <li><span class="turn">Message box</span> — she attaches an image and removes it, the model picker shows <code>claude-opus-5-5</code>, and she changes the thinking level from medium to high and back. A two-line question (Shift+Enter starts the second line) goes out with the Send button; Esc stops it, and the reply reads <em>Stopped before finishing.</em> In a new session she types a plan for the day, a starter command replaces it, and <em>Restore previous draft</em> brings it back.</li>
-          <li><span class="turn">Sidebar and sessions</span> — projects with screening progress (<em>9 of 12 screened</em>, <em>No records yet</em>) and an <em>agent</em> tag on the agent's project; sessions from all projects, newest first. She reopens an earlier session and unfolds its steps: a thinking note, and a tool card whose long output expands and collapses. <em>Fork</em> copies that session and <em>New session</em> starts an empty one, whose starter commands fit her review.</li>
-          <li><span class="turn">Reading list</span> — the next-step bar (<code>1 full text ready · Screen full texts</code>) writes that command into the message box. State chips with counts filter the list, by click or arrow keys; <em>Excluded · T/A</em> lists the five title/abstract exclusions, and a record's panel shows its verdict and the reason recorded. ↑/↓, Enter, Esc and the Previous/Next buttons walk the records, and <em>Ask agent to reconsider</em> writes a request that quotes the recorded reason. Searching <em>triage</em> finds TriageAgent, with both screening verdicts, its DOI and <em>Open PDF</em>, which shows the paper; a search with no matches says <em>No records match this filter.</em></li>
-          <li><span class="turn">Reviews</span> — the newest review file opens first, with a table and a formula; the file picker switches to her mini-review. <em>Contents</em> jumps to a section, a numbered citation jumps to its reference (DOI linked) and Back returns. She selects one sentence and <em>Check claim</em> writes a request naming the file, the project and the sentence; each section also has <em>Revise</em> and <em>Check</em>, which write their own requests.</li>
-          <li><span class="turn">Paper graph</span> — hovering a paper labels it and its neighbours. Clicking TriageAgent opens its details and three actions, <em>Find citing papers</em>, <em>Auto-edges</em> and <em>Explain neighbors</em>, each writing a request into the message box. She closes the details, drags a paper, pans and zooms, checks the legend of link types, searches <em>galatea</em> (Enter picks the most-connected match) and clears the selection. The sun/moon button turns the whole app dark, the graph included, and back to light.</li>
-          <li><span class="turn">PRISMA</span> — the PRISMA-ScR flow diagram, every count taken from her records, with a <em>Download SVG</em> button.</li>
-          <li><span class="turn">An empty project</span> — viewing an empty project, the header offers <em>Make active</em> instead of the tag, and PRISMA, the reading list and the reviews each say what to do next, with a button that writes it into the message box, naming the project.</li>
-          <li><span class="turn">Connection</span> — an old link to a project name that no longer exists still opens her project's reviews. When the agent process stops, a banner says so and <em>Reconnect</em> starts a fresh agent; her sessions are still there, and one reopens with its whole conversation.</li>
-          <li><span class="turn">Phone width</span> — at 430 px the sidebar becomes a drawer that Esc or a tap outside closes, a record opens as a full-screen sheet with <em>Next</em>, the review gets a <em>Contents</em> menu, and PRISMA gets a <em>Fit / 100 %</em> switch; at 100 % the diagram scrolls sideways.</li>
+        <ul class="facts">
+          <li>6 min, real time</li>
+          <li>Real agent turns</li>
+          <li>Light mode, one dark chapter</li>
+          <li>Open-access PDFs only</li>
         </ul>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#research-web">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play" /></svg>
+            Watch the demo
+          </a>
+          <a class="btn" href="docs/runbook.html">Try it on your own review</a>
+        </div>
       </section>
 
-      <section id="viz">
-        <h2>2 · The exported paper graph</h2>
-        <p class="sub">
-          The Graph tab shows the paper graph's own export: one self-contained HTML file that draws the papers as a network
-          you can drag, zoom, pan and search. Bigger dots have more links, line colours show the link type, and clicking a
-          paper shows its details. It loads nothing from the internet, so it also opens straight from disk.
-        </p>
-        <figure>
+      <section id="research-web" aria-labelledby="demo-title">
+        <div class="block-head split">
+          <h2 id="demo-title">A researcher picks up her scoping review</h2>
+          <p>
+            She is reviewing how teams of LLM agents support clinical decisions. One command, <code>research web</code>,
+            opens the agent in her browser on her own machine (<code>127.0.0.1</code>), beside her projects. In the take she
+            makes the review the agent's project and asks which paper to read first, reopens an earlier session, triages the
+            reading list, reads the review and picks out a claim to check, explores the paper graph and the PRISMA diagram,
+            recovers from a stopped agent, and finishes on a phone-width screen.
+          </p>
+        </div>
+
+        <div class="demo">
+          <div class="demo-stage">
+            <video id="demo" controls preload="metadata" poster="posters/research-web-poster.png" width="1440" height="900">
+              <source src="research-web.mp4" type="video/mp4" />
+              Your browser cannot play this demo.
+              <a href="research-web.mp4">Download the MP4</a>.
+            </video>
+          </div>
+          <div class="rail">
+            <div class="rail-scroll">
+              <h3 class="section-head">Chapters <span class="count">18</span></h3>
+              <ol class="chapters">
+                <li><button class="chapter" type="button" data-t="0"><span class="ts">0:00</span><span>Back to her scoping review</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="12.2"><span class="ts">0:12</span><span>She hands the review to the agent</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="60"><span class="ts">1:00</span><span>Images, model and thinking level</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="72.4"><span class="ts">1:12</span><span>A second question, stopped with Esc</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="81.9"><span class="ts">1:21</span><span>An earlier session, folded</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="97.5"><span class="ts">1:37</span><span>Fork it, or start fresh</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="115.2"><span class="ts">1:55</span><span>Reading list: next step and exclusions</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="146"><span class="ts">2:26</span><span>Opening TriageAgent's PDF</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="171.8"><span class="ts">2:51</span><span>Reading the review</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="195.8"><span class="ts">3:15</span><span>Checking a claim, revising a section</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="217.6"><span class="ts">3:37</span><span>How the papers connect</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="264.8"><span class="ts">4:24</span><span>Dark mode, all the way into the graph</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="271.3"><span class="ts">4:31</span><span>PRISMA flow diagram</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="277.1"><span class="ts">4:37</span><span>A project with nothing in it yet</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="297.3"><span class="ts">4:57</span><span>More room, and tabs by keyboard</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="306.8"><span class="ts">5:06</span><span>An old link still lands on her review</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="310.6"><span class="ts">5:10</span><span>If the agent stops, reconnect</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="321.7"><span class="ts">5:21</span><span>On a phone-width screen</span><span class="bar"></span></button></li>
+              </ol>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-notes">
+          <div>
+            <h3>How it was recorded</h3>
+            <p>
+              6 min 0 s, recorded live from headless Chrome with Puppeteer's <code>page.screencast()</code>
+              (<a href="research-web.ts.txt">script</a>) at 1440x900 and shown at 1x. The phone-width part is a second
+              recording at 430x900, letterboxed and joined after the first; that join is the only cut. research web and its
+              agent ran with a scratch home folder holding a copy of her project, so only sessions made there appear and
+              nothing in the real research folder changed.
+            </p>
+          </div>
+          <div>
+            <h3>What the agent really did</h3>
+            <p>
+              The agent's answers are real (<code>claude-opus-5-5</code>, thinking medium): three prompts are sent during the
+              take (the project switch, <em>Which paper should I read first?</em> and a summary request she stops with Esc),
+              and the earlier session she reopens is a real turn sent while preparing the scratch folder. A screencast can't
+              follow a new tab, so <em>Open PDF</em> is shown by loading the PDF in the same tab and coming back.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="block" id="on-screen" aria-labelledby="on-screen-title">
+        <div class="block-head">
+          <h2 id="on-screen-title">What's on screen</h2>
+          <p>Every part of research web the take passes through.</p>
+        </div>
+        <dl class="ledger">
+          <div>
+            <dt>Header and tabs</dt>
+            <dd>The header shows the project she is viewing, whether the agent works on it (an <em>Agent project</em> tag, or a <em>Make active</em> button when it doesn't), the agent's status (<em>Ready</em>, <em>Working…</em>, <em>Connecting…</em>, <em>Disconnected</em>) and a sun/moon button for dark mode. Arrow keys, Home and End move between the Chat, Graph, Reviews, Reading list and PRISMA tabs; the sidebar button hides the sidebar for more room and <kbd>Ctrl/⌘+B</kbd> brings it back.</dd>
+          </div>
+          <div>
+            <dt>Chat</dt>
+            <dd><em>Make active</em> writes the switch into the message box; she sends it with Enter, the status turns <em>Working…</em>, the agent's steps appear while it works, and the answer brings a table of where the review stands. Meanwhile she types <em>Which paper should I read first?</em>, which waits its turn and is answered next. A fork tried mid-answer gets a short notice that it couldn't be done, which she dismisses. Each answer keeps its thinking and tool steps folded under <em>thinking · N steps</em>, so the answer stays in front, and once the agent is done the header and sidebar show her review as the agent's project.</dd>
+          </div>
+          <div>
+            <dt>Message box</dt>
+            <dd>She attaches an image and removes it, the model picker shows <code>claude-opus-5-5</code>, and she changes the thinking level from medium to high and back. A two-line question (Shift+Enter starts the second line) goes out with the Send button; Esc stops it, and the reply reads <em>Stopped before finishing.</em> In a new session she types a plan for the day, a starter command replaces it, and <em>Restore previous draft</em> brings it back.</dd>
+          </div>
+          <div>
+            <dt>Sidebar and sessions</dt>
+            <dd>Projects with screening progress (<em>9 of 12 screened</em>, <em>No records yet</em>) and an <em>agent</em> tag on the agent's project; sessions from all projects, newest first. She reopens an earlier session and unfolds its steps: a thinking note, and a tool card whose long output expands and collapses. <em>Fork</em> copies that session and <em>New session</em> starts an empty one, whose starter commands fit her review.</dd>
+          </div>
+          <div>
+            <dt>Reading list</dt>
+            <dd>The next-step bar (<code>1 full text ready · Screen full texts</code>) writes that command into the message box. State chips with counts filter the list, by click or arrow keys; <em>Excluded · T/A</em> lists the five title/abstract exclusions, and a record's panel shows its verdict and the reason recorded. ↑/↓, Enter, Esc and the Previous/Next buttons walk the records, and <em>Ask agent to reconsider</em> writes a request that quotes the recorded reason. Searching <em>triage</em> finds TriageAgent, with both screening verdicts, its DOI and <em>Open PDF</em>, which shows the paper; a search with no matches says <em>No records match this filter.</em></dd>
+          </div>
+          <div>
+            <dt>Reviews</dt>
+            <dd>The newest review file opens first, with a table and a formula; the file picker switches to her mini-review. <em>Contents</em> jumps to a section, a numbered citation jumps to its reference (DOI linked) and Back returns. She selects one sentence and <em>Check claim</em> writes a request naming the file, the project and the sentence; each section also has <em>Revise</em> and <em>Check</em>, which write their own requests.</dd>
+          </div>
+          <div>
+            <dt>Paper graph</dt>
+            <dd>Hovering a paper labels it and its neighbours. Clicking TriageAgent opens its details and three actions, <em>Find citing papers</em>, <em>Auto-edges</em> and <em>Explain neighbors</em>, each writing a request into the message box. She closes the details, drags a paper, pans and zooms, checks the legend of link types, searches <em>galatea</em> (Enter picks the most-connected match) and clears the selection. The sun/moon button turns the whole app dark, the graph included, and back to light.</dd>
+          </div>
+          <div>
+            <dt>PRISMA</dt>
+            <dd>The PRISMA-ScR flow diagram, every count taken from her records, with a <em>Download SVG</em> button.</dd>
+          </div>
+          <div>
+            <dt>An empty project</dt>
+            <dd>Viewing an empty project, the header offers <em>Make active</em> instead of the tag, and PRISMA, the reading list and the reviews each say what to do next, with a button that writes it into the message box, naming the project.</dd>
+          </div>
+          <div>
+            <dt>Connection</dt>
+            <dd>An old link to a project name that no longer exists still opens her project's reviews. When the agent process stops, a banner says so and <em>Reconnect</em> starts a fresh agent; her sessions are still there, and one reopens with its whole conversation.</dd>
+          </div>
+          <div>
+            <dt>Phone width</dt>
+            <dd>At 430 px the sidebar becomes a drawer that Esc or a tap outside closes, a record opens as a full-screen sheet with <em>Next</em>, the review gets a <em>Contents</em> menu, and PRISMA gets a <em>Fit / 100 %</em> switch; at 100 % the diagram scrolls sideways.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="block" id="viz" aria-labelledby="viz-title">
+        <div class="block-head">
+          <h2 id="viz-title">The exported paper graph</h2>
+          <p>
+            The Graph tab shows the paper graph's own export: one self-contained HTML file that draws the papers as a network
+            you can drag, zoom, pan and search. Bigger dots have more links, line colours show the link type, and clicking a
+            paper shows its details. It loads nothing from the internet, so it also opens straight from disk.
+          </p>
+        </div>
+        <figure class="plate">
           <img
             src="graph-viz.png"
             width="1600"
             height="1000"
+            loading="lazy"
             alt="The paper-graph export opened from disk, in its dark theme: eight papers as blue dots joined by coloured lines (blue cites, green related, orange same-topic, per the legend at bottom left), dots larger the more links they have, a search box at top left, and TriageAgent selected: a gold dot labelled with its full title, its two neighbours MedAgents and the Korean triage paper labelled, and a side panel with its authors, year and venue (2024, Findings of EMNLP), id and degree, and DOI link."
           />
           <figcaption>Her own graph, exported from her papers and opened from disk: eight papers, TriageAgent selected.</figcaption>
         </figure>
       </section>
 
-      <section id="architecture">
-        <h2>3 · How it fits together</h2>
-        <p class="sub">
-          The browser and the terminal talk to the same research agent. research web only reads her projects; the agent's
-          commands run small Python scripts, which keep the screening records and the paper graph and fetch open-access PDFs.
-        </p>
-        <figure>
-          <img
-            src="diagrams/architecture.svg"
-            width="1356"
-            height="1068"
-            alt="Architecture diagram. A researcher uses either research web, a browser on 127.0.0.1 with chat, reading list, reviews, graph and PRISMA, or the research terminal app, with its branded welcome, /help and statusline progress. The browser talks over a WebSocket and /api to the research-web server (Bun.serve), which checks Host and Origin, passes only allowed commands to the agent over /ws, serves /api/* with research state read-only, and starts one omp --mode rpc agent per tab. Both front ends reach the same omp agent session in research mode: system.md plus 13 commands from /scope to /export, and four agents: scholar, screener, synthesizer and librarian. Its commands run python3 standard-library scripts (review.py, prisma_scr.py, fetch_paper.py, local_library.py, paper_graph.py, graph_viz.py, the jev scripts), which write review.db (per project: records and history in PRISMA-ScR states) and papers.db (the paper graph with typed links), and fetch open-access PDFs through OpenAlex, Unpaywall and arXiv. A local PDF corpus is read-only. A dashed line shows the server reading review.db."
-          />
+      <section class="block" id="architecture" aria-labelledby="arch-title">
+        <div class="block-head">
+          <h2 id="arch-title">How it fits together</h2>
+          <p>
+            The browser and the terminal talk to the same research agent. research web only reads her projects; the agent's
+            commands run small Python scripts, which keep the screening records and the paper graph and fetch open-access
+            PDFs. The <a href="docs/architecture.html">architecture guide</a> walks through every layer.
+          </p>
+        </div>
+        <figure class="plate diagram">
+          <img class="only-light" src="diagrams/architecture-light.svg" width="1356" height="1068" loading="lazy" alt="Architecture diagram. A researcher uses either research web, a browser on 127.0.0.1 with chat, reading list, reviews, graph and PRISMA, or the research terminal app, with its branded welcome, /help and statusline progress. The browser talks over a WebSocket and /api to the research-web server (Bun.serve), which checks Host and Origin, passes only allowed commands to the agent over /ws, serves /api/* with research state read-only, and starts one omp --mode rpc agent per tab. Both front ends reach the same omp agent session in research mode: system.md plus 13 commands from /scope to /export, and four agents: scholar, screener, synthesizer and librarian. Its commands run python3 standard-library scripts (review.py, prisma_scr.py, fetch_paper.py, local_library.py, paper_graph.py, graph_viz.py, the jev scripts), which write review.db (per project: records and history in PRISMA-ScR states) and papers.db (the paper graph with typed links), and fetch open-access PDFs through OpenAlex, Unpaywall and arXiv. A local PDF corpus is read-only. A dashed line shows the server reading review.db." />
+          <img class="only-dark" src="diagrams/architecture.svg" width="1356" height="1068" loading="lazy" alt="Architecture diagram. A researcher uses either research web, a browser on 127.0.0.1 with chat, reading list, reviews, graph and PRISMA, or the research terminal app, with its branded welcome, /help and statusline progress. The browser talks over a WebSocket and /api to the research-web server (Bun.serve), which checks Host and Origin, passes only allowed commands to the agent over /ws, serves /api/* with research state read-only, and starts one omp --mode rpc agent per tab. Both front ends reach the same omp agent session in research mode: system.md plus 13 commands from /scope to /export, and four agents: scholar, screener, synthesizer and librarian. Its commands run python3 standard-library scripts (review.py, prisma_scr.py, fetch_paper.py, local_library.py, paper_graph.py, graph_viz.py, the jev scripts), which write review.db (per project: records and history in PRISMA-ScR states) and papers.db (the paper graph with typed links), and fetch open-access PDFs through OpenAlex, Unpaywall and arXiv. A local PDF corpus is read-only. A dashed line shows the server reading review.db." />
           <figcaption>
             Source: <a href="diagrams/architecture.reladraw.txt">architecture.reladraw.txt</a>. Drawn with
             <a href="https://github.com/reladraw/reladraw">reladraw 0.19.0</a> and rendered to SVG, because GitHub's Markdown
@@ -204,28 +234,56 @@
         </figure>
       </section>
 
-      <div class="note">
-        Why the video lives here: GitHub's file view says a committed MP4 is too big to show, and its raw download is served
-        as <code>application/octet-stream</code>, so a committed MP4 cannot be watched in place. GitHub Pages serves it as
-        real <code>video/mp4</code>, so it plays here at full quality.
-      </div>
+      <section class="block" id="docs" aria-labelledby="docs-title">
+        <div class="block-head">
+          <h2 id="docs-title">Read further</h2>
+          <p>The two guides from the repository, rendered here so they are easier to read and to copy from.</p>
+        </div>
+        <ul class="doc-rows">
+          <li>
+            <a href="docs/runbook.html">
+              <span class="title">Testing runbook</span>
+              <span class="desc">Test-drive the harness end to end on a real scoping review in one sitting, with the numbers you should see at every step and the known issues found along the way.</span>
+              <svg class="go i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </li>
+          <li>
+            <a href="docs/architecture.html">
+              <span class="title">Architecture</span>
+              <span class="desc">How the scoping-review layer is built, where every piece lives, and the guarantees the design enforces. Written for someone who has never seen the repo.</span>
+              <svg class="go i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </li>
+        </ul>
+      </section>
 
-      <footer>
-        Fork of <a href="https://github.com/can1357/oh-my-pi">can1357/oh-my-pi</a> ·
-        <a href="https://github.com/LaansDole/research-harness">repository</a> ·
-        <a href="https://github.com/LaansDole/research-harness/blob/main/docs/ARCHITECTURE.md">architecture</a> ·
-        recorded with <a href="https://pptr.dev/api/puppeteer.page.screencast">Puppeteer</a>.
+      <p class="footnote">
+        Why the video lives here: GitHub's file view says a committed MP4 is too big to show, and its raw download is served
+        as <code>application/octet-stream</code>, so a committed MP4 cannot be watched in place. GitHub Pages serves it as real
+        <code>video/mp4</code>, so it plays here at full quality.
+      </p>
+
+      <footer class="site-footer">
+        <span>Fork of <a href="https://github.com/can1357/oh-my-pi">can1357/oh-my-pi</a></span>
+        <a href="https://github.com/LaansDole/research-harness">Repository</a>
+        <a href="docs/architecture.html">Architecture</a>
+        <a href="docs/runbook.html">Runbook</a>
+        <span>Recorded with <a href="https://pptr.dev/api/puppeteer.page.screencast">Puppeteer</a></span>
       </footer>
-    </div>
-    <script>
-      // Chapter buttons seek the demo video.
-      const video = document.getElementById("demo");
-      for (const button of document.querySelectorAll(".chapters button")) {
-        button.addEventListener("click", () => {
-          video.currentTime = Number(button.dataset.t);
-          video.play().catch(() => {});
-        });
-      }
-    </script>
+    </main>
+
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="mark" viewBox="0 0 24 24">
+        <path d="M6.5 7.5 17 6M6.5 7.5l5 11M17 6l-5.5 12.5" fill="none" stroke="var(--fg-faint)" stroke-width="1.6" stroke-linecap="round" />
+        <circle cx="6" cy="7.5" r="3" fill="var(--accent)" />
+        <circle cx="17.5" cy="6" r="2.4" fill="var(--fg)" />
+        <circle cx="11.5" cy="18.5" r="2.4" fill="var(--fg)" />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.1A8.5 8.5 0 1 1 9.9 3.5a6.6 6.6 0 0 0 10.6 10.6Z" /></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.6-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5Z" fill="currentColor" /></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" /></symbol>
+    </svg>
+    <script src="site.js"></script>
   </body>
 </html>

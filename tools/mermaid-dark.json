@@ -1,0 +1,39 @@
+{
+	"theme": "base",
+	"fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+	"themeVariables": {
+		"darkMode": true,
+		"fontFamily": "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif",
+		"fontSize": "14px",
+		"background": "transparent",
+		"primaryColor": "#121214",
+		"primaryTextColor": "#ededef",
+		"primaryBorderColor": "#3a3a41",
+		"secondaryColor": "#2a1024",
+		"tertiaryColor": "#0e0e10",
+		"lineColor": "#85858d",
+		"textColor": "#ededef",
+		"clusterBkg": "#0e0e10",
+		"clusterBorder": "#2a2a30",
+		"edgeLabelBackground": "#09090a",
+		"stateBkg": "#121214",
+		"stateBorder": "#3a3a41",
+		"transitionColor": "#85858d",
+		"specialStateColor": "#f068c8",
+		"innerEndBackground": "#f068c8",
+		"nodeTextColor": "#ededef",
+		"stateLabelColor": "#ededef",
+		"labelColor": "#ededef",
+		"labelTextColor": "#ededef",
+		"titleColor": "#ededef"
+	},
+	"flowchart": {
+		"curve": "basis",
+		"padding": 14,
+		"nodeSpacing": 36,
+		"rankSpacing": 48
+	},
+	"state": {
+		"padding": 10
+	}
+}
