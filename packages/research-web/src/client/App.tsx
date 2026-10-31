@@ -1,7 +1,7 @@
 import { Transcript } from "@oh-my-pi/collab-web/src/components/transcript/Transcript";
 import { useThemePreference } from "@oh-my-pi/collab-web/src/lib/theme";
 import type { ImageContent, WireMessage } from "@oh-my-pi/pi-wire";
-import { Moon, PanelLeft, Sun, X } from "lucide-react";
+import { AlertCircle, Moon, PanelLeft, Sun, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ProjectSummary, ReviewState } from "../data";
@@ -429,6 +429,7 @@ export function App(): ReactNode {
 				</header>
 				{exit && (
 					<div className="rw-banner">
+						<AlertCircle size={16} aria-hidden />
 						<span>
 							{exit.reason === "agent" ? (
 								"The research agent stopped unexpectedly. Your sessions are saved; reconnecting starts it again."
@@ -515,6 +516,7 @@ export function App(): ReactNode {
 			<div className="rw-toasts">
 				{toasts.map(t => (
 					<div key={t.id} className="rw-toast" role="alert">
+						<AlertCircle size={16} aria-hidden />
 						<span>{t.text}</span>
 						<button
 							type="button"
