@@ -307,8 +307,9 @@
 	background: var(--accent-muted);
 }
 
+/* Mixed toward --fg so the count clears 4.5:1 on the tinted fill of a hovered or current box too. */
 .rw-strip-n {
-	color: var(--rw-ink);
+	color: color-mix(in srgb, var(--rw-ink) 80%, var(--fg));
 	font-size: 13px;
 	font-weight: 600;
 	font-variant-numeric: tabular-nums;
@@ -355,6 +356,11 @@
 		flex-direction: row;
 		gap: 4px;
 		padding: 2px 4px;
+		border-color: transparent;
+	}
+
+	/* The collapsed line has no boxes: the current stage keeps its tint, not an outline. */
+	.rw-app .rw-strip .rw-strip-box[aria-current="true"] {
 		border-color: transparent;
 	}
 
