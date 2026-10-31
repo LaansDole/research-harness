@@ -48,48 +48,48 @@ colors:
   prisma-paper-dark: "#e3e5e2"
 typography:
   headline:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "20px"
     fontWeight: 600
   title-document:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "18px"
     fontWeight: 600
   title:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "16px"
     fontWeight: 600
   body:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.5
   body-reading:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "14px"
     fontWeight: 400
     lineHeight: 1.6
   body-composer:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "15px"
     fontWeight: 400
   count:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "13px"
     fontWeight: 600
     fontFeature: "\"tnum\""
   label:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "12px"
     fontWeight: 400
     fontFeature: "\"tnum\""
   label-small:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "11px"
     fontWeight: 400
     fontFeature: "\"tnum\""
   section-label:
-    fontFamily: "\"Inter var\", \"Inter\", ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, \"Segoe UI\", sans-serif"
     fontSize: "11px"
     fontWeight: 600
     letterSpacing: "0.06em"
@@ -260,7 +260,7 @@ A cool, near-neutral paper-and-graphite palette with a single deep-teal ink and 
 
 ## Typography
 
-**Body Font:** the UI stack inherited from collab-web (`"Inter var", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`). No webfont is loaded, so it renders as the platform sans (SF Pro on macOS in every capture) unless Inter happens to be installed.
+**Body Font:** the system UI sans (`ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif`), set as `--font-ui` in `theme.css` over collab-web's Inter-first stack. No webfont is loaded, so it renders as the platform sans (SF Pro on macOS in every capture).
 **Mono Font:** `ui-monospace, "SF Mono", …` for slash commands and code only.
 
 **Character:** a single plain sans in a compact app scale; hierarchy comes from weight (400 / 500 / 600) and three or four size steps, not from a display face.
