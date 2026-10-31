@@ -81,20 +81,21 @@ export function RecordsView({
 	active,
 	tick,
 	prefill,
-	filter,
+	state,
+	onState,
 }: {
 	slug: string;
 	/** Whether `slug` is the agent's active project: slash commands only target that one. */
 	active: boolean;
 	tick: number;
 	prefill(text: string): void;
-	/** A state filter asked for from outside (the header's PRISMA strip); `n` makes a repeat click land. */
-	filter: { state: ReviewState | ""; n: number } | null;
+	/** The state filter, owned by App so the header's PRISMA strip can set and mark it. */
+	state: ReviewState | "";
+	onState(state: ReviewState | ""): void;
 }): ReactNode {
 	const base = `/api/projects/${encodeURIComponent(slug)}`;
 	// ponytail: one fetch, client-side filtering; server ?state= filtering if a project reaches thousands of rows.
 	const records = useFetch<RecordRow[]>(`${base}/records`, tick);
-	const [state, setState] = useState<ReviewState | "">("");
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
@@ -109,18 +110,12 @@ export function RecordsView({
 		return () => mq.removeEventListener("change", onChange);
 	}, []);
 
-	// A different project starts fresh: its filter and selection mean nothing here.
+	// A different project starts fresh: its search and selection mean nothing here (App resets the filter).
 	useEffect(() => {
-		setState("");
 		setQuery("");
 		setSelectedId(null);
 		setOpen(false);
 	}, [slug]);
-
-	// Declared after the project reset so a strip click during a project switch still wins.
-	useEffect(() => {
-		if (filter !== null) setState(filter.state);
-	}, [filter]);
 
 	// Mobile: a native modal dialog, so everything behind the sheet is inert and Tab stays inside it.
 	useEffect(() => {
@@ -227,7 +222,7 @@ export function RecordsView({
 		if (dir === 0) return;
 		e.preventDefault();
 		const next = (chips.indexOf(state) + dir + chips.length) % chips.length;
-		setState(chips[next] ?? "");
+		onState(chips[next] ?? "");
 		(e.currentTarget.children[next] as HTMLElement | undefined)?.focus();
 	};
 	// The roving tab stop: the selected row, else the first.
@@ -359,7 +354,7 @@ export function RecordsView({
 							role="radio"
 							aria-checked={state === s}
 							tabIndex={state === s ? 0 : -1}
-							onClick={() => setState(s)}
+							onClick={() => onState(s)}
 						>
 							{s === "" ? "All" : LABELS[s]}{" "}
 							<span className="rw-count">{s === "" ? all.length : counts[s]}</span>
