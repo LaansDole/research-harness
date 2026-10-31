@@ -4,7 +4,7 @@ import type { ImageContent, WireMessage } from "@oh-my-pi/pi-wire";
 import { Moon, PanelLeft, Sun, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { ProjectSummary } from "../data";
+import type { ProjectSummary, ReviewState } from "../data";
 import type { SessionListItem } from "../protocol";
 import {
 	AgentConnection,
@@ -19,6 +19,7 @@ import {
 } from "./agent";
 import { useFetch } from "./api";
 import { Composer } from "./Composer";
+import { PrismaStrip } from "./PrismaStrip";
 import { progress, Sidebar } from "./Sidebar";
 import { GraphView } from "./views/GraphView";
 import { PrismaView } from "./views/PrismaView";
@@ -128,6 +129,9 @@ export function App(): ReactNode {
 	// Desktop collapse persists; the mobile drawer always starts closed.
 	const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSED_KEY) === "1");
 	const [drawer, setDrawer] = useState(false);
+	// A PRISMA strip box asks the Reading list for one state filter; the counter re-applies the same
+	// stage when it is clicked twice.
+	const [recordsFilter, setRecordsFilter] = useState<{ state: ReviewState | ""; n: number } | null>(null);
 	const toggleRef = useRef<HTMLButtonElement | null>(null);
 	// Read synchronously in `run`'s catch: exit lands before the rejected requests settle.
 	const exitRef = useRef<ExitInfo | null>(null);
@@ -139,6 +143,7 @@ export function App(): ReactNode {
 	// A stale hash slug (project removed) falls back like an unpicked view.
 	const pickedSlug = picked !== null && (projects.data?.some(p => p.slug === picked) ?? true) ? picked : null;
 	const slug = pickedSlug ?? activeSlug ?? projects.data?.[0]?.slug ?? null;
+	const viewed = projects.data?.find(p => p.slug === slug) ?? null;
 	const sidebarShown = narrow ? drawer : !collapsed;
 
 	const toast = useCallback((text: string): void => {
@@ -412,6 +417,15 @@ export function App(): ReactNode {
 						</span>
 						<ThemeToggle onSaveFailed={toast} />
 					</div>
+					{viewed && (
+						<PrismaStrip
+							counts={viewed.counts}
+							onOpen={chip => {
+								setRecordsFilter(prev => ({ state: chip, n: (prev?.n ?? 0) + 1 }));
+								setTab("records");
+							}}
+						/>
+					)}
 				</header>
 				{exit && (
 					<div className="rw-banner">
@@ -487,7 +501,11 @@ export function App(): ReactNode {
 				)}
 				{panel(
 					"records",
-					slug === null ? noProjects : <RecordsView slug={slug} active={active} tick={tick} prefill={prefill} />,
+					slug === null ? (
+						noProjects
+					) : (
+						<RecordsView slug={slug} active={active} tick={tick} prefill={prefill} filter={recordsFilter} />
+					),
 				)}
 				{panel(
 					"prisma",
