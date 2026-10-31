@@ -6,7 +6,7 @@
     <title>research-harness: your scoping review, in your browser</title>
     <meta
       name="description"
-      content="A real-time demo of research-harness in the browser: a researcher makes her scoping review on multi-agent LLMs for clinical decision support the agent's project, asks it questions, works through her reading list, review, paper graph and PRISMA diagram, and reconnects a stopped agent. Plus how the pieces fit together, the architecture and the testing runbook."
+      content="A real-time demo of research-harness in the browser: a researcher makes her scoping review on multi-agent LLMs for clinical decision support the agent's project, asks it questions, works through her reading list, review, paper graph and PRISMA diagram, and reconnects a stopped agent. Plus a developer guide and the architecture."
     />
     <meta name="color-scheme" content="light dark" />
     <script>
@@ -29,8 +29,8 @@
         <nav aria-label="Site">
           <ul class="tabs">
             <li><a href="./" aria-current="page">Demo</a></li>
+            <li><a href="docs/developer.html">Developer guide</a></li>
             <li><a href="docs/architecture.html">Architecture</a></li>
-            <li><a href="docs/runbook.html">Runbook</a></li>
           </ul>
         </nav>
         <div class="topbar-end">
@@ -66,7 +66,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play" /></svg>
             Watch the demo
           </a>
-          <a class="btn" href="docs/runbook.html">Try it on your own review</a>
+          <a class="btn" href="https://github.com/LaansDole/research-harness#get-started">Get started</a>
         </div>
       </section>
 
@@ -214,36 +214,16 @@
         </figure>
       </section>
 
-      <section class="block" id="architecture" aria-labelledby="arch-title">
-        <div class="block-head">
-          <h2 id="arch-title">How it fits together</h2>
-          <p>
-            The browser and the terminal talk to the same research agent. research web only reads her projects; the agent's
-            commands run small Python scripts, which keep the screening records and the paper graph and fetch open-access
-            PDFs. The <a href="docs/architecture.html">architecture guide</a> walks through every layer.
-          </p>
-        </div>
-        <figure class="plate diagram">
-          <img class="only-light" src="diagrams/architecture-light.svg" width="1356" height="1068" loading="lazy" alt="Architecture diagram. A researcher uses either research web, a browser on 127.0.0.1 with chat, reading list, reviews, graph and PRISMA, or the research terminal app, with its branded welcome, /help and statusline progress. The browser talks over a WebSocket and /api to the research-web server (Bun.serve), which checks Host and Origin, passes only allowed commands to the agent over /ws, serves /api/* with research state read-only, and starts one omp --mode rpc agent per tab. Both front ends reach the same omp agent session in research mode: system.md plus 13 commands from /scope to /export, and four agents: scholar, screener, synthesizer and librarian. Its commands run python3 standard-library scripts (review.py, prisma_scr.py, fetch_paper.py, local_library.py, paper_graph.py, graph_viz.py, the jev scripts), which write review.db (per project: records and history in PRISMA-ScR states) and papers.db (the paper graph with typed links), and fetch open-access PDFs through OpenAlex, Unpaywall and arXiv. A local PDF corpus is read-only. A dashed line shows the server reading review.db." />
-          <img class="only-dark" src="diagrams/architecture.svg" width="1356" height="1068" loading="lazy" alt="Architecture diagram. A researcher uses either research web, a browser on 127.0.0.1 with chat, reading list, reviews, graph and PRISMA, or the research terminal app, with its branded welcome, /help and statusline progress. The browser talks over a WebSocket and /api to the research-web server (Bun.serve), which checks Host and Origin, passes only allowed commands to the agent over /ws, serves /api/* with research state read-only, and starts one omp --mode rpc agent per tab. Both front ends reach the same omp agent session in research mode: system.md plus 13 commands from /scope to /export, and four agents: scholar, screener, synthesizer and librarian. Its commands run python3 standard-library scripts (review.py, prisma_scr.py, fetch_paper.py, local_library.py, paper_graph.py, graph_viz.py, the jev scripts), which write review.db (per project: records and history in PRISMA-ScR states) and papers.db (the paper graph with typed links), and fetch open-access PDFs through OpenAlex, Unpaywall and arXiv. A local PDF corpus is read-only. A dashed line shows the server reading review.db." />
-          <figcaption>
-            Source: <a href="diagrams/architecture.reladraw.txt">architecture.reladraw.txt</a>. Drawn with
-            <a href="https://github.com/reladraw/reladraw">reladraw 0.19.0</a> and rendered to SVG, because GitHub's Markdown
-            can't render reladraw (<a href="https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-diagrams">it draws Mermaid, GeoJSON, TopoJSON and STL only</a>).
-          </figcaption>
-        </figure>
-      </section>
-
       <section class="block" id="docs" aria-labelledby="docs-title">
         <div class="block-head">
-          <h2 id="docs-title">Read further</h2>
-          <p>The two guides from the repository, rendered here so they are easier to read and to copy from.</p>
+          <h2 id="docs-title">For developers</h2>
+          <p>Setting up the terminal app, checking an install, and how the pieces fit together.</p>
         </div>
         <ul class="doc-rows">
           <li>
-            <a href="docs/runbook.html">
-              <span class="title">Testing runbook</span>
-              <span class="desc">Test-drive the harness end to end on a real scoping review in one sitting, with the numbers you should see at every step and the known issues found along the way.</span>
+            <a href="docs/developer.html">
+              <span class="title">Developer guide</span>
+              <span class="desc">Install and health-check the harness, set up the terminal app, then test-drive it end to end on a real scoping review, with the numbers you should see at every step and the known issues found along the way.</span>
               <svg class="go i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </a>
           </li>
@@ -266,8 +246,8 @@
       <footer class="site-footer">
         <span>Fork of <a href="https://github.com/can1357/oh-my-pi">can1357/oh-my-pi</a></span>
         <a href="https://github.com/LaansDole/research-harness">Repository</a>
+        <a href="docs/developer.html">Developer guide</a>
         <a href="docs/architecture.html">Architecture</a>
-        <a href="docs/runbook.html">Runbook</a>
         <span>Recorded with <a href="https://pptr.dev/api/puppeteer.page.screencast">Puppeteer</a></span>
       </footer>
     </main>

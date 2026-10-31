@@ -26,7 +26,11 @@ interface Doc {
 	src: string;
 	out: string;
 	slug: string;
-	tab: "architecture" | "runbook";
+	tab: "architecture" | "developer";
+	// Replaces the Markdown's own h1 on the page (the source title stays as written on main).
+	heading?: string;
+	// HTML inserted after the page's opening paragraph.
+	intro?: string;
 	title: string;
 	description: string;
 	diagramAlt: string[];
@@ -39,6 +43,7 @@ const DOCS: Doc[] = [
 		slug: "architecture",
 		tab: "architecture",
 		title: "Architecture",
+		intro: "tools/overview-figure.html",
 		description:
 			"How the research-harness scoping-review layer is built, where every piece lives, and the guarantees the design enforces.",
 		diagramAlt: [
@@ -48,19 +53,20 @@ const DOCS: Doc[] = [
 	},
 	{
 		src: "docs/RUNBOOK.md",
-		out: "docs/runbook.html",
-		slug: "runbook",
-		tab: "runbook",
-		title: "Testing runbook",
+		out: "docs/developer.html",
+		slug: "developer",
+		tab: "developer",
+		title: "Developer guide",
+		heading: "Developer guide",
 		description:
-			"Test-drive research-harness end to end on a real scoping review in one sitting, and know whether each step actually worked.",
+			"Install and health-check research-harness, set up the terminal app, and test-drive it end to end on a real scoping review.",
 		diagramAlt: [],
 	},
 ];
 
 const ROUTES: Record<string, string> = {
 	"ARCHITECTURE.md": "architecture.html",
-	"RUNBOOK.md": "runbook.html",
+	"RUNBOOK.md": "developer.html",
 };
 
 const escapeHtml = (s: string) =>
@@ -238,6 +244,11 @@ for (const doc of DOCS) {
 	html = rewriteLinks(html, doc.src);
 	html = decorate(html, toc);
 	for (const n of blocks.keys()) html = html.replace(`<p>RHMERMAID${n}</p>`, await diagramFigure(doc, n));
+	if (doc.heading) html = html.replace(/<h1([^>]*)>[\s\S]*?<\/h1>/, `<h1$1>${escapeHtml(doc.heading)}</h1>`);
+	if (doc.intro) {
+		const figure = await Bun.file(path.join(SITE, doc.intro)).text();
+		html = html.replace(/(<h1[^>]*>[\s\S]*?<\/h1>\s*<p>[\s\S]*?<\/p>)/, `$1\n${figure}`);
+	}
 
 	const source =
 		`Rendered from <a href="${REPO_URL}/blob/${sha}/${doc.src}">${doc.src}</a> ` +

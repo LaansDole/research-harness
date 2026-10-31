@@ -1,7 +1,8 @@
 /* research-harness Pages site.
- * Tokens are the research web app's own (packages/collab-web/src/styles/tokens.css),
- * so the site and the product read as one thing. Light is the default the demo is
- * recorded in; [data-theme="dark"] mirrors the app's dark chassis. */
+ * Light tokens are the research web app's own (packages/collab-web/src/styles/tokens.css),
+ * so the site and the product read as one thing; light is the default the demo is recorded in.
+ * Dark is deliberately calmer than the app's neon chassis: a soft charcoal ground and a
+ * dusty-rose accent, for long reading. */
 
 :root {
 	color-scheme: light;
@@ -46,30 +47,30 @@
 [data-theme="dark"] {
 	color-scheme: dark;
 
-	--bg: #000;
-	--panel: #09090a;
-	--bg-inset: #0e0e10;
+	--bg: #111113;
+	--panel: #18181b;
+	--bg-inset: #1d1d21;
 	--hover: rgba(255, 255, 255, 0.035);
 	--selected: rgba(255, 255, 255, 0.075);
-	--glass: rgba(0, 0, 0, 0.8);
+	--glass: rgba(17, 17, 19, 0.85);
 
-	--fg: #ededef;
-	--fg-muted: #a0a0a8;
-	--fg-faint: #85858d;
+	--fg: #e4e4e7;
+	--fg-muted: #a3a3ab;
+	--fg-faint: #8a8a93;
 
-	--accent: #f068c8;
-	--accent-strong: #f68ad6;
-	--accent-muted: rgba(237, 74, 191, 0.14);
-	--on-accent: #1a0614;
+	--accent: #d6a4c1;
+	--accent-strong: #e4bdd3;
+	--accent-muted: rgba(214, 164, 193, 0.12);
+	--on-accent: #221019;
 	--accent-track: rgba(255, 255, 255, 0.1);
-	--ring: #5ad8e6;
-	--ok: #3ecf8e;
+	--ring: #9cc7cf;
+	--ok: #7fc4a2;
 
 	--border: rgba(255, 255, 255, 0.08);
 	--border-strong: rgba(255, 255, 255, 0.14);
 
-	--code-fg: #d4d4da;
-	--selection: rgba(240, 104, 200, 0.3);
+	--code-fg: #d2d2d8;
+	--selection: rgba(214, 164, 193, 0.28);
 
 	--shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
@@ -78,25 +79,25 @@
 @media (prefers-color-scheme: dark) {
 	:root:not([data-theme]) {
 		color-scheme: dark;
-		--bg: #000;
-		--panel: #09090a;
-		--bg-inset: #0e0e10;
+		--bg: #111113;
+		--panel: #18181b;
+		--bg-inset: #1d1d21;
 		--hover: rgba(255, 255, 255, 0.035);
 		--selected: rgba(255, 255, 255, 0.075);
-		--glass: rgba(0, 0, 0, 0.8);
-		--fg: #ededef;
-		--fg-muted: #a0a0a8;
-		--fg-faint: #85858d;
-		--accent: #f068c8;
-		--accent-strong: #f68ad6;
-		--accent-muted: rgba(237, 74, 191, 0.14);
-		--on-accent: #1a0614;
+		--glass: rgba(17, 17, 19, 0.85);
+		--fg: #e4e4e7;
+		--fg-muted: #a3a3ab;
+		--fg-faint: #8a8a93;
+		--accent: #d6a4c1;
+		--accent-strong: #e4bdd3;
+		--accent-muted: rgba(214, 164, 193, 0.12);
+		--on-accent: #221019;
 		--accent-track: rgba(255, 255, 255, 0.1);
-		--ring: #5ad8e6;
+		--ring: #9cc7cf;
 		--border: rgba(255, 255, 255, 0.08);
 		--border-strong: rgba(255, 255, 255, 0.14);
-		--code-fg: #d4d4da;
-		--selection: rgba(240, 104, 200, 0.3);
+		--code-fg: #d2d2d8;
+		--selection: rgba(214, 164, 193, 0.28);
 	}
 }
 

@@ -4,8 +4,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Testing runbook · research-harness</title>
-    <meta name="description" content="Test-drive research-harness end to end on a real scoping review in one sitting, and know whether each step actually worked." />
+    <title>Developer guide · research-harness</title>
+    <meta name="description" content="Install and health-check research-harness, set up the terminal app, and test-drive it end to end on a real scoping review." />
     <meta name="color-scheme" content="light dark" />
     <script>
       (() => {
@@ -27,8 +27,8 @@
         <nav aria-label="Site">
           <ul class="tabs">
             <li><a href="../">Demo</a></li>
+            <li><a href="developer.html" aria-current="page">Developer guide</a></li>
             <li><a href="architecture.html">Architecture</a></li>
-            <li><a href="runbook.html" aria-current="page">Runbook</a></li>
           </ul>
         </nav>
         <div class="topbar-end">
@@ -52,11 +52,11 @@
         <nav aria-label="Contents">
           <h2 class="section-head">Contents</h2>
           <ol><li><a href="#part-0-environment-gates-5-minutes">Part 0 — Environment gates (5 minutes)</a><ol><li><a href="#step-01-install-repair-the-harness">Step 0.1 — Install / repair the harness</a></li><li><a href="#step-02-health-check">Step 0.2 — Health check</a></li><li><a href="#step-03-run-the-test-suite">Step 0.3 — Run the test suite</a></li></ol></li><li><a href="#part-05-see-what-you-can-type">Part 0.5 — See what you can type</a><ol><li><a href="#welcome-screen-branding">Welcome-screen branding</a></li><li><a href="#prefer-a-browser-research-web">Prefer a browser? research web</a></li></ol></li><li><a href="#part-1-the-worked-pass-on-a-real-review">Part 1 — The worked pass on a real review</a><ol><li><a href="#step-1-import-your-database-export">Step 1 — Import your database export</a></li><li><a href="#step-2-deduplicate">Step 2 — Deduplicate</a></li><li><a href="#step-3-fill-in-the-missing-abstracts-important-for-a-pubmed-csv">Step 3 — Fill in the missing abstracts (important for a PubMed CSV)</a></li><li><a href="#step-4-screen-a-bounded-batch">Step 4 — Screen a bounded batch</a></li><li><a href="#optional-a-cheap-first-pass-with-jev">Optional: a cheap first pass with Jev</a></li><li><a href="#step-5-get-the-full-texts">Step 5 — Get the full texts</a></li><li><a href="#step-6-prisma-flow">Step 6 — PRISMA flow</a></li><li><a href="#step-7-synthesise">Step 7 — Synthesise</a></li><li><a href="#step-8-file-the-papers-into-the-graph">Step 8 — File the papers into the graph</a></li><li><a href="#step-9-export">Step 9 — Export</a></li></ol></li><li><a href="#part-2-assertion-checklist">Part 2 — Assertion checklist</a></li><li><a href="#part-3-starting-a-brand-new-review">Part 3 — Starting a brand-new review</a></li><li><a href="#known-issues-found-during-this-test-run-2026-09-19">Known issues found during this test run (2026-09-19)</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#appendix-scripted-checks">Appendix — scripted checks</a></li></ol>
-          <p class="doc-source">Rendered from <a href="https://github.com/LaansDole/research-harness/blob/e36d769cb1/docs/RUNBOOK.md">docs/RUNBOOK.md</a> at <a href="https://github.com/LaansDole/research-harness/commit/e36d769cb1">e36d769cb1</a>, last changed 2026-10-31.</p>
+          <p class="doc-source">Rendered from <a href="https://github.com/LaansDole/research-harness/blob/0254cdb425/docs/RUNBOOK.md">docs/RUNBOOK.md</a> at <a href="https://github.com/LaansDole/research-harness/commit/0254cdb425">0254cdb425</a>, last changed 2026-10-31.</p>
         </nav>
       </details>
       <main class="prose">
-<h1 id="testing-runbook">Testing Runbook</h1>
+<h1 id="testing-runbook">Developer guide</h1>
 <p>How to test-drive research-harness end to end on a real scoping review, in one sitting, and know whether each step actually worked.</p>
 <p>Everything below was executed on <strong>2026-09-19</strong> against a throwaway copy of a real 50-record PubMed export and a 43-PDF folder. The numbers quoted as &quot;what you should see&quot; are the numbers that run produced. Where a step was exercised through the underlying script rather than through the chat command, the text says so.</p>
 <p><strong>What you need</strong></p>
@@ -115,7 +115,7 @@ status: ready — run 'research' to start
 <div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>bash research/tests/run.sh
 </code></pre></div>
 <p>Last three lines should be:</p>
-<div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>Ran 109 tests in 1.129s
+<div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>Ran 111 tests in 0.915s
 
 OK (skipped=1)
 </code></pre></div>
@@ -428,7 +428,7 @@ ER  -
 </thead>
 <tbody>
 <tr><td><code>bash bin/research doctor</code></td><td>no <code>FAIL</code> line, <code>status: ready</code> (the Jev line is a <code>warn</code> until you opt in)</td><td>a <code>FAIL</code> line → re-run <code>bash setup.sh</code></td></tr>
-<tr><td><code>bash research/tests/run.sh</code></td><td><code>Ran 109 tests ... OK (skipped=1)</code>, ~1 s</td><td>the scripts are broken; stop and report</td></tr>
+<tr><td><code>bash research/tests/run.sh</code></td><td><code>Ran 111 tests ... OK (skipped=1)</code>, ~1 s</td><td>the scripts are broken; stop and report</td></tr>
 <tr><td><code>/import</code> of the 50-record CSV</td><td><code>added: 50, already_present: 0, skipped: 0</code></td><td><code>skipped &gt; 0</code> → rows without a title; <code>added: 0</code> → format not recognised</td></tr>
 <tr><td>Re-run the same <code>/import</code></td><td><code>added: 0, already_present: 50</code></td><td>duplicates created → the store is not idempotent; report it</td></tr>
 <tr><td>Field completeness after CSV import</td><td>50 titles, 48 DOIs, 50 years, <strong>0 abstracts, 0 journals</strong></td><td>more abstracts is better (a richer export); fewer titles means a parsing problem</td></tr>
