@@ -195,7 +195,12 @@ export function ReviewsView({
 						</option>
 					))}
 				</select>
-				<button type="button" disabled={selection === ""} onClick={() => checkClaim(selection)}>
+				<button
+					type="button"
+					className="rw-check-claim"
+					disabled={selection === ""}
+					onClick={() => checkClaim(selection)}
+				>
 					Check claim
 				</button>
 				{selection === "" && <span className="rw-faint">Select a sentence first</span>}

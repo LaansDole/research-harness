@@ -43,8 +43,8 @@ export function PrismaView({
 		return (
 			<EmptyState
 				icon={GitFork}
-				title="No records yet"
-				body="The PRISMA flow diagram draws itself once the project has screening records."
+				title="No papers yet"
+				body="The PRISMA flow diagram draws itself once the project has papers to screen."
 				actions={[
 					{ label: "Find papers", prompt: active ? "/find " : `Find candidate papers for project ${slug}` },
 					{

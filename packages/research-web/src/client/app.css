@@ -535,8 +535,9 @@
 	text-align: left;
 }
 
-.rw-starters code {
-	color: var(--accent);
+/* Starter cards name the action, not the command, so the title reads as prose in the ink colour. */
+.rw-starter-title {
+	color: var(--fg);
 	font-weight: 600;
 }
 
