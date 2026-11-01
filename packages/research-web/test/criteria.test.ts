@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseScope } from "../src/criteria";
+import { parseScope, suggestTerms } from "../src/criteria";
 
 /** The shape /scope writes: a PCC table plus the two criteria lists (demo project's scope.md). */
 const DEMO = `# Scope: Multi-agent LLM systems for clinical decision support
@@ -63,4 +63,40 @@ test("a scope without tables or criteria headings is empty, not an error", () =>
 	const scope = parseScope("# Scope\n\nSome prose about the review, no headings at all.\n");
 	expect(scope).toEqual({ question: "", pcc: {}, inclusion: [], exclusion: [] });
 	expect(parseScope("")).toEqual({ question: "", pcc: {}, inclusion: [], exclusion: [] });
+});
+/** The list the editor shows when a researcher presses "Suggest from your criteria" is the contract:
+ * same scope, same words, same order, no model call. Failure mode: a suggestion list that reshuffles
+ * between visits, or fills up with "study", "evaluation" and other method boilerplate. */
+test("suggested highlight words come from the criteria, deterministically", () => {
+	const suggested = suggestTerms(parseScope(DEMO));
+	expect(suggested).toEqual({
+		include: [
+			"clinicians",
+			"patients",
+			"clinical",
+			"workflows",
+			"decisions",
+			"supported",
+			"multi-agent",
+			"systems",
+			"llm-backed",
+			"agents",
+			"collaborate",
+			"decision",
+		],
+		exclude: [
+			"single-agent",
+			"applications",
+			"llms",
+			"non-clinical",
+			"health",
+			"contexts",
+			"editorials",
+			"opinion",
+			"pieces",
+			"protocols",
+			"description",
+		],
+	});
+	expect(suggestTerms(parseScope(DEMO))).toEqual(suggested);
 });
