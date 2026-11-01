@@ -340,7 +340,7 @@ Small, diagram-like corners over hairline 1px borders: 4px for strip boxes, badg
 
 ### Reason Picker
 - Exclude opens a list in place of the buttons: the project's own exclusion criteria first, then the PCC dimensions, "No abstract" and "Other…", each row numbered 1–9 in an 11px teal tabular prefix. Arrow keys move, a digit selects, Enter confirms, Escape returns to the buttons.
-- Below it, one optional note field (strong hairline, inset fill) and a Save / Cancel pair. "Other…" turns the note field into the reason itself.
+- Below it a Save exclusion / Cancel pair, and under the desk one optional note field (strong hairline, inset fill); Enter in the note — or in the "Other…" field, which replaces the list's reason — saves the exclusion.
 
 ### Criteria Marks
 - The project's highlight words marked in titles and abstracts: include words get the green highlighter band, exclude words the vermilion band plus a dotted underline, so the two never depend on colour alone. 2px corners, 1px horizontal padding, text colour unchanged.
