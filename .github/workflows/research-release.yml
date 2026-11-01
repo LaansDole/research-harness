@@ -1,0 +1,52 @@
+name: Research release
+
+# Manual: Actions -> Research release -> Run workflow, version x.y.z.
+# Opens a release/x.y.z PR that moves research/CHANGELOG.md's [Unreleased] entries under
+# [x.y.z] and sets research/VERSION; merging it is the release. No tag or GitHub Release:
+# fork-sync rewrites main, which would leave them on orphaned commits.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: New harness version (x.y.z, newer than research/VERSION)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Never branch off a main that a running sync/promote is about to rewrite.
+concurrency:
+  group: fork-sync
+  cancel-in-progress: false
+
+env:
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Open the release PR
+        env:
+          # FORK_SYNC_TOKEN, not github.token: PRs opened by github.token trigger no CI.
+          GH_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: url.https://x-access-token:${{ secrets.FORK_SYNC_TOKEN }}@github.com/.insteadOf
+          GIT_CONFIG_VALUE_0: https://github.com/
+        run: |
+          NOTES=$(bash .github/scripts/research-release.sh "$VERSION")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "release/$VERSION"
+          git commit -q -am "release(research): $VERSION"
+          git push -q "https://github.com/$GH_REPO.git" "release/$VERSION"
+          gh pr create --base main --head "release/$VERSION" \
+            --title "release(research): $VERSION" \
+            --body "$(printf 'Harness release %s. Merge to publish; researchers see these notes on research update.\n\n%s\n' "$VERSION" "$NOTES")"
