@@ -34,3 +34,5 @@
 - Losing the connection no longer stacks duplicate error toasts over the Reconnect button.
 - Opening the Graph tab no longer shows the papers piled into the top-left corner; the graph stays centred when its frame is shown or resized.
 - Opening another session no longer shows its steps and thinking already expanded because you opened the same spot in the previous session.
+- The exclusion reason picker and *Suggest from your criteria* now read every shape `scope.md` is written in — a plain `Question:` line with `- Population:` bullets, `## PCC` sections with bullet lists, and the `| Criterion | Include | Exclude |` table under headings such as *Framework — PCC* or *Inclusion / exclusion criteria* — instead of coming up empty on all but one.
+- A hyphenated exclude word is no longer suggested when the review's own subject spells it with a space, so a review about social science is no longer offered `social-science` as a reason to throw papers out.
