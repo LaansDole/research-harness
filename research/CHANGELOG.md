@@ -6,6 +6,8 @@ installed version. Add entries under `[Unreleased]`; release with Actions → Re
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-01
+
 ### Added
 
 - `research web` has a screening desk: open a paper in the Reading list and decide it yourself with Include, Exclude or Maybe (keys I, E, M); an exclusion asks which of your criteria it failed, and the agent's own verdict is shown so you can confirm or overrule it
