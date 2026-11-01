@@ -271,7 +271,7 @@ export function RecordsView({
 					<button
 						type="button"
 						className="rw-icon"
-						aria-label="Previous record"
+						aria-label="Previous paper"
 						disabled={selectedIndex === 0}
 						onClick={() => select(selectedIndex - 1)}
 					>
@@ -280,7 +280,7 @@ export function RecordsView({
 					<button
 						type="button"
 						className="rw-icon"
-						aria-label="Next record"
+						aria-label="Next paper"
 						disabled={selectedIndex === shown.length - 1}
 						onClick={() => select(selectedIndex + 1)}
 					>
@@ -384,7 +384,7 @@ export function RecordsView({
 				</div>
 			)}
 			<div className="rw-toolbar">
-				<div className="rw-chips" role="radiogroup" aria-label="Filter by state" onKeyDown={onChipKey}>
+				<div className="rw-chips" role="radiogroup" aria-label="Filter by stage" onKeyDown={onChipKey}>
 					{chips.map(s => (
 						<button
 							key={s || "all"}
@@ -403,7 +403,7 @@ export function RecordsView({
 					type="search"
 					className="rw-search"
 					placeholder="Search title, author, DOI"
-					aria-label="Search records"
+					aria-label="Search papers"
 					value={query}
 					onChange={e => setQuery(e.target.value)}
 				/>
@@ -436,8 +436,8 @@ export function RecordsView({
 					<table className="rw-table" role="grid" aria-label="Reading list">
 						<thead>
 							<tr>
-								<th>Record</th>
-								<th>State</th>
+								<th>Paper</th>
+								<th>Stage</th>
 								<th className="rw-wide">PDF</th>
 								<th className="rw-wide">
 									<span className="rw-sr">Action</span>
@@ -500,7 +500,7 @@ export function RecordsView({
 							})}
 						</tbody>
 					</table>
-					{shown.length === 0 && <p className="rw-faint rw-pad">No records match this filter.</p>}
+					{shown.length === 0 && <p className="rw-faint rw-pad">No papers match this filter.</p>}
 				</div>
 				{selected &&
 					(narrow ? (
@@ -516,7 +516,7 @@ export function RecordsView({
 							{details}
 						</dialog>
 					) : (
-						<aside className="rw-drawer" aria-label="Record details">
+						<aside className="rw-drawer" aria-label="Paper details">
 							{details}
 						</aside>
 					))}
