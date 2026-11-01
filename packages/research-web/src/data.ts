@@ -43,6 +43,8 @@ export interface RecordRow {
 	state: ReviewState;
 	ta_verdict: string | null;
 	ta_rationale: string | null;
+	/** HIGH | MEDIUM | LOW as review.py normalises it: the agent's confidence in its suggestion. */
+	ta_confidence: string | null;
 	ft_verdict: string | null;
 	ft_rationale: string | null;
 	exclusion_reason: string | null;
@@ -171,7 +173,7 @@ async function runPython(script: string, args: string[]): Promise<{ code: number
 }
 
 const RECORD_COLUMNS = `id, title, authors, year, venue, doi, url, abstract, state, ta_verdict, ta_rationale,
-	ft_verdict, ft_rationale, exclusion_reason, oa_status, pdf_path`;
+	ta_confidence, ft_verdict, ft_rationale, exclusion_reason, oa_status, pdf_path`;
 
 /** Records of one project, optionally narrowed to a state or a single id, in reading-list order. */
 async function loadRecords(dir: string, state: string | null, id: string | null): Promise<RecordRow[]> {
@@ -239,8 +241,12 @@ function terms(value: unknown, what: string): string[] {
 function verdictRefusal(stderr: string): string {
 	if (stderr.includes("past title/abstract stage"))
 		return "This paper has already moved past the title and abstract stage, so that decision can't be recorded now.";
-	if (stderr.includes("not at full-text stage"))
-		return "This paper isn't at the full-text stage yet, so a full-text decision can't be recorded for it.";
+	if (stderr.includes("not at full-text stage")) {
+		// `included` is a final state in review.py's machine: no edge leads out of it.
+		return /\(state included\)/.test(stderr)
+			? "This paper is already included, which is the end of its trail, so it takes no further decision."
+			: "This paper isn't at the full-text stage yet, so a full-text decision can't be recorded for it.";
+	}
 	if (stderr.includes("'maybe' is banned")) return "Maybe isn't available at the full-text stage.";
 	if (stderr.includes("illegal transition")) return "That decision doesn't fit where this paper stands in the review.";
 	if (stderr.includes("no record with id")) return "That paper is no longer in this project.";
