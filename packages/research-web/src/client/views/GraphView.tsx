@@ -55,7 +55,7 @@ export function GraphView({ tick, prefill }: { tick: number; prefill(text: strin
 				icon={Network}
 				title="Graph is empty"
 				body="File included papers into the paper graph to see how they connect."
-				actions={[{ label: "/graph", prompt: "/graph add" }]}
+				actions={[{ label: "Add included papers", prompt: "/graph add" }]}
 				prefill={prefill}
 			/>
 		);
