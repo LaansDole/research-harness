@@ -1,10 +1,11 @@
-import { BookOpen, ChevronDown, ChevronUp, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Highlighter, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import type { Criteria } from "../../criteria";
-import type { RecordRow, ReviewState, Stage } from "../../data";
+import type { Highlights, RecordRow, ReviewState, Stage } from "../../data";
 import { problemClass, useFetch } from "../api";
 import { EmptyState } from "./EmptyState";
+import { hasMarks, HighlightLegend, HighlightWords, Marked, NO_WORDS } from "./HighlightWords";
 import { needsDecision, RecordedVerdict, ScreeningDesk, stagesFor } from "./ScreeningDesk";
 import { VerdictMark } from "./VerdictMark";
 import "./views.css";
@@ -102,6 +103,11 @@ export function RecordsView({
 	// ponytail: one fetch, client-side filtering; server ?state= filtering if a project reaches thousands of rows.
 	const records = useFetch<RecordRow[]>(`${base}/records`, tick);
 	const criteria = useFetch<Criteria>(`${base}/criteria`, tick);
+	const storedWords = useFetch<Highlights>(`${base}/highlights`, tick);
+	// The saved lists, until this session edits them; the editor hands back what the server stored.
+	const [editedWords, setEditedWords] = useState<Highlights | null>(null);
+	const [wordsOpen, setWordsOpen] = useState(false);
+	const words = editedWords ?? storedWords.data ?? NO_WORDS;
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
@@ -124,6 +130,8 @@ export function RecordsView({
 		setSelectedId(null);
 		setOpen(false);
 		setAllDecided(null);
+		setEditedWords(null);
+		setWordsOpen(false);
 	}, [slug]);
 
 	// Mobile: a native modal dialog, so everything behind the sheet is inert and Tab stays inside it.
@@ -283,7 +291,9 @@ export function RecordsView({
 					</button>
 				</span>
 			</div>
-			<h2 id="rw-drawer-title">{selected.title}</h2>
+			<h2 id="rw-drawer-title">
+				<Marked text={selected.title} words={words} />
+			</h2>
 			<p className="rw-faint">{[selected.authors, selected.year, selected.venue].filter(Boolean).join(" · ")}</p>
 			{selected.doi && (
 				<p>
@@ -343,7 +353,12 @@ export function RecordsView({
 						</>
 					)}
 				<dt>Abstract</dt>
-				<dd>{selected.abstract || "No abstract recorded."}</dd>
+				{(hasMarks(selected.abstract ?? "", words) || hasMarks(selected.title, words)) && (
+					<dd>
+						<HighlightLegend />
+					</dd>
+				)}
+				<dd>{selected.abstract ? <Marked text={selected.abstract} words={words} /> : "No abstract recorded."}</dd>
 			</dl>
 		</>
 	);
@@ -393,9 +408,29 @@ export function RecordsView({
 					onChange={e => setQuery(e.target.value)}
 				/>
 				<span className="rw-faint" role="status">
-					{shown.length} of {all.length} records
+					{shown.length} of {all.length} papers
 				</span>
+				<button
+					type="button"
+					className="rw-words-toggle"
+					aria-expanded={wordsOpen}
+					onClick={() => setWordsOpen(o => !o)}
+				>
+					<Highlighter size={14} aria-hidden /> Highlight words
+					{words.include.length + words.exclude.length > 0 && (
+						<span className="rw-count">{words.include.length + words.exclude.length}</span>
+					)}
+				</button>
 			</div>
+			{wordsOpen && (
+				<HighlightWords
+					slug={slug}
+					words={words}
+					criteria={criteria.data}
+					onSaved={setEditedWords}
+					onClose={() => setWordsOpen(false)}
+				/>
+			)}
 			<div className="rw-records-body">
 				<div className="rw-records-list">
 					<table className="rw-table" role="grid" aria-label="Reading list">
@@ -428,7 +463,9 @@ export function RecordsView({
 										onKeyDown={e => onRowKey(e, i)}
 									>
 										<td>
-											<div className="rw-title">{r.title}</div>
+											<div className="rw-title">
+												<Marked text={r.title} words={words} />
+											</div>
 											<div className="rw-faint">
 												{[r.authors, r.year, r.venue].filter(Boolean).join(" · ")}
 											</div>
