@@ -250,7 +250,7 @@ A calibrated first pass at the title/abstract stage, off unless a TypeSafe API k
 
 ### 6.2 Screening from the browser
 
-The reading list in `research web` carries a screening desk: any record still waiting on a decision at its stage gets Include / Exclude / Maybe (keys `I`, `E`, `M`), with the exclude reason picked from the project's own `scope.md` criteria. It follows the same rules as the agent and Jev:
+The reading list in `research web` carries a screening desk: any record at a screenable stage gets Include / Exclude / Maybe (keys `I`, `E`, `M`), with the exclude reason picked from the project's own `scope.md` criteria. That includes records the agent or Jev has already screened — their verdict is already written to `review.db`, and the desk shows it so the researcher can confirm or overrule it, replacing it with her own. It follows the same rules as the agent and Jev:
 
 - **No privileged write path.** `POST /api/projects/:slug/records/:id/verdict` spawns `review.py verdict` with `--stage/--verdict/--rationale` (`packages/research-web/src/data.ts`); research-web never opens `review.db` for writing. A refusal from the state machine (`maybe` at the full-text stage, a record already past the stage, an illegal transition) comes back as exit 1 and is shown as a plain sentence, with the record untouched.
 - **Researcher provenance.** Rationales written from the browser are prefixed `[researcher] `, the way Jev's carry `[jev-<version> p=…]`, so `review.db` and the PRISMA tables say who decided without any schema change. The UI strips the prefix and shows "You decided".

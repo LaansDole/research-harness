@@ -41,7 +41,7 @@ Then just say what you are working on — *"I'm starting a scoping review on LLM
 
 - **Frames your question** as PCC/PICO with inclusion and exclusion criteria.
 - **Plans the search** — which databases suit your question, and ready-to-paste search strings in each one's own syntax. It searches arXiv, OpenAlex and your own folder of PDFs itself; for paywalled databases you run the string and import the export (RIS, BibTeX or CSV). Nothing is scraped.
-- **Screens with you** — it removes duplicates, then proposes a verdict for each record against your criteria, with a one-sentence reason and how confident it is. You decide at the screening desk: *Include*, *Exclude* or *Maybe* with one key, the exclusion reason picked from your own criteria, a note if you want one. Nothing is saved until you choose.
+- **Screens with you** — it removes duplicates, then screens each record against your criteria and records its verdict with a one-sentence reason and how confident it is. At the screening desk you confirm or overrule any of them with one key — *Include*, *Exclude* or *Maybe*, the exclusion reason picked from your own criteria, a note if you want one — and what you decide is recorded as your decision, with your reason.
 - **Marks your own words** — the terms from your inclusion and exclusion criteria are highlighted in every title and abstract, green for include and vermilion for exclude, so you can see at a glance why a paper is there. Suggested from your scope; edit the list whenever it is wrong.
 - **Finds full texts** from open-access sources only (OpenAlex, Unpaywall, arXiv, your own PDFs). Anything it cannot find is marked *not retrieved*, never guessed.
 - **Drafts a cited review** from your included papers, citing only papers in your review.
@@ -52,7 +52,7 @@ Then just say what you are working on — *"I'm starting a scoping review on LLM
 
 ![research web Reading list tab, filtered to the 4 records not screened yet, with the screening desk open on "A Survey on LLM-based Multi-Agent AI Hospital" (Zonghai Yao; Hong Qing Yu, 2025) and its DOI. The decision line reads "Your decision: Maybe — Unclear from the title and abstract", with Maybe outlined in amber beside Include and Exclude and their I, E and M keys, an optional note box, and a Screen button next to "No PDF downloaded". Below, the abstract is marked with the researcher's highlight words — green for include words, vermilion underlined for exclude words — and the four waiting titles on the left carry the same marks. The header strip counts 20 Identified, 18 Screened with 4 to screen, 8 Sought, 5 Assessed, 4 Included.](../assets/research/web-screening.png)
 
-One paper at a time, with its abstract, its marks and the agent's suggestion if it has one. *Include*, *Exclude* or *Maybe* with one key; an exclusion asks which of your own criteria it failed and lets you add a note; *Maybe* keeps the paper open for later. The panel moves to the next paper on its own, and every decision is written as your call, with your reason, into the PRISMA counts.
+One paper at a time, with its abstract, its marks and the verdict the agent already recorded, if it has one. Confirm it or change it: *Include*, *Exclude* or *Maybe* with one key; an exclusion asks which of your own criteria it failed and lets you add a note; *Maybe* keeps the paper open for later. The panel moves to the next paper on its own, and every decision you make is written as your call, with your reason, into the PRISMA counts.
 
 ### Reading list
 
@@ -72,7 +72,7 @@ How your papers connect — citation links checked against OpenAlex, plus relate
 
 Drawn from your records and ready to download as SVG for your manuscript.
 
-**You stay in control.** Nothing is screened behind your back: the agent proposes, you decide at the desk, and the diagram counts your decisions and your reasons. The reading list, review, graph and PRISMA views only show work that is already there. Buttons such as *Screen full texts* or *Check the claims in this section* just fill in the message box — nothing runs until you press Enter. The workspace runs on your own machine (`127.0.0.1`), and each review lives in its own folder under `~/.research-harness/projects/`, so several reviews can run side by side.
+**You stay in control.** The agent screens and writes down what it decided and why, and you can confirm or overrule any verdict at the desk with one key — your decisions are recorded as yours, with your reason, and the diagram counts them. The reading list, review, graph and PRISMA views only show work that is already there. Buttons such as *Screen full texts* or *Check the claims in this section* just fill in the message box — nothing runs until you press Enter. The workspace runs on your own machine (`127.0.0.1`), and each review lives in its own folder under `~/.research-harness/projects/`, so several reviews can run side by side.
 
 ## Commands
 
