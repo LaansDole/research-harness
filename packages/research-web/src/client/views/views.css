@@ -337,6 +337,14 @@
 	font-size: 13px;
 }
 
+/* Include, Exclude and Maybe on one row inside the 380px drawer: tighter than a default button
+ * (the extra specificity is what beats the base button padding), full 29px hit target kept.
+ * The row still wraps on a phone, where there is no width to win. */
+.rw-app .rw-desk-verdicts .rw-desk-verdict {
+	gap: 4px;
+	padding: 4px 8px;
+}
+
 .rw-desk-verdict::before {
 	content: "";
 	position: absolute;
