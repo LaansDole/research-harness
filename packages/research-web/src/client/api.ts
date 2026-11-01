@@ -16,10 +16,10 @@ class FetchError extends Error {
 	}
 }
 
-async function fetchBody<T>(url: string, as: "json" | "text"): Promise<T> {
+async function fetchBody<T>(url: string, as: "json" | "text", init?: RequestInit): Promise<T> {
 	let res: Response;
 	try {
-		res = await fetch(url);
+		res = await fetch(url, init);
 	} catch {
 		throw new FetchError("Can't reach research web. Is it still running?", 0);
 	}
@@ -35,6 +35,18 @@ async function fetchBody<T>(url: string, as: "json" | "text"): Promise<T> {
 		throw new FetchError(message, res.status);
 	}
 	return (as === "json" ? JSON.parse(text) : text) as T;
+}
+
+/**
+ * A write (verdict, highlight words): JSON in, JSON out, same friendly errors as a read.
+ * The server validates every field; the message it returns is written for the researcher.
+ */
+export function sendJson<T>(url: string, method: "POST" | "PUT", body: unknown): Promise<T> {
+	return fetchBody<T>(url, "json", {
+		method,
+		headers: { "content-type": "application/json" },
+		body: JSON.stringify(body),
+	});
 }
 
 /**
