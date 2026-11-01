@@ -209,6 +209,27 @@ class ResearchUpdateTest(helpers.ResearchCase):
         up = self.research("update")
         self.assertIn("already up to date: 0.2.0 (%s)" % tip[:7], up.stdout)
 
+    def test_update_lists_only_changelog_sections_newer_than_installed_version(self):
+        changelog = os.path.join(self.upstream, "research/CHANGELOG.md")
+        write(os.path.join(self.upstream, "research/VERSION"), "0.1.0\n")
+        write(changelog, "# Changelog\n\n## [0.1.0] - d\n\n- old-feature\n")
+        self.push_commit(name="v010")
+        self.assertEqual(self.research("update").returncode, 0)
+
+        write(os.path.join(self.upstream, "research/VERSION"), "0.2.0\n")
+        write(changelog, "# Changelog\n\n## [Unreleased]\n\n## [0.2.0] - d\n\n"
+                         "### Added\n\n- new-feature\n\n## [0.1.0] - d\n\n- old-feature\n")
+        self.push_commit(name="v020")
+
+        check = self.research("update", "--check")
+        proc = self.research("update")
+
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+        for out in (check.stdout, proc.stdout):
+            self.assertIn("- new-feature", out)
+            self.assertNotIn("old-feature", out)
+            self.assertNotIn("[Unreleased]", out)
+
     def test_force_pushed_remote_lands_on_new_tip_and_prints_the_old_sha(self):
         old = self.head()
         tip = self.rebuild_history()
