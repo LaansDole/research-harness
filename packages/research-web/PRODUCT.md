@@ -50,7 +50,7 @@ PRISMA counts are derived from per-record states in the project's review store, 
 
 1. The researcher always sees where the review stands and the next step.
 2. Every count and verdict is traceable to a record and its recorded reason.
-3. The agent proposes; the researcher sends. Nothing changes silently.
+3. The agent screens and records its own verdicts with reasons; the researcher confirms or overrules any of them, and her decision is recorded as hers. Every other action waits for her to send it.
 4. Plain language over tool vocabulary; Covidence-level friendliness is the bar.
 5. Local-first and open-access only.
 
