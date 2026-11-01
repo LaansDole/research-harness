@@ -15,7 +15,19 @@ export interface Criteria {
 
 const EMPTY: Criteria = { question: "", pcc: {}, inclusion: [], exclusion: [] };
 
-/** `## Heading` splits the document; `###` and deeper stay inside their section. */
+/** Markdown emphasis is decoration, not content: `**Population**` is the dimension `Population`. */
+function plainText(text: string): string {
+	return text
+		.replace(/\*\*(.+?)\*\*/g, "$1")
+		.replace(/`(.+?)`/g, "$1")
+		.replace(/\*(.+?)\*/g, "$1")
+		.trim();
+}
+
+/**
+ * `## Heading` splits the document; `###` and deeper stay inside their section. Headings are kept as
+ * their bare words, so "Framework — PCC" and "Inclusion / exclusion criteria" are matchable.
+ */
 function sectionsOf(markdown: string): Map<string, string[]> {
 	const out = new Map<string, string[]>();
 	let lines: string[] = [];
@@ -25,7 +37,13 @@ function sectionsOf(markdown: string): Map<string, string[]> {
 		if (heading === null) lines.push(line);
 		else {
 			lines = [];
-			out.set(heading[1].toLowerCase(), lines);
+			out.set(
+				plainText(heading[1])
+					.toLowerCase()
+					.replace(/[^\p{L}\p{N}]+/gu, " ")
+					.trim(),
+				lines,
+			);
 		}
 	}
 	return out;
@@ -35,48 +53,146 @@ function bullets(lines: string[] | undefined): string[] {
 	const out: string[] = [];
 	for (const line of lines ?? []) {
 		const bullet = /^\s*[-*]\s+(.+?)\s*$/.exec(line);
-		if (bullet !== null) out.push(bullet[1]);
+		if (bullet !== null) out.push(plainText(bullet[1]));
 	}
 	return out;
 }
 
-/** The dimension rows of a pipe table: its header row and the `---` rule are not criteria. */
-function tableRows(lines: string[] | undefined): Record<string, string> {
-	const out: Record<string, string> = {};
-	let row = 0;
+/** The bullets of the first section whose heading matches, skipping sections that hold a table. */
+function sectionBullets(sections: Map<string, string[]>, heading: RegExp): string[] {
+	for (const [name, lines] of sections) {
+		if (!heading.test(name)) continue;
+		const found = bullets(lines);
+		if (found.length > 0) return found;
+	}
+	return [];
+}
+
+/** The first paragraph: /scope wraps a question over several lines. */
+function paragraph(lines: string[] | undefined): string {
+	const out: string[] = [];
 	for (const line of lines ?? []) {
-		if (!line.trim().startsWith("|")) {
-			row = 0;
+		const text = plainText(line);
+		if (text === "" || text.startsWith("|") || /^[-*]\s/.test(text)) {
+			if (out.length > 0) break;
 			continue;
 		}
-		row++;
-		const cells = line
-			.trim()
+		out.push(text);
+	}
+	return out.join(" ");
+}
+
+/** Every pipe table in these lines, as rows of cells; the `---` alignment rule is not a row. */
+function pipeTables(lines: string[] | undefined): string[][][] {
+	const tables: string[][][] = [];
+	let rows: string[][] | null = null;
+	for (const line of lines ?? []) {
+		const text = line.trim();
+		if (!text.startsWith("|")) {
+			rows = null;
+			continue;
+		}
+		const cells = text
 			.replace(/^\||\|$/g, "")
 			.split("|")
-			.map(c => c.trim());
-		// 1 = the header row, 2 = the alignment rule.
-		if (row <= 2 || cells.length < 2 || cells[0] === "") continue;
-		out[cells[0].toLowerCase()] = cells.slice(1).join(" | ");
+			.map(c => plainText(c));
+		if (cells.every(c => /^:?-+:?$/.test(c))) continue;
+		if (rows === null) {
+			rows = [];
+			tables.push(rows);
+		}
+		rows.push(cells);
 	}
-	return out;
+	return tables;
 }
+
+/** The dimension rows of a `| Dimension | Definition |` table: its header row is not a dimension. */
+function dimensionRows(tables: string[][][]): Record<string, string> {
+	for (const rows of tables) {
+		const out: Record<string, string> = {};
+		for (const cells of rows.slice(1)) {
+			if (cells.length < 2 || cells[0] === "") continue;
+			out[cells[0].toLowerCase()] = cells.slice(1).join(" | ");
+		}
+		if (Object.keys(out).length > 0) return out;
+	}
+	return {};
+}
+
+/**
+ * The shape /scope writes: `| Criterion | Include | Exclude |`, one row per criterion. Each row
+ * contributes one inclusion and one exclusion entry, labelled by its criterion so the exclusion
+ * reads as a reason in the picker ("Population: Single-agent LLM systems; non-LLM agents").
+ */
+function criteriaTable(tables: string[][][]): { inclusion: string[]; exclusion: string[] } | null {
+	for (const rows of tables) {
+		const header = (rows[0] ?? []).map(c => c.toLowerCase());
+		const columns = {
+			inclusion: header.findIndex(c => c.startsWith("inclu")),
+			exclusion: header.findIndex(c => c.startsWith("exclu")),
+		};
+		if (columns.inclusion < 0 || columns.exclusion < 0) continue;
+		const label = header.findIndex((_, i) => i !== columns.inclusion && i !== columns.exclusion);
+		const out: { inclusion: string[]; exclusion: string[] } = { inclusion: [], exclusion: [] };
+		for (const cells of rows.slice(1)) {
+			const name = label < 0 ? "" : (cells[label] ?? "");
+			for (const key of ["inclusion", "exclusion"] as const) {
+				const text = cells[columns[key]] ?? "";
+				if (text === "" || text === "-" || text === "—") continue;
+				out[key].push(name === "" ? text : `${name}: ${text}`);
+			}
+		}
+		if (out.inclusion.length > 0 || out.exclusion.length > 0) return out;
+	}
+	return null;
+}
+
+/** The PCC/PICO dimension names, for a scope that states them as plain bullets instead of a table. */
+const DIMENSION =
+	/^(population|participants|concept|context|intervention|comparator|comparison|outcomes?|setting|exposure)$/;
 
 export function parseScope(markdown: string): Criteria {
 	if (markdown.trim() === "") return { ...EMPTY };
 	const sections = sectionsOf(markdown);
-	const question = (sections.get("question") ?? []).map(l => l.trim()).find(l => l !== "") ?? "";
+	const all = markdown.split("\n");
+
+	let question = "";
+	for (const [heading, lines] of sections) {
+		if (!/\bquestion\b/.test(heading)) continue;
+		question = paragraph(lines);
+		if (question !== "") break;
+	}
+	// A hand-written scope states it as one line: "Question: ..." / "Research question: ...".
+	if (question === "")
+		for (const line of all) {
+			const stated = /^(?:[-*]\s+)?(?:\p{L}+\s+)?question\s*:\s*(.+)$/iu.exec(plainText(line));
+			if (stated !== null) {
+				question = stated[1].trim();
+				break;
+			}
+		}
+
 	let pcc: Record<string, string> = {};
 	for (const [heading, lines] of sections) {
-		if (!/^(pcc|pico|picos|criteria framework)\b/.test(heading)) continue;
-		pcc = tableRows(lines);
+		if (!/\b(pcc|picos?|framework)\b/.test(heading)) continue;
+		pcc = dimensionRows(pipeTables(lines));
 		if (Object.keys(pcc).length > 0) break;
 	}
+	if (Object.keys(pcc).length === 0)
+		for (const bullet of bullets(all)) {
+			const row = /^([^:]+):\s*(.+)$/.exec(bullet);
+			if (row !== null && DIMENSION.test(row[1].toLowerCase().trim()))
+				pcc[row[1].toLowerCase().trim()] = row[2].trim();
+		}
+
+	const table = criteriaTable(pipeTables(all));
+	const inclusion = sectionBullets(sections, /^inclusion/);
+	const exclusion = sectionBullets(sections, /^exclusion/);
 	return {
 		question,
 		pcc,
-		inclusion: bullets(sections.get("inclusion criteria")),
-		exclusion: bullets(sections.get("exclusion criteria")),
+		inclusion: inclusion.length > 0 ? inclusion : (table?.inclusion ?? []),
+		exclusion: exclusion.length > 0 ? exclusion : (table?.exclusion ?? []),
 	};
 }
 
@@ -124,12 +240,15 @@ function roundRobin(groups: readonly string[][]): string[] {
 
 /**
  * Whether a word lights up the review's own subject — by the highlighter's rule and by that rule
- * read backwards, so `llms` is not offered as an exclusion for a review about LLM systems.
+ * read backwards, so `llms` is not offered as an exclusion for a review about LLM systems. A
+ * compound counts as its spaced spelling too: one scope writes "social science" in its PCC and
+ * "social-science" in an exclusion cell, and both name the same subject.
  */
 function marksSubject(term: string, subject: string): boolean {
 	const hits = (t: string) =>
 		t.length >= 3 && markTerms(subject, { include: [], exclude: [t] }).some(seg => seg.kind !== null);
-	return hits(term) || hits(term.replace(/(es|s)$/, ""));
+	const spellings = term.includes("-") ? [term, term.replace(/-/g, " ")] : [term];
+	return spellings.some(t => hits(t) || hits(t.replace(/(es|s)$/, "")));
 }
 
 /** How many suggestions each list offers: enough to edit down, few enough to read at a glance. */
