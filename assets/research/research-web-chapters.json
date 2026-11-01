@@ -4,71 +4,55 @@
 		"title": "Back to her scoping review"
 	},
 	{
-		"t": 12.2,
-		"title": "She hands the review to the agent"
+		"t": 18.3,
+		"title": "She asks where the review stands"
 	},
 	{
-		"t": 60,
-		"title": "Images, model and thinking level"
+		"t": 76.4,
+		"title": "Her reading list, opened from the strip"
 	},
 	{
-		"t": 72.4,
-		"title": "A second question, stopped with Esc"
+		"t": 87.6,
+		"title": "Words from her own criteria"
 	},
 	{
-		"t": 81.9,
-		"title": "An earlier session, folded"
+		"t": 122.5,
+		"title": "She decides a paper herself"
 	},
 	{
-		"t": 97.5,
-		"title": "Fork it, or start fresh"
+		"t": 131,
+		"title": "Excluding one, with a reason"
 	},
 	{
-		"t": 115.2,
-		"title": "Reading list: next step and exclusions"
+		"t": 154.8,
+		"title": "A maybe, when she is not sure"
 	},
 	{
-		"t": 146,
-		"title": "Opening TriageAgent's PDF"
+		"t": 176,
+		"title": "What the agent suggested"
 	},
 	{
-		"t": 171.8,
-		"title": "Reading the review"
+		"t": 208.8,
+		"title": "Verdict marks down the list"
 	},
 	{
-		"t": 195.8,
-		"title": "Checking a claim, revising a section"
+		"t": 227.3,
+		"title": "A claim she wants checked"
 	},
 	{
-		"t": 217.6,
+		"t": 257.1,
 		"title": "How the papers connect"
 	},
 	{
-		"t": 264.8,
-		"title": "Dark mode, all the way into the graph"
+		"t": 279.1,
+		"title": "Lights down"
 	},
 	{
-		"t": 271.3,
-		"title": "PRISMA flow diagram"
+		"t": 292.1,
+		"title": "PRISMA, from her own decisions"
 	},
 	{
-		"t": 277.1,
-		"title": "A project with nothing in it yet"
-	},
-	{
-		"t": 297.3,
-		"title": "More room, and tabs by keyboard"
-	},
-	{
-		"t": 306.8,
-		"title": "An old link still lands on her review"
-	},
-	{
-		"t": 310.6,
-		"title": "If the agent stops, reconnect"
-	},
-	{
-		"t": 321.7,
+		"t": 308.7,
 		"title": "On a phone-width screen"
 	}
 ]

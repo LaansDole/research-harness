@@ -1,51 +1,69 @@
-// The research-web demo: a researcher returning to her scoping review in the browser UI, recorded in
-// real time from a real Chrome. One take walks every capability of the UI.
+// The research-web demo: a researcher screening her scoping review in the browser UI, recorded in
+// real time from a real Chrome. One take walks the working day the UI is built for.
 //
 // Replaces VHS for this repo's demos: VHS renders a terminal frame by frame through its own
 // headless browser, so a capture took many times its running length. The web UI is already a
 // browser page, so Puppeteer's `page.screencast()` records it directly (needs ffmpeg) and the
 // take costs exactly its own length.
 //
-// Persona: a researcher (not a developer) returning to a scoping review on multi-agent LLMs for
-// clinical decision support. The agent still points at a newer, empty project; she makes the review
-// the agent's project, asks what to read first, stops a second question, reopens an earlier session,
-// triages the reading list, opens a PDF, reads the review and checks a claim, explores the paper
-// graph (dark mode too), visits the PRISMA diagram and the empty project, reconnects a stopped agent,
-// and finishes on a phone-width screen.
+// Persona: a researcher (not a developer) coming back to a scoping review on multi-agent LLMs for
+// clinical decision support. She asks the agent where the review stands, filters her reading list
+// from the PRISMA strip, has the UI suggest highlight words from her own criteria and drops one she
+// disagrees with, screens four papers herself at the desk (include, exclude with a reason and a
+// note, maybe, and one where she confirms the agent's suggestion), reads her review and marks a
+// claim to check, glances at the paper graph, turns the lights down, ends on the PRISMA diagram,
+// and finishes on a phone.
 //
-// What is real: research web from this checkout, its omp agent on the default model (real turns, no
-// mocked RPC or replay), and every view reading the scratch ~/.research-harness. Three prompts are
-// sent: "Switch the active project to demo-web-ui" (prefilled by Make active), "Which paper should I
-// read first?" (queued while the agent works) and "Summarise the included papers." (stopped with
-// Esc). The earlier session she reopens is a real turn sent while preparing the scratch HOME.
+// What is real: research web from this checkout, its omp agent on the default model (one real turn,
+// no mocked RPC or replay), every view reading the scratch ~/.research-harness, and every verdict
+// written by `review.py verdict` into the scratch review.db. One prompt is sent and answered:
+// "Where does my review stand?". A second prompt — the claim check — is only prefilled into the
+// message box and deliberately never sent.
 //
-// Scratch HOME (RESEARCH_WEB_DEMO_HOME, required; the script refuses the real HOME). research web and
-// its agent run with HOME pointed there, so nothing under the real ~/.research-harness or
-// ~/.omp/agent/sessions is read or written. Prepare it once:
-//   .research-harness/  projects/demo-web-ui (its review.db pdf_path rows rewritten to the copy) plus
-//                       review-evidence-table.md (a second review file: a table and a formula); one
-//                       empty project (llm-multi-agent-design) as active-project; papers.db; web-theme;
+// Two things are seeded into the SCRATCH COPY of the demo project (never into the real one):
+//   * `scope.md` keeps demo-web-ui's own question and PCC wording but is written in the headings
+//     /scope produces (## Question, ## PCC table) and gains "## Inclusion criteria" and
+//     "## Exclusion criteria" bullets, because the desk's reason picker and "Suggest from your
+//     criteria" read them. Without the PCC table the suggester would offer the review's own
+//     subject as an exclusion word.
+//   * Six more records, so papers are actually waiting at title/abstract. Real OpenAlex works
+//     (real titles, authors, venues, DOIs and abstracts) imported through `review.py import`:
+//     10.1093/jamia/ocag111, 10.1109/bibm62325.2024.10822109, 10.1109/jbhi.2026.3740738,
+//     10.1515/cdbme-2026-0216, 10.17586/2713-1874-2024-4-50-59, 10.31219/osf.io/bv5sg_v1.
+// The review file `review-multi-agent-cds.md` is the project's own and predates those imports, so
+// its Scope paragraph still counts 14 records: a draft that has not caught up with the screening,
+// which is why she is screening.
+//
+// Scratch HOME (RESEARCH_WEB_DEMO_HOME, required; the script refuses the real HOME). research web
+// and its agent run with HOME pointed there, so nothing under the real ~/.research-harness or
+// ~/.omp/agent/sessions is read or written. Prepare it once under a directory that is not pruned
+// (the take used ~/.hermes/cache/rh-dispatches/restyle/rec-home, never $TMPDIR):
+//   .research-harness/  projects/demo-web-ui copied from the real one (its review.db pdf_path rows
+//                       rewritten to the copy) with the scope.md and the six imports above;
+//                       active-project = demo-web-ui; papers.db; web-theme (light);
 //                       config.env minus RESEARCH_HARNESS_HOME and PAPER_GRAPH_DB.
 //   .omp/agent/         agent.db (sqlite3 .backup, OAuth refresh tokens blanked so the copy never
-//                       rotates the real ones) and models.db; config.yml and .env, with autoResume and
-//                       advisor.enabled set to false (the omp defaults); research/agents/*.md and
-//                       research/prompts/*.md as setup.sh installs them. No sessions are copied.
+//                       rotates the real ones) and models.db; config.yml and .env, with autoResume
+//                       and advisor.enabled set to false (the omp defaults); research/agents/*.md
+//                       and research/prompts/*.md as setup.sh installs them. No sessions are copied.
 //   .omp/plugins/       node_modules/research-harness-tools -> this checkout's research/, enabled in
 //                       omp-plugins.lock.json.
-// Then send "Summarise the included papers." / "One line each." once in research web (the earlier
-// session) and set active-project back to llm-multi-agent-design. Restore that state before every
-// take: the take switches the active project and adds sessions.
+// Restore that state before every take: the take writes four verdicts, a highlights.json and a
+// session. Rebuilding the scratch HOME from scratch is the cheapest restore.
 //
-// Pre-flight (claude-opus-5-5, medium thinking): the switch turn answers in ~18 s, ~40 s with the
-// queued follow-up; the summary took 17-26 s on its own but ~5 s in the take, where the follow-up had
-// already read the abstracts, so Esc comes as soon as it starts. Every wait is a DOM condition
-// (status back to Ready, the "Stopped before finishing." line) with a generous timeout.
+// Pre-flight (claude-opus-5-5, medium thinking): "Where does my review stand?" starts its first
+// activity row 2-3 s after send and answers in 25-29 s over 5-6 steps, with a PRISMA table that
+// matches the header strip. Every wait is a DOM condition (status back to Ready, the live activity
+// row, the strip's pending count, the paper the panel advanced to) with a generous timeout, never
+// a sleep.
+// An include or an exclude moves the Screened box's "to screen" count; a maybe does not, because
+// review.py keeps a maybe paper unscreened (SCREENING.md) — there the advance is the proof.
 //
 // Prereqs: ffmpeg, Google Chrome (or CHROME_PATH), the repo's node_modules and a native addon built
 // from this checkout (`bun --cwd=packages/natives run build`; a stale one breaks the agent's shell).
 // Render from the repo root:  RESEARCH_WEB_DEMO_HOME=/path/to/scratch bun assets/research/tapes/research-web.ts
 // Writes assets/research/research-web.mp4, research-web-poster.png and research-web-chapters.json.
-// The phone-width part is a second screencast (430x900, letterboxed onto 1440x900) joined after the
+// The phone-width part is a second screencast (390x900, letterboxed onto 1440x900) joined after the
 // main one: that join is the take's only seam.
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
@@ -55,16 +73,12 @@ import puppeteer, { type ElementHandle, type Frame, type KeyInput, type Page } f
 
 const ROOT = path.resolve(import.meta.dir, "../../..");
 const OUT_DIR = path.join(ROOT, "assets/research");
-const PROJECT = "demo-web-ui";
-const EMPTY = "llm-multi-agent-design";
 const PORT = Number(process.env.RESEARCH_WEB_PORT ?? 7799);
 const CHROME = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const VIEWPORT = { width: 1440, height: 900 };
-const PHONE = { width: 430, height: 900 };
+const PHONE = { width: 390, height: 900 };
 const BASE = `http://127.0.0.1:${PORT}/`;
 const MESSAGE = "textarea[aria-label='Message']";
-// Any image works: it is attached and removed again, never sent.
-const IMAGE = path.join(OUT_DIR, "graph-viz.png");
 const DEMO_HOME = path.resolve(process.env.RESEARCH_WEB_DEMO_HOME ?? "");
 if (!process.env.RESEARCH_WEB_DEMO_HOME || DEMO_HOME === path.resolve(os.homedir())) {
 	throw new Error("set RESEARCH_WEB_DEMO_HOME to a prepared scratch HOME (see the header), never the real one");
@@ -190,13 +204,55 @@ async function press(page: Page, key: KeyInput, after = 900, modifier?: KeyInput
 	await pause(after);
 }
 
-const statusOf = (page: Page): Promise<string> => page.$eval("[role=status]", e => e.textContent ?? "");
-
 async function waitStatus(page: Page, text: string, timeout: number): Promise<void> {
 	await page
 		.waitForFunction((t: string) => document.querySelector("[role=status]")?.textContent === t, { timeout }, text)
 		.catch((err: unknown) => {
 			throw new Error(`status never became ${text}`, { cause: err });
+		});
+}
+
+/**
+ * The header strip's pending count for a stage, e.g. the "6 to screen" under Screened. Every
+ * screening step waits on this instead of a sleep: it only moves once review.py has written the
+ * verdict and the project counts have been re-read.
+ */
+async function waitPending(page: Page, stage: string, want: number): Promise<void> {
+	await page
+		.waitForFunction(
+			(s: string, n: string) =>
+				document.querySelector(`.rw-strip-box[data-stage="${s}"] .rw-strip-pending-n`)?.textContent === n,
+			{ timeout: 60_000 },
+			stage,
+			String(want),
+		)
+		.catch((err: unknown) => {
+			throw new Error(`the ${stage} box never counted down to ${want}`, { cause: err });
+		});
+}
+
+/** The paper the detail panel is open on; the desk beats assert they moved to the right one. */
+const openPaper = (page: Page): Promise<string> => page.$eval("#rw-drawer-title", e => e.textContent ?? "");
+
+async function expectPaper(page: Page, starts: string): Promise<void> {
+	const title = await openPaper(page);
+	if (!title.startsWith(starts)) throw new Error(`the panel shows "${title}", expected "${starts}…"`);
+}
+
+/**
+ * Waits for the panel to land on a paper. A maybe leaves the paper unscreened (review.py records the
+ * verdict and keeps the state), so the strip cannot prove that save: the advance to the next
+ * undecided paper is what does.
+ */
+async function waitPaper(page: Page, starts: string): Promise<void> {
+	await page
+		.waitForFunction(
+			(s: string) => document.querySelector("#rw-drawer-title")?.textContent?.startsWith(s) === true,
+			{ timeout: 60_000 },
+			starts,
+		)
+		.catch((err: unknown) => {
+			throw new Error(`the panel never moved to "${starts}…"`, { cause: err });
 		});
 }
 
@@ -214,15 +270,6 @@ async function nodePoint(page: Page, frame: Frame, id: string): Promise<{ x: num
 	if (p.x < 0 || p.y < 0 || p.x > box.width || p.y > box.height)
 		throw new Error(`paper ${id} is off-screen in the graph (${Math.round(p.x)}, ${Math.round(p.y)})`);
 	return { x: box.x + p.x, y: box.y + p.y };
-}
-
-/** Moves the mouse from `from` to `by` away with the button held: drags a node, or pans the canvas. */
-async function drag(page: Page, from: { x: number; y: number }, by: { x: number; y: number }): Promise<void> {
-	await glide(page, from.x, from.y);
-	await page.mouse.down();
-	await page.mouse.move(from.x + by.x, from.y + by.y, { steps: 25 });
-	await page.mouse.up();
-	await pause(1200);
 }
 
 // The screencast only emits a frame when the page repaints, and frames still in flight are lost
@@ -283,168 +330,166 @@ try {
 	segment = 1;
 	segmentStart = Date.now();
 
-	// 1 · The agent still points at her newer, empty project; the sidebar shows both projects and an
-	// earlier session. She views her review and makes it the agent's project.
+	// 1 · Arrival, light. The PRISMA flow of her own review runs across the header with what is
+	// still waiting under each box; the empty chat offers the next steps in her words.
 	chapter("Back to her scoping review");
-	await pause(1800);
-	await hover(page, ".rw-context .rw-chip", 1200);
-	await hover(page, ".rw-starters li:nth-child(1) button", 1000);
-	await clickText(page, "#rw-sidebar", PROJECT, 1500);
-	await clickText(page, ".rw-context", "Make active", 1800);
+	await pause(2600);
+	await hover(page, ".rw-strip-box[data-stage='screened']", 2200);
+	await hover(page, ".rw-strip-box[data-stage='sought']", 1800);
+	await hover(page, ".rw-strip-box[data-stage='assessed']", 1800);
+	await hover(page, ".rw-starters li:nth-child(1) button", 2000);
+	await hover(page, ".rw-starters li:nth-child(4) button", 1800);
 
-	// 2 · A real turn: Working…, the live row with its steps, then the answer. While it works she
-	// queues a follow-up, and Fork refuses (a snapshot needs an idle agent: a toast, dismissed). Once
-	// both turns settle the header and sidebar show demo-web-ui as the agent's project.
-	chapter("She hands the review to the agent");
-	await page.focus(MESSAGE);
+	// 2 · One real agent turn, in a plain sentence. Its thinking and tool calls stay folded under
+	// "thinking · N steps" — that fold is the point, so the take leaves it closed: the answer, a
+	// PRISMA table counted live from review.db, is what she reads. (It also keeps this checkout's
+	// paths, which the agent's shell lines carry, out of a published video.)
+	chapter("She asks where the review stands");
+	await click(page, MESSAGE, 200);
+	await page.keyboard.type("Where does my review stand?", { delay: 38 });
+	await pause(1400);
 	await press(page, "Enter", 0);
-	await waitStatus(page, "Working…", 15_000);
-	const liveFold = await page.waitForSelector(".tr-think-head[aria-expanded]", { visible: true, timeout: 30_000 });
+	await waitStatus(page, "Working…", 20_000);
+	// The live row is the proof of work: its label counts the steps up while the status says
+	// Working…, and the fold keeps them out of her way.
+	const liveFold = await page.waitForSelector(".tr-think-head[aria-expanded]", {
+		visible: true,
+		timeout: 60_000,
+	});
 	if (!liveFold) throw new Error("no live activity row");
-	await clickEl(page, liveFold, "live steps", 1500);
-	await click(page, MESSAGE, 200);
-	await page.keyboard.type("Which paper should I read first?", { delay: 35 });
-	if ((await statusOf(page)) !== "Working…") console.warn("the first turn ended before the follow-up was sent");
-	await press(page, "Enter", 0);
-	await click(page, "[aria-label='Fork current session']", 0);
-	await find(page, ".rw-toast");
-	await pause(2500);
-	await click(page, ".rw-toast [aria-label='Dismiss']", 800);
-	await page.waitForFunction(() => document.querySelectorAll(".tr-row--user").length >= 2, { timeout: 120_000 });
-	// Scroll back to the status table while the follow-up runs; the poster is this mid-work view.
-	await glide(page, 900, 400);
-	await page.mouse.wheel({ deltaY: -420 });
-	await pause(2500);
-	await page.screenshot({ path: path.join(OUT_DIR, "research-web-poster.png") });
-	await waitStatus(page, "Ready", 180_000);
-	await page.mouse.wheel({ deltaY: 4000 });
-	await pause(3500);
-	await hover(page, ".rw-context .rw-chip", 1200);
-	await hover(page, "#rw-sidebar .rw-selected .rw-chip", 1500);
-
-	// 3 · The message box: an image attached and removed, the model, and a thinking level changed and
-	// changed back. Native <select> popups never reach a screencast, so values are set with the
-	// pointer resting on the picker.
-	chapter("Images, model and thinking level");
-	const [chooser] = await Promise.all([page.waitForFileChooser(), click(page, "[aria-label='Attach image']", 0)]);
-	await chooser.accept([IMAGE]);
-	await find(page, ".rw-thumb img");
-	await pause(1500);
-	await click(page, "[aria-label='Remove image']", 1000);
-	await hover(page, "select[aria-label=Model]", 1800);
-	await hover(page, "select[aria-label='Thinking level']", 800);
-	await page.select("select[aria-label='Thinking level']", "high");
-	await pause(1800);
-	await page.select("select[aria-label='Thinking level']", "medium");
-	await pause(1200);
-
-	// 4 · A two-line question sent with the Send button, then stopped with Esc in the box (the Stop
-	// button beside Send does the same): "Stopped before finishing." The follow-up already read the
-	// abstracts, so the summary needs no tools and answers in ~5 s; Esc comes as soon as it starts.
-	chapter("A second question, stopped with Esc");
-	await click(page, MESSAGE, 200);
-	await page.keyboard.type("Summarise the included papers.", { delay: 35 });
-	await press(page, "Enter", 0, "Shift");
-	await page.keyboard.type("One line each.", { delay: 35 });
-	await pause(800);
-	await click(page, "button[aria-label='Send']", 0);
-	await waitStatus(page, "Working…", 15_000);
-	await click(page, MESSAGE, 0);
-	if ((await statusOf(page)) !== "Working…") throw new Error("the summary finished before Esc; render again");
-	await press(page, "Escape", 0);
-	await waitStatus(page, "Ready", 60_000);
-	await hover(page, ".tr-stop", 2500);
-
-	// 5 · She remembers asking this before: the earlier session, its folded steps, a thinking block
-	// and a tool card. Then a fork of it, and a fresh session whose starters fit the review.
-	chapter("An earlier session, folded");
-	await clickText(page, "#rw-sidebar", "Summarise the included papers.", 0);
-	await page.waitForFunction(() => document.querySelectorAll(".tr-row--user").length === 1, { timeout: 20_000 });
-	await pause(1800);
-	await click(page, ".tr-think-head[aria-expanded]", 1500);
-	await click(page, ".tr-activity-body .tr-think-head", 1800);
-	const toolCards = await page.$$(".tr-activity-body .tv-head");
-	const helpCard = toolCards[1];
-	if (!helpCard) throw new Error("the earlier session has fewer tool calls than expected");
-	await clickEl(page, helpCard, "tool card", 1500);
-	await click(page, ".tv-expand", 1800);
-	await click(page, ".tv-expand", 1000);
-
-	chapter("Fork it, or start fresh");
-	await click(page, "[aria-label='Fork current session']", 1800);
-	await hover(page, "#rw-sidebar section:nth-child(2) .rw-selected", 1200);
-	await click(page, "[aria-label='New session']", 1800);
-	await click(page, MESSAGE, 200);
-	await page.keyboard.type("Plan for today: screen the last full text, then tighten the review", { delay: 30 });
-	await pause(600);
-	await clickText(page, ".rw-starters", "/screen full-text", 1800);
-	await clickText(page, ".rw-composer", "Restore previous draft", 1800);
-
-	// 6 · Reading list: the next step, chips (also by arrow keys), why papers were excluded,
-	// keyboard triage, and a row action.
-	chapter("Reading list: next step and exclusions");
-	await click(page, "#rw-tab-records", 1800);
-	await clickText(page, ".rw-next", "Screen full texts", 1500);
-	await click(page, "#rw-tab-records", 1200);
-	await clickText(page, "[aria-label='Filter by state']", "Excluded", 900);
-	await press(page, "ArrowRight", 900);
-	await press(page, "ArrowLeft", 900);
-	await click(page, ".rw-table tbody tr:nth-child(1) .rw-title", 2500);
-	await press(page, "ArrowDown", 2000);
-	await click(page, "[aria-label='Next record']", 1800);
-	await click(page, "[aria-label='Previous record']", 1500);
-	await press(page, "Escape", 800);
-	await press(page, "ArrowUp", 900);
-	await press(page, "Enter", 2200);
-	await press(page, "Escape", 800);
-	await clickText(page, ".rw-table tbody tr[aria-selected='true']", "Ask agent to reconsider", 2200);
-
-	// 7 · A paper the agent suggested: search, its record, the DOI, and the PDF. A real click would
-	// open a new tab the screencast cannot follow, so this tab goes to the PDF; coming back reloads
-	// the app on the same view from its URL. The PDF stays on its first page: scrolling headless
-	// Chrome's PDF viewer crashed it in one take.
-	chapter("Opening TriageAgent's PDF");
-	await click(page, "#rw-tab-records", 1200);
-	await clickText(page, "[aria-label='Filter by state']", "All", 800);
-	await click(page, "[aria-label='Search records']", 200);
-	await page.keyboard.type("triage", { delay: 80 });
-	await pause(1200);
-	await clickText(page, ".rw-table tbody", "TriageAgent", 2200, ".rw-title");
-	await hover(page, ".rw-drawer a[href^='https://doi.org/']", 1500);
-	const pdf = await find(page, ".rw-drawer a.rw-button");
-	const pdfUrl = await pdf.evaluate(a => (a as HTMLAnchorElement).href);
-	const at = await centerOf(pdf, "Open PDF");
-	await glide(page, at.x, at.y);
-	await pause(500);
-	await page.goto(pdfUrl);
+	if ((await liveFold.evaluate(e => e.getAttribute("aria-expanded"))) === "true")
+		await clickEl(page, liveFold, "live steps", 600);
+	await hover(page, ".tr-think-head", 0);
+	await hold(page, 9000);
+	await waitStatus(page, "Ready", 240_000);
+	await pause(4000);
+	await page.mouse.wheel({ deltaY: 700 });
+	await pause(5000);
+	await page.mouse.wheel({ deltaY: 700 });
 	await pause(4500);
-	await page.goto(`${BASE}#records/${PROJECT}`);
-	await waitStatus(page, "Ready", 60_000);
-	await pause(1200);
-	await click(page, "[aria-label='Search records']", 200);
-	await page.keyboard.type("zebrafish", { delay: 70 });
-	await pause(2000);
-	await page.click("[aria-label='Search records']", { count: 3 });
-	await press(page, "Backspace", 600);
+	// The views read the same review.db the agent just counted: her header says what its answer says.
+	await hover(page, ".rw-strip-box[data-stage='identified']", 1800);
+	await hover(page, ".rw-strip-box[data-stage='screened']", 2600);
 
-	// 8 · Reviews: the newest file (a table and a formula), the picker, contents, a citation and its
-	// reference (DOI linked), browser Back, one claim checked, and per-section Revise and Check.
-	chapter("Reading the review");
-	await click(page, "#rw-tab-reviews", 2000);
-	await hover(page, ".rw-doc table", 1800);
-	await hover(page, ".rw-doc .tr-math", 1800);
-	await hover(page, "select[aria-label='Review file']", 800);
-	await page.select("select[aria-label='Review file']", "review-multi-agent-cds.md");
-	await pause(2000);
-	await clickText(page, ".rw-toc", "Safety evaluation", 2000);
-	await hover(page, "#rw-sec-4 a[href^='#ref-']", 1200);
-	await click(page, "#rw-sec-4 a[href^='#ref-']", 2000);
-	await hover(page, "#rw-sec-6 li:target a[href^='https://doi.org/']", 1500);
-	await page.goBack();
-	await pause(1500);
+	// 3 · The strip is also the way in: its Screened box opens the reading list on the papers that
+	// still need a title/abstract decision.
+	chapter("Her reading list, opened from the strip");
+	await click(page, ".rw-strip-box[data-stage='screened']", 2600);
+	await hover(page, ".rw-chips", 2200);
+	await hover(page, ".rw-table tbody tr:nth-child(3)", 2600);
 
-	chapter("Checking a claim, revising a section");
-	// Drag-select one whole claim: the GALATEA II sentence, from its first word to "domains".
+	// 4 · Highlight words: suggested from her own inclusion and exclusion criteria, edited by hand if
+	// she likes, then marked in every title and abstract with a legend above the abstract.
+	chapter("Words from her own criteria");
+	await clickText(page, ".rw-toolbar", "Highlight words", 2000);
+	await clickText(page, ".rw-words-actions", "Suggest from your criteria", 3000);
+	await hover(page, ".rw-words-row:nth-of-type(1) .rw-words-chips", 2600);
+	await hover(page, ".rw-words-row:nth-of-type(2) .rw-words-chips", 2600);
+	// The list is hers, not the suggester's: "reinforcement learning" came apart into two words and
+	// a bare "learning" would mark half her field, so she drops it.
+	await click(page, "[aria-label='Remove learning']", 2600);
+	await clickText(page, ".rw-words-actions", "Save", 2600);
+	await click(page, ".rw-table tbody tr:nth-child(1)", 2400);
+	await expectPaper(page, "Orchestrator multi-agent");
+	await hover(page, ".rw-hl-legend", 3000);
+	await hover(page, ".rw-drawer dl dd:last-child", 3400);
+
+	// 5 · The desk. This paper is an LLM multi-agent CDSS with an evaluation: include, with the I key.
+	chapter("She decides a paper herself");
+	await hover(page, ".rw-desk-verdicts", 3000);
+	await press(page, "i", 0);
+	await waitPending(page, "screened", 5);
+	await pause(2600);
+	await expectPaper(page, "ArgMed-Agents");
+	await pause(1600);
+
+	// 6 · An exclusion names one reason, picked from her own criteria with a number key, plus a note.
+	// Her exclude words are already marked in this abstract: reinforcement, PPO, no LLM.
+	chapter("Excluding one, with a reason");
+	await clickText(page, ".rw-table tbody", "Explainability of Agent Behavior", 2400, ".rw-title");
+	await expectPaper(page, "Explainability of Agent Behavior");
+	await hover(page, ".rw-drawer dl dd:last-child", 4000);
+	await press(page, "e", 2000);
+	await press(page, "2", 2400);
+	await click(page, ".rw-desk-note input", 600);
+	await page.keyboard.type("Reinforcement-learning agents, no language model.", { delay: 42 });
+	await pause(1400);
+	// She looks back over the reason she picked before saving. The caret stays in the note, so Enter
+	// still saves; this is also the poster frame: picker, note and the marked abstract in one view.
+	await glide(page, 1230, 560);
+	await page.mouse.wheel({ deltaY: -170 });
+	await pause(2200);
+	await page.screenshot({ path: path.join(OUT_DIR, "research-web-poster.png") });
+	await press(page, "Enter", 0);
+	await waitPending(page, "screened", 4);
+	await pause(2000);
+	await expectPaper(page, "A Survey on LLM-based");
+
+	// 7 · Maybe is for exactly this: a survey of the field, not a system. It keeps the paper
+	// unscreened — the strip does not move — and the desk moves on; her own mark waits where she
+	// left it.
+	chapter("A maybe, when she is not sure");
+	// The caret is still in the note she just typed; her next click is the paper the desk moved to,
+	// which is also what puts I/E/M back in reach.
+	await click(page, ".rw-table tbody tr[aria-selected='true']", 1800);
+	await hover(page, ".rw-drawer dl dd:last-child", 3600);
+	await hover(page, ".rw-desk-verdicts", 2200);
+	await press(page, "m", 0);
+	await waitPaper(page, "ArgMed-Agents");
+	await pause(2400);
+	await clickText(page, ".rw-table tbody", "A Survey on LLM-based", 2600, ".rw-title");
+	await hover(page, ".rw-desk-said", 3600);
+
+	// 8 · A paper the agent screened: its verdict is a suggestion with a rationale and a confidence,
+	// not a decision. Both stages apply here, and Maybe is absent at full text, where it is illegal.
+	chapter("What the agent suggested");
+	await click(page, ".rw-strip-box[data-stage='sought']", 2600);
+	await click(page, ".rw-table tbody tr:nth-child(1)", 2400);
+	await expectPaper(page, "ClinicalMC");
+	await hover(page, ".rw-desk-said", 2600);
+	await clickText(page, ".rw-desk-said", "Show more", 4200);
+	await clickText(page, ".rw-desk-stage", "Full text", 3200);
+	await clickText(page, ".rw-desk-stage", "Title/abstract", 2400);
+	// Back to the whole list, so confirming hands her the next paper that is still waiting.
+	await clickText(page, ".rw-chips", "All", 2000);
+	await press(page, "i", 0);
+	await pause(4000);
+	await expectPaper(page, "ArgMed-Agents");
+	await pause(1800);
+
+	// 9 · Her decisions down the table: green include and vermilion exclude bands, each with its
+	// icon and its word, beside the stage badges of the papers that have no verdict yet.
+	chapter("Verdict marks down the list");
+	await press(page, "Escape", 1200);
+	await glide(page, 760, 520);
+	await page.mouse.wheel({ deltaY: 420 });
+	await pause(3400);
+	await page.mouse.wheel({ deltaY: 420 });
+	await pause(3400);
+	// The same list, found by name: 20 papers down to the one she wanted, then back.
+	const search = await centerOf(await find(page, "[aria-label='Search papers']"), "search box");
+	await glide(page, search.x, search.y);
+	await page.mouse.click(search.x, search.y);
+	await pause(800);
+	await page.keyboard.type("radiology", { delay: 90 });
+	await pause(3400);
+	// Meta+A is a browser editing command rather than a key event Chrome synthesises for us, and a
+	// synthetic triple click does not select inside a type=search field either: she just deletes it.
+	for (let i = 0; i < "radiology".length; i++) await press(page, "Backspace", 110);
+	await pause(2400);
+	await page
+		.waitForFunction(() => document.querySelector<HTMLInputElement>("[aria-label='Search papers']")?.value === "", {
+			timeout: 10_000,
+		})
+		.catch((err: unknown) => {
+			throw new Error("the search box did not clear", { cause: err });
+		});
+
+	// 10 · Reviews: a selected sentence raises a note in the margin, and its Check claim writes the
+	// question into the message box. Nothing is sent: the box still waits for her.
+	chapter("A claim she wants checked");
+	await click(page, "#rw-tab-reviews", 2600);
+	await clickText(page, ".rw-toc", "Safety evaluation", 3400);
 	const claim = await page.evaluate(() => {
 		const p = [...document.querySelectorAll(".rw-doc p")].find(e => e.textContent?.startsWith("GALATEA II"));
 		const text = p?.firstChild;
@@ -464,137 +509,69 @@ try {
 	await page.mouse.down();
 	await page.mouse.move(claim.x1, claim.y1, { steps: 30 });
 	await page.mouse.up();
-	await pause(1500);
-	await clickText(page, ".rw-toolbar", "Check claim", 2500);
-	await click(page, "#rw-tab-reviews", 1200);
-	await hover(page, "#rw-sec-5 h2", 800);
-	await clickText(page, "#rw-sec-5 .rw-revise", "Revise", 2200);
-	await click(page, "#rw-tab-reviews", 1200);
-	await hover(page, "#rw-sec-5 h2", 800);
-	await clickText(page, "#rw-sec-5 .rw-revise", "Check", 2200);
+	await pause(2400);
+	await hover(page, ".rw-margin-note", 2600);
+	await clickText(page, ".rw-margin-note", "Check claim", 3600);
+	await click(page, "#rw-tab-reviews", 2000);
+	await hover(page, ".rw-margin-note", 4000);
 
-	// 9 · Paper graph: labels on hover, a paper's record and its three agent actions, the in-frame
-	// close, zoom, drag, pan, the legend, search + Enter, clearing, and dark mode following inside.
+	// 11 · A short look at how the papers connect, then the lights go down once, for good.
 	chapter("How the papers connect");
-	await click(page, "#rw-tab-graph", 3000);
+	await click(page, "#rw-tab-graph", 3400);
 	const frame = await (await find(page, ".rw-graph-frame iframe")).contentFrame();
 	if (!frame) throw new Error("graph iframe has no frame");
 	await frame.waitForSelector("#search", { timeout: 20_000 });
-	for (const id of ["medagents", "galatea2"]) {
-		const p = await nodePoint(page, frame, id);
-		await glide(page, p.x, p.y);
-		await pause(1400);
+	for (const id of ["medagents", "agentclinic", "galatea2"]) {
+		const at = await nodePoint(page, frame, id);
+		await glide(page, at.x, at.y);
+		await pause(2000);
 	}
-	let p = await nodePoint(page, frame, "triageagent");
-	await glide(page, p.x, p.y);
-	await page.mouse.click(p.x, p.y);
-	await pause(2500);
-	for (const action of ["Find citing papers", "Auto-edges", "Explain neighbors"]) {
-		await clickText(page, ".rw-actions-right", action, 1800);
-		await click(page, "#rw-tab-graph", 1200);
-	}
+	const node = await nodePoint(page, frame, "triageagent");
+	await glide(page, node.x, node.y);
+	await page.mouse.click(node.x, node.y);
+	await pause(4500);
 	const close = await centerOf(await find(frame, "#panel .close"), "panel close");
 	await glide(page, close.x, close.y);
 	await page.mouse.click(close.x, close.y);
-	await pause(1200);
-	await drag(page, await nodePoint(page, frame, "korean-triage"), { x: 90, y: 60 });
-	const box = await (await find(page, ".rw-graph-frame iframe")).boundingBox();
-	if (!box) throw new Error("graph iframe has no box");
-	await drag(page, { x: box.x + box.width * 0.85, y: box.y + box.height * 0.8 }, { x: -160, y: -70 });
-	p = await nodePoint(page, frame, "triageagent");
-	await glide(page, p.x, p.y);
-	for (let i = 0; i < 4; i++) {
-		await page.mouse.wheel({ deltaY: -120 });
-		await pause(250);
-	}
-	await pause(1200);
-	const legend = await centerOf(await find(frame, "#legend"), "legend");
-	await glide(page, legend.x, legend.y);
-	await pause(1500);
-	await frame.click("#search");
-	await frame.type("#search", "galatea", { delay: 90 });
-	await press(page, "Enter", 2500);
-	await click(page, "[aria-label='Clear selection']", 1500);
+	await pause(2000);
 
-	chapter("Dark mode, all the way into the graph");
-	await click(page, ".rw-context button[aria-label^='Switch to']", 3000);
-	await click(page, ".rw-context button[aria-label^='Switch to']", 1500);
+	chapter("Lights down");
+	await click(page, ".rw-context button[aria-label^='Switch to']", 3400);
+	await click(page, "#rw-tab-records", 3000);
+	await glide(page, 760, 520);
+	await page.mouse.wheel({ deltaY: 300 });
+	await pause(3400);
 
-	// 10 · PRISMA, derived from record state, and its SVG download.
-	chapter("PRISMA flow diagram");
-	await click(page, "#rw-tab-prisma", 2500);
-	await clickText(page, "#rw-panel-prisma", "Download SVG", 1500);
-
-	// 11 · The empty project: Make active instead of the chip, and each view's empty state with a
-	// button that writes the next step into the message box, naming the project.
-	chapter("A project with nothing in it yet");
-	await clickText(page, "#rw-sidebar", EMPTY, 1800);
-	await hover(page, ".rw-context", 1000);
-	await clickText(page, "#rw-panel-prisma", "Import exports", 1800);
-	await click(page, "#rw-tab-records", 1500);
-	await clickText(page, "#rw-panel-records", "Find papers", 1800);
-	await click(page, "#rw-tab-reviews", 1500);
-	await clickText(page, "#rw-panel-reviews", "Write review", 1800);
-	await clickText(page, "#rw-sidebar", PROJECT, 1200);
-
-	// 12 · Reading room: hide the sidebar with its button, bring it back with ⌘B, walk the tabs by keyboard.
-	chapter("More room, and tabs by keyboard");
-	await click(page, "button[aria-controls=rw-sidebar]", 1500);
-	await press(page, "b", 1500, "Meta");
-	await click(page, "#rw-tab-chat", 600);
-	for (const key of ["ArrowRight", "ArrowRight", "End", "ArrowLeft", "Home"] as const) await press(page, key, 800);
-
-	// 13 · An old bookmark to a renamed project falls back to her review. Then the agent process dies:
-	// the banner, Reconnect, a fresh agent, and her sessions are still there.
-	chapter("An old link still lands on her review");
-	// A hash-only goto would stay in the same document; the app reads its view from the URL at load.
-	await page.evaluate(() => history.replaceState(null, "", "#reviews/multi-agent-cds"));
-	await page.reload();
-	await waitStatus(page, "Ready", 60_000);
-	await pause(2200);
-
-	chapter("If the agent stops, reconnect");
-	await $`pkill -KILL -P ${server.pid}`.nothrow();
-	await find(page, ".rw-banner");
-	await pause(2500);
-	await clickText(page, ".rw-banner", "Reconnect", 0);
-	await waitStatus(page, "Ready", 60_000);
-	await pause(1000);
-	await click(page, "#rw-tab-chat", 600);
-	await clickText(page, "#rw-sidebar", "Switch the active project", 0);
-	await page.waitForFunction(() => document.querySelectorAll(".tr-row--user").length >= 3, { timeout: 20_000 });
+	// 12 · The diagram she will print, drawn from the decisions she just made: her exclusion reason
+	// is a line in the excluded box, and the maybe is counted as still awaiting a decision.
+	chapter("PRISMA, from her own decisions");
+	await click(page, "#rw-tab-prisma", 3400);
+	await hover(page, "#rw-panel-prisma .rw-prisma-card", 3400);
+	await page.mouse.wheel({ deltaY: 260 });
+	await pause(4500);
 	await hold(page, 3000);
 	await recorder.stop();
 
-	// 14 · Phone width: the sidebar as a drawer (scrim, Esc), a record as a full-screen sheet, the
-	// review's Contents menu, and PRISMA's Fit / 100 %.
+	// 13 · Phone width: the strip collapses to one line of counts, and the desk still fits.
 	await page.setViewport(PHONE);
-	await pause(800);
+	await pause(1000);
 	recorder = await page.screencast({ path: phone as `${string}.webm` });
 	segment = 2;
 	segmentStart = Date.now();
 	chapter("On a phone-width screen");
-	await pause(1500);
-	await click(page, "#rw-tab-records", 1500);
-	await click(page, "button[aria-controls=rw-sidebar]", 1500);
-	await press(page, "Escape", 1000);
-	await click(page, "button[aria-controls=rw-sidebar]", 1200);
-	await glide(page, PHONE.width - 50, PHONE.height / 2);
-	await page.mouse.click(PHONE.width - 50, PHONE.height / 2);
-	await pause(1000);
-	await click(page, ".rw-table tbody tr:nth-child(4) .rw-title", 2000);
-	await click(page, "dialog [aria-label='Next record']", 1800);
-	await press(page, "Escape", 1000);
-	await click(page, "#rw-tab-reviews", 1500);
-	await click(page, ".rw-toc-mobile summary", 1200);
-	await clickText(page, ".rw-toc-mobile", "Screening agreement", 2000);
-	await click(page, "#rw-tab-prisma", 1800);
-	await clickText(page, ".rw-segmented", "100 %", 1500);
-	await glide(page, PHONE.width / 2, PHONE.height / 2);
-	await page.mouse.wheel({ deltaX: 360 });
-	await pause(1500);
-	await clickText(page, ".rw-segmented", "Fit", 1500);
-	await hold(page, 2000);
+	await pause(1200);
+	await hover(page, ".rw-strip", 3000);
+	await click(page, "#rw-tab-records", 2600);
+	await glide(page, PHONE.width / 2, 600);
+	await page.mouse.wheel({ deltaY: -1400 });
+	await pause(2600);
+	await clickText(page, ".rw-table tbody", "KGR-MAS", 2800, ".rw-title");
+	await hover(page, ".rw-desk-verdicts", 3000);
+	await glide(page, PHONE.width / 2, 600);
+	await page.mouse.wheel({ deltaY: 420 });
+	await pause(3400);
+	await press(page, "Escape", 1600);
+	await hold(page, 2500);
 	await recorder.stop();
 } finally {
 	await browser.close();
@@ -602,13 +579,15 @@ try {
 }
 
 // H.264 MP4 plays everywhere the Pages site is opened. Each segment is encoded alike (the phone one
-// letterboxed to 1440x900) and joined without re-encoding.
+// letterboxed to 1440x900) and joined without re-encoding. CRF 26 keeps a six-minute take of this
+// mostly-static UI near 7 MB; raise it if a longer take ever approaches the ~15 MB the Pages site
+// should serve. Never speed the take up to make it smaller.
 const encode = (input: string, output: string, filter: string) =>
 	$`ffmpeg -y -loglevel error -i ${input} -vf ${filter} -c:v libx264 -preset slow -crf 26 -pix_fmt yuv420p -an ${output}`;
 const mainMp4 = path.join(work, "main.mp4");
 const phoneMp4 = path.join(work, "phone.mp4");
 await encode(main, mainMp4, "fps=30");
-await encode(phone, phoneMp4, `fps=30,pad=${VIEWPORT.width}:${VIEWPORT.height}:(ow-iw)/2:0:color=0x1f2328`);
+await encode(phone, phoneMp4, `fps=30,pad=${VIEWPORT.width}:${VIEWPORT.height}:(ow-iw)/2:0:color=0x141517`);
 const list = path.join(work, "list.txt");
 await Bun.write(list, `file '${mainMp4}'\nfile '${phoneMp4}'\n`);
 const mp4 = path.join(OUT_DIR, "research-web.mp4");
@@ -617,7 +596,7 @@ const mainSeconds = Number(
 	(await $`ffprobe -v error -show_entries format=duration -of csv=p=0 ${mainMp4}`.text()).trim(),
 );
 const marks = chapters.map(c => ({
-	t: Math.round((c.t + (c.segment === 2 ? mainSeconds : 0)) * 10) / 10,
+	t: Math.round((c.segment === 1 ? c.t : mainSeconds + c.t) * 10) / 10,
 	title: c.title,
 }));
 await Bun.write(path.join(OUT_DIR, "research-web-chapters.json"), `${JSON.stringify(marks, null, "\t")}\n`);
