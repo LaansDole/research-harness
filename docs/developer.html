@@ -51,8 +51,8 @@
         </summary>
         <nav aria-label="Contents">
           <h2 class="section-head">Contents</h2>
-          <ol><li><a href="#part-0-environment-gates-5-minutes">Part 0 — Environment gates (5 minutes)</a><ol><li><a href="#step-01-install-repair-the-harness">Step 0.1 — Install / repair the harness</a></li><li><a href="#step-02-health-check">Step 0.2 — Health check</a></li><li><a href="#step-03-run-the-test-suite">Step 0.3 — Run the test suite</a></li></ol></li><li><a href="#part-05-see-what-you-can-type">Part 0.5 — See what you can type</a><ol><li><a href="#welcome-screen-branding">Welcome-screen branding</a></li><li><a href="#prefer-a-browser-research-web">Prefer a browser? research web</a></li></ol></li><li><a href="#part-1-the-worked-pass-on-a-real-review">Part 1 — The worked pass on a real review</a><ol><li><a href="#step-1-import-your-database-export">Step 1 — Import your database export</a></li><li><a href="#step-2-deduplicate">Step 2 — Deduplicate</a></li><li><a href="#step-3-fill-in-the-missing-abstracts-important-for-a-pubmed-csv">Step 3 — Fill in the missing abstracts (important for a PubMed CSV)</a></li><li><a href="#step-4-screen-a-bounded-batch">Step 4 — Screen a bounded batch</a></li><li><a href="#optional-a-cheap-first-pass-with-jev">Optional: a cheap first pass with Jev</a></li><li><a href="#step-5-get-the-full-texts">Step 5 — Get the full texts</a></li><li><a href="#step-6-prisma-flow">Step 6 — PRISMA flow</a></li><li><a href="#step-7-synthesise">Step 7 — Synthesise</a></li><li><a href="#step-8-file-the-papers-into-the-graph">Step 8 — File the papers into the graph</a></li><li><a href="#step-9-export">Step 9 — Export</a></li></ol></li><li><a href="#part-2-assertion-checklist">Part 2 — Assertion checklist</a></li><li><a href="#part-3-starting-a-brand-new-review">Part 3 — Starting a brand-new review</a></li><li><a href="#known-issues-found-during-this-test-run-2026-09-19">Known issues found during this test run (2026-09-19)</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#appendix-scripted-checks">Appendix — scripted checks</a></li></ol>
-          <p class="doc-source">Rendered from <a href="https://github.com/LaansDole/research-harness/blob/0254cdb425/docs/RUNBOOK.md">docs/RUNBOOK.md</a> at <a href="https://github.com/LaansDole/research-harness/commit/0254cdb425">0254cdb425</a>, last changed 2026-10-31.</p>
+          <ol><li><a href="#part-0-environment-gates-5-minutes">Part 0 — Environment gates (5 minutes)</a><ol><li><a href="#step-01-install-repair-the-harness">Step 0.1 — Install / repair the harness</a></li><li><a href="#step-02-health-check">Step 0.2 — Health check</a></li><li><a href="#step-03-run-the-test-suite">Step 0.3 — Run the test suite</a></li><li><a href="#step-04-keeping-the-harness-up-to-date">Step 0.4 — Keeping the harness up to date</a></li></ol></li><li><a href="#part-05-see-what-you-can-type">Part 0.5 — See what you can type</a><ol><li><a href="#welcome-screen-branding">Welcome-screen branding</a></li><li><a href="#prefer-a-browser-research-web">Prefer a browser? research web</a></li></ol></li><li><a href="#part-1-the-worked-pass-on-a-real-review">Part 1 — The worked pass on a real review</a><ol><li><a href="#step-1-import-your-database-export">Step 1 — Import your database export</a></li><li><a href="#step-2-deduplicate">Step 2 — Deduplicate</a></li><li><a href="#step-3-fill-in-the-missing-abstracts-important-for-a-pubmed-csv">Step 3 — Fill in the missing abstracts (important for a PubMed CSV)</a></li><li><a href="#step-4-screen-a-bounded-batch">Step 4 — Screen a bounded batch</a></li><li><a href="#optional-a-cheap-first-pass-with-jev">Optional: a cheap first pass with Jev</a></li><li><a href="#step-5-get-the-full-texts">Step 5 — Get the full texts</a></li><li><a href="#step-6-prisma-flow">Step 6 — PRISMA flow</a></li><li><a href="#step-7-synthesise">Step 7 — Synthesise</a></li><li><a href="#step-8-file-the-papers-into-the-graph">Step 8 — File the papers into the graph</a></li><li><a href="#step-9-export">Step 9 — Export</a></li></ol></li><li><a href="#part-2-assertion-checklist">Part 2 — Assertion checklist</a></li><li><a href="#part-3-starting-a-brand-new-review">Part 3 — Starting a brand-new review</a></li><li><a href="#known-issues-found-during-this-test-run-2026-09-19">Known issues found during this test run (2026-09-19)</a></li><li><a href="#troubleshooting">Troubleshooting</a></li><li><a href="#appendix-scripted-checks">Appendix — scripted checks</a></li></ol>
+          <p class="doc-source">Rendered from <a href="https://github.com/LaansDole/research-harness/blob/aab6e63d9f/docs/RUNBOOK.md">docs/RUNBOOK.md</a> at <a href="https://github.com/LaansDole/research-harness/commit/aab6e63d9f">aab6e63d9f</a>, last changed 2026-11-01.</p>
         </nav>
       </details>
       <main class="prose">
@@ -84,13 +84,14 @@ bash setup.sh
   brand    Research Harness (RESEARCHHARNESS_BRAND_NAME in config.env)
   launcher research -&gt; ~/Projects/research-harness/bin/research
 </code></pre></div>
-<p><strong>If you don't see 13 prompts</strong>, the install is partial — run the command again and read the error. <code>setup.sh</code> is safe to re-run: it never overwrites your own agent files, and it keeps the settings it manages. It does <strong>not</strong> keep anything else you put in <code>config.env</code>, including a changed brand name — see the Jev subsection in Part 1 for what that costs you.</p>
+<p><strong>If you don't see 13 prompts</strong>, the install is partial — run the command again and read the error. <code>setup.sh</code> is safe to re-run: it never overwrites your own agent files, it keeps the settings it manages, and since 2026-10-24 it also keeps every other line you put in <code>config.env</code> (API keys, <code>RERANK_URL</code>, a changed brand name, comments).</p>
 <h3 id="step-02-health-check">Step 0.2 — Health check<a class="anchor" href="#step-02-health-check" aria-label="Link to this section">#</a></h3>
 <p>Type:</p>
 <div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>bash bin/research doctor
 </code></pre></div>
 <p>No line may start with <code>FAIL</code>, and the last line must be <code>status: ready</code>:</p>
 <div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>research doctor
+  ok    research-harness 0.1.0 (4aab1eb)
   ok    omp omp/18.1.19 at ~/.local/bin/omp
   ok    plugin research-harness-tools installed
   ok    extension research-mode (/help guide + statusline)
@@ -99,6 +100,7 @@ bash setup.sh
   ok    agent synthesizer
   ok    agent librarian
   ok    prompts (13 commands installed)
+  ok    installed agents/prompts match the checkout (17 files)
   ok    mode system prompt ~/Projects/research-harness/research/mode/system.md
   ok    config ~/.research-harness/config.env
   ok    brand &quot;Research Harness&quot;, logo ok, tips ok
@@ -109,17 +111,48 @@ bash setup.sh
 status: ready — run 'research' to start
         type /help in the TUI to see every command
 </code></pre></div>
-<p><strong>A <code>FAIL</code> line means the fix is almost always <code>bash setup.sh</code>.</strong> A <code>warn</code> about the corpus, the paper graph or the Jev first pass is fine — it means you haven't set a PDF folder, the graph file doesn't exist yet (it is created the first time you file a paper), or you haven't opted into the optional first pass (Part 1, after Step 4).</p>
+<p><strong>A <code>FAIL</code> line, or a <code>warn</code> that installed files differ from the checkout, means the fix is almost always <code>research update</code></strong> — it re-runs the install, so the agents and prompts under <code>~/.omp/agent/</code> match your checkout again. A <code>warn</code> about the corpus, the paper graph or the Jev first pass is fine — it means you haven't set a PDF folder, the graph file doesn't exist yet (it is created the first time you file a paper), or you haven't opted into the optional first pass (Part 1, after Step 4).</p>
 <h3 id="step-03-run-the-test-suite">Step 0.3 — Run the test suite<a class="anchor" href="#step-03-run-the-test-suite" aria-label="Link to this section">#</a></h3>
 <p>Type:</p>
 <div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>bash research/tests/run.sh
 </code></pre></div>
 <p>Last three lines should be:</p>
-<div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>Ran 111 tests in 0.915s
+<div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>Ran 129 tests in 10.144s
 
 OK (skipped=1)
 </code></pre></div>
-<p>It takes about a second. <strong>Any <code>FAIL</code>/<code>ERROR</code> here means the scripts themselves are broken</strong> — do not start a review on top of that; report it.</p>
+<p>It takes a few seconds. <strong>Any <code>FAIL</code>/<code>ERROR</code> here means the scripts themselves are broken</strong> — do not start a review on top of that; report it.</p>
+<h3 id="step-04-keeping-the-harness-up-to-date">Step 0.4 — Keeping the harness up to date<a class="anchor" href="#step-04-keeping-the-harness-up-to-date" aria-label="Link to this section">#</a></h3>
+<div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>research update --check   # what's new, changes nothing
+research update           # get it, then reinstall and health-check
+</code></pre></div>
+<p><code>research update</code> pulls the latest version from GitHub (<code>LaansDole/research-harness</code>, branch
+<code>main</code>), re-runs <code>setup.sh</code> so the prompts, agents and plugin match the new code, and finishes
+with <code>research doctor</code>. It re-runs the install even when the checkout is already current, so it is
+also the command to run when <code>doctor</code> says installed files differ from the checkout.
+The last line is <code>research-harness updated &lt;old&gt; -&gt; &lt;new&gt; (N new commits)</code>,
+where <code>&lt;old&gt;</code>/<code>&lt;new&gt;</code> read <code>&lt;version&gt; (&lt;sha&gt;)</code> (<code>unknown</code> for commits that predate <code>research/VERSION</code>) and
+<code>N</code> counts only work that is actually new to your copy (after a history rebuild, commits you
+already have are not counted again). <code>research version</code> prints the installed version.
+The version lives in <code>research/VERSION</code>, not in a git tag, because the daily rebase sync rewrites
+<code>main</code> and would leave tags behind; bump it by editing the file when you cut a release.
+Run it from anywhere; it works on the folder you cloned.</p>
+<p>It stops and changes nothing when:</p>
+<ul>
+<li><strong>the folder has edits you have not saved in git</strong> — it prints the files; undo or commit them first.
+Files the build regenerates (named <code>*.generated.*</code>) do not count: the update resets them and
+re-runs <code>bun install</code> so they match your machine;</li>
+<li><strong>you are on another branch</strong> — switch back to <code>main</code>;</li>
+<li><strong>you made your own commits</strong> on <code>main</code> that are not on GitHub — it lists them and tells you how
+to park them on their own branch first. Your work is never thrown away.</li>
+</ul>
+<p>The project rebuilds its history on GitHub most days (that is how the fork follows upstream), so an
+update often replaces your copy's history rather than adding to it. When that happens the update
+prints the version you were on:</p>
+<div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>GitHub rebuilt the history; this copy now matches it.
+  previous version: 1efb80b (go back with: git -C &quot;&lt;folder&gt;&quot; reset --keep 1efb80b)
+</code></pre></div>
+<p>Copy that <code>reset --keep</code> line if the new version misbehaves and you want the old one back.</p>
 <hr />
 <h2 id="part-05-see-what-you-can-type">Part 0.5 — See what you can type<a class="anchor" href="#part-05-see-what-you-can-type" aria-label="Link to this section">#</a></h2>
 <p>Open the harness (<code>research</code>) and type <code>/help</code>. It prints the capability guide: one line on
@@ -175,9 +208,9 @@ surface silently falls back to stock omp. <code>research doctor</code> prints
 is missing.</p>
 <p>To change the name, edit the <code>RESEARCHHARNESS_BRAND_NAME=&quot;Research Harness&quot;</code> line that
 <code>setup.sh</code> adds to <code>~/.research-harness/config.env</code> (with no such line, <code>bin/research</code> still
-uses <code>Research Harness</code>). <strong>Re-running <code>bash setup.sh</code> puts the default name back</strong>: step 6
-rewrites <code>config.env</code> from scratch (see the Jev subsection in Part 1), so re-apply a custom
-name after every setup run.</p>
+uses <code>Research Harness</code>). Since 2026-10-24 a custom name survives <code>bash setup.sh</code>: step 6
+rewrites only the keys it manages (<code>RESEARCH_HARNESS_HOME</code>, <code>PAPER_GRAPH_DB</code>,
+<code>RESEARCH_CORPUS_DIR</code>) and copies every other line through unchanged.</p>
 <p>The brand lives in the fork's source, so the launcher runs the fork: <code>bin/research</code> prefers
 <code>packages/coding-agent/scripts/omp</code> (the dev wrapper, which runs <code>packages/coding-agent/src/cli.ts</code>
 through <code>bun</code>) whenever <code>bun</code> is on your PATH and the repo's dependencies are installed
@@ -194,17 +227,42 @@ RESEARCH_WEB_PORT=7788 research web # same, on a fixed address: http://127.0.0.1
 the TUI, and the sidebar on the left lists your projects with their screening progress, your
 past sessions, and the model. The other tabs show your work without typing commands: <strong>Graph</strong>
 (the paper graph), <strong>Reviews</strong> (your written reviews, with clickable citations), <strong>Reading list</strong>
-(every record with its verdict and PDF) and <strong>PRISMA</strong> (the flow diagram).</p>
-<p>The tabs only show; they never change your review. Buttons such as <em>Screen</em> or <em>Check claim</em>
-write a suggested message into the chat box, and nothing happens until you press Enter. Press
-Ctrl+C in the terminal where you started it to stop. Hard to read? The sun/moon button at the right
-of the top bar switches between light (the default) and dark; the choice is kept across restarts.</p>
-<p>Empty projects say so in grey with what to do next. A project with no records yet shows
-<em>No screening records in this project yet. Ask the agent to find or import papers, and the
-PRISMA diagram will appear here.</em> on the PRISMA tab. Red text means something actually
-failed; the UI never shows code or error dumps, and the technical detail goes to
-<code>~/.omp/logs/omp.&lt;date&gt;.log</code>. It runs only on your own machine (<code>127.0.0.1</code>) and needs the
-checkout's dependencies installed (<code>bun install</code> in the harness folder).</p>
+(every paper with its verdict and PDF) and <strong>PRISMA</strong> (the flow diagram).</p>
+<p>Most tabs only show; buttons such as <em>Screen</em> or <em>Check claim</em> write a suggested message into the
+chat box, and nothing happens until you press Enter. The one exception is the screening desk below.
+Press Ctrl+C in the terminal where you started it to stop. Hard to read? The sun/moon button at the
+right of the top bar switches between light (the default) and dark; the choice is kept across
+restarts.</p>
+<p>Empty projects say so in grey with what to do next. A project with nothing in it yet shows
+<em>No papers yet — The PRISMA flow diagram draws itself once the project has papers to screen.</em> on
+the PRISMA tab. Red text means something actually failed; the UI never shows code or error dumps,
+and the technical detail goes to <code>~/.omp/logs/omp.&lt;date&gt;.log</code>. It runs only on your own machine
+(<code>127.0.0.1</code>) and needs the checkout's dependencies installed (<code>bun install</code> in the harness folder).</p>
+<h4 id="screen-in-the-browser">Screen in the browser</h4>
+<p>Open <strong>Reading list</strong> and click any paper that still needs a decision. Under its title and DOI,
+above the abstract, is the screening desk:</p>
+<ul>
+<li><strong>Include</strong> (<code>I</code>), <strong>Exclude</strong> (<code>E</code>), <strong>Maybe</strong> (<code>M</code>) — the keys work anywhere in the list, as
+long as you are not typing in the search box.</li>
+<li>Exclude asks for a reason first: your project's own exclusion criteria are listed and numbered,
+so <code>E</code>, then <code>3</code>, then Enter records that criterion as the reason. <em>Other…</em> lets you type one.</li>
+<li>A note is optional on any verdict; one line about what you saw in the abstract. Enter saves from
+the note field too, so Exclude → <code>3</code> → note → Enter is one pass without the mouse.</li>
+<li>Saving moves you to the next paper that still needs a decision, and the PRISMA strip at the top
+updates as you go.</li>
+</ul>
+<p>Everything you decide is written by the same <code>review.py verdict</code> the agent uses — the state
+machine, the history rows and the PRISMA counts cannot tell the difference, except that your
+rationales are tagged <code>[researcher]</code>, so the record shows &quot;You decided&quot;. If a decision is not legal
+(<code>maybe</code> at the full-text stage, a paper already past that stage), the desk says so in one sentence
+and changes nothing. Where the agent has already screened the paper its verdict is already
+recorded; the desk shows it above the buttons so you can confirm it or overrule it, and your
+decision replaces it as yours, with your reason.</p>
+<p><strong>Highlight words</strong> (the button beside the search box) keeps an include list and an exclude list
+per project; press <em>Suggest from your criteria</em> to fill them from your <code>scope.md</code>, then edit
+freely. Those words are marked in every title and abstract — green for include, vermilion with a
+dotted underline for exclude — so a 300-word abstract can be judged at a glance. They are a reading
+aid only: they never decide anything.</p>
 <hr />
 <h2 id="part-1-the-worked-pass-on-a-real-review">Part 1 — The worked pass on a real review<a class="anchor" href="#part-1-the-worked-pass-on-a-real-review" aria-label="Link to this section">#</a></h2>
 <p>Open the harness:</p>
@@ -306,12 +364,12 @@ no verdicts written.</p>
 <p>To enable it, add one line to <code>~/.research-harness/config.env</code>:</p>
 <div class="code"><button class="icon-btn copy" type="button" aria-label="Copy code"><svg class="clip i" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><svg class="ok i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg></button><pre><code>TYPESAFE_API_KEY=&quot;your-key-here&quot;
 </code></pre></div>
-<p><strong>Re-running <code>bash setup.sh</code> deletes that line.</strong> Step 6 of the script rewrites <code>config.env</code> from
-scratch with only the three settings it manages (plus the default brand line), so the key silently disappears and the first pass
-goes quiet again. This is not specific to Jev — the same run drops <code>UNPAYWALL_EMAIL</code> and
-<code>OPENALEX_MAILTO</code> too (both reproduced on 2026-09-19 against a scratch <code>HOME</code>), even though the
-file's own header invites you to edit it freely. Re-add your lines after any setup run, or export
-<code>TYPESAFE_API_KEY</code> from your shell profile instead, which the resolver checks first.</p>
+<p><strong>Since 2026-10-24 re-running <code>bash setup.sh</code> keeps that line.</strong> Step 6 rewrites only the three
+settings it manages and preserves every other line of <code>config.env</code> verbatim, so <code>TYPESAFE_API_KEY</code>,
+<code>UNPAYWALL_EMAIL</code>, <code>OPENALEX_MAILTO</code> and a customized brand name all survive a re-run
+(regression test: <code>research/tests/test_setup_config.py</code>). Before that fix the step rewrote the file
+from scratch and silently dropped all of them. Exporting <code>TYPESAFE_API_KEY</code> from your shell profile
+still works and is checked first.</p>
 <p>With a working key <code>doctor</code> lists the models it can see (<code>ok    Jev first-pass enabled (models: ...)</code>);
 that branch was not exercised here — no real key was used. What was exercised is the other one:
 <code>Jev key set but API unreachable (HTTPError) - first pass will skip</code>. <strong>A bad key is worse than no
@@ -427,8 +485,8 @@ ER  -
 <tr><th>Checkpoint</th><th>Expected</th><th>What a different result means</th></tr>
 </thead>
 <tbody>
-<tr><td><code>bash bin/research doctor</code></td><td>no <code>FAIL</code> line, <code>status: ready</code> (the Jev line is a <code>warn</code> until you opt in)</td><td>a <code>FAIL</code> line → re-run <code>bash setup.sh</code></td></tr>
-<tr><td><code>bash research/tests/run.sh</code></td><td><code>Ran 111 tests ... OK (skipped=1)</code>, ~1 s</td><td>the scripts are broken; stop and report</td></tr>
+<tr><td><code>bash bin/research doctor</code></td><td>no <code>FAIL</code> line, <code>status: ready</code> (the Jev line is a <code>warn</code> until you opt in)</td><td>a <code>FAIL</code> line → <code>research update</code></td></tr>
+<tr><td><code>bash research/tests/run.sh</code></td><td><code>Ran 129 tests ... OK (skipped=1)</code>, ~10 s</td><td>the scripts are broken; stop and report</td></tr>
 <tr><td><code>/import</code> of the 50-record CSV</td><td><code>added: 50, already_present: 0, skipped: 0</code></td><td><code>skipped &gt; 0</code> → rows without a title; <code>added: 0</code> → format not recognised</td></tr>
 <tr><td>Re-run the same <code>/import</code></td><td><code>added: 0, already_present: 50</code></td><td>duplicates created → the store is not idempotent; report it</td></tr>
 <tr><td>Field completeness after CSV import</td><td>50 titles, 48 DOIs, 50 years, <strong>0 abstracts, 0 journals</strong></td><td>more abstracts is better (a richer export); fewer titles means a parsing problem</td></tr>
@@ -509,7 +567,7 @@ for line in sys.stdin:
 <tr><th>Symptom</th><th>What it means</th><th>What to do</th></tr>
 </thead>
 <tbody>
-<tr><td><code>doctor</code> reports a missing prompt or agent</td><td>the install drifted</td><td><code>bash setup.sh</code>, then <code>doctor</code> again</td></tr>
+<tr><td><code>doctor</code> reports a missing prompt or agent, or installed files that differ from the checkout</td><td>the install drifted</td><td><code>research update</code>, then <code>doctor</code> again</td></tr>
 <tr><td><code>_http: HTTP Error 429 ...; retry 1/3 in 3s</code></td><td>arXiv/OpenAlex is rate-limiting you</td><td>nothing — the backoff is 3s, 9s, 27s and it honours <code>Retry-After</code>. <strong>Don't re-run the command while it's waiting</strong>; that's what got you throttled</td></tr>
 <tr><td><code>skipping Unpaywall — set UNPAYWALL_EMAIL</code></td><td>Unpaywall needs a real contact address</td><td>add <code>UNPAYWALL_EMAIL=&quot;you@example.org&quot;</code> to <code>~/.research-harness/config.env</code>, or accept that one cascade step is skipped</td></tr>
 <tr><td><code>&quot;needs_human_review&quot;: true</code> with a <code>candidate_url</code></td><td>no open-access copy was found</td><td>open the link yourself; if you find a legitimate OA copy, approve it and it will be fetched and recorded</td></tr>

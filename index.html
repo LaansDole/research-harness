@@ -50,16 +50,15 @@
         <h1>Your scoping review, <em>in your browser.</em></h1>
         <p class="lede">
           A real-time recording of <strong>research web</strong>, the browser side of
-          <a href="https://github.com/LaansDole/research-harness">research-harness</a>, with a real agent answering. The
-          project is a seeded demo built from a real OpenAlex search. In the research views, the buttons that ask the agent
-          for something only write the request into the message box; nothing runs until she sends it, so only the agent
-          changes her project.
+          <a href="https://github.com/LaansDole/research-harness">research-harness</a>, with a real agent answering. She
+          screens papers herself at the screening desk, one key per decision, and sees her own criteria marked in every
+          title and abstract. The project is a seeded demo built from a real OpenAlex search.
         </p>
         <ul class="facts">
-          <li>6 min, real time</li>
-          <li>Real agent turns</li>
+          <li>5½ min, real time</li>
+          <li>Real agent turn</li>
+          <li>Screening with I / E / M</li>
           <li>Light mode, one dark chapter</li>
-          <li>Open-access PDFs only</li>
         </ul>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#research-web">
@@ -75,10 +74,11 @@
           <h2 id="demo-title">A researcher picks up her scoping review</h2>
           <p>
             She is reviewing how teams of LLM agents support clinical decisions. One command, <code>research web</code>,
-            opens the agent in her browser on her own machine (<code>127.0.0.1</code>), beside her projects. In the take she
-            makes the review the agent's project and asks which paper to read first, reopens an earlier session, triages the
-            reading list, reads the review and picks out a claim to check, explores the paper graph and the PRISMA diagram,
-            recovers from a stopped agent, and finishes on a phone-width screen.
+            opens the agent in her browser on her own machine (<code>127.0.0.1</code>). In the take she asks where the
+            review stands, opens her reading list from the PRISMA strip, has the words from her own criteria marked,
+            screens four papers herself (include, exclude with a reason, maybe, and one the agent had already screened),
+            marks a claim in her review to check, glances at the paper graph and ends on the PRISMA diagram her decisions
+            just changed, then on a phone-width screen.
           </p>
         </div>
 
@@ -92,26 +92,22 @@
           </div>
           <div class="rail">
             <div class="rail-scroll">
-              <h3 class="section-head">Chapters <span class="count">18</span></h3>
+              <h3 class="section-head">Chapters <span class="count">14</span></h3>
               <ol class="chapters">
                 <li><button class="chapter" type="button" data-t="0"><span class="ts">0:00</span><span>Back to her scoping review</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="12.2"><span class="ts">0:12</span><span>She hands the review to the agent</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="60"><span class="ts">1:00</span><span>Images, model and thinking level</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="72.4"><span class="ts">1:12</span><span>A second question, stopped with Esc</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="81.9"><span class="ts">1:21</span><span>An earlier session, folded</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="97.5"><span class="ts">1:37</span><span>Fork it, or start fresh</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="115.2"><span class="ts">1:55</span><span>Reading list: next step and exclusions</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="146"><span class="ts">2:26</span><span>Opening TriageAgent's PDF</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="171.8"><span class="ts">2:51</span><span>Reading the review</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="195.8"><span class="ts">3:15</span><span>Checking a claim, revising a section</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="217.6"><span class="ts">3:37</span><span>How the papers connect</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="264.8"><span class="ts">4:24</span><span>Dark mode, all the way into the graph</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="271.3"><span class="ts">4:31</span><span>PRISMA flow diagram</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="277.1"><span class="ts">4:37</span><span>A project with nothing in it yet</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="297.3"><span class="ts">4:57</span><span>More room, and tabs by keyboard</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="306.8"><span class="ts">5:06</span><span>An old link still lands on her review</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="310.6"><span class="ts">5:10</span><span>If the agent stops, reconnect</span><span class="bar"></span></button></li>
-                <li><button class="chapter" type="button" data-t="321.7"><span class="ts">5:21</span><span>On a phone-width screen</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="18.3"><span class="ts">0:18</span><span>She asks where the review stands</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="76.4"><span class="ts">1:16</span><span>Her reading list, opened from the strip</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="87.6"><span class="ts">1:27</span><span>Words from her own criteria</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="122.5"><span class="ts">2:02</span><span>She decides a paper herself</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="131"><span class="ts">2:11</span><span>Excluding one, with a reason</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="154.8"><span class="ts">2:34</span><span>A maybe, when she is not sure</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="176"><span class="ts">2:56</span><span>What the agent suggested</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="208.8"><span class="ts">3:28</span><span>Verdict marks down the list</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="227.3"><span class="ts">3:47</span><span>A claim she wants checked</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="257.1"><span class="ts">4:17</span><span>How the papers connect</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="279.1"><span class="ts">4:39</span><span>Lights down</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="292.1"><span class="ts">4:52</span><span>PRISMA, from her own decisions</span><span class="bar"></span></button></li>
+                <li><button class="chapter" type="button" data-t="308.7"><span class="ts">5:08</span><span>On a phone-width screen</span><span class="bar"></span></button></li>
               </ol>
             </div>
           </div>
@@ -121,20 +117,20 @@
           <div>
             <h3>How it was recorded</h3>
             <p>
-              6 min 0 s, recorded live from headless Chrome with Puppeteer's <code>page.screencast()</code>
+              5 min 38 s, recorded live from headless Chrome with Puppeteer's <code>page.screencast()</code>
               (<a href="research-web.ts.txt">script</a>) at 1440x900 and shown at 1x. The phone-width part is a second
-              recording at 430x900, letterboxed and joined after the first; that join is the only cut. research web and its
-              agent ran with a scratch home folder holding a copy of her project, so only sessions made there appear and
-              nothing in the real research folder changed.
+              recording at 390x900, letterboxed and joined after the first; that join is the only cut. research web and its
+              agent ran with a scratch home folder holding a copy of the project, so nothing in the real research folder
+              changed.
             </p>
           </div>
           <div>
-            <h3>What the agent really did</h3>
+            <h3>What is real, and what was added</h3>
             <p>
-              The agent's answers are real (<code>claude-opus-5-5</code>, thinking medium): three prompts are sent during the
-              take (the project switch, <em>Which paper should I read first?</em> and a summary request she stops with Esc),
-              and the earlier session she reopens is a real turn sent while preparing the scratch folder. A screencast can't
-              follow a new tab, so <em>Open PDF</em> is shown by loading the PDF in the same tab and coming back.
+              One prompt is sent and answered for real: <em>Where does my review stand?</em> The claim check is only written
+              into the message box and never sent. Every decision at the desk is saved to the project's review store, the
+              same one the agent writes to. For the take, the scratch copy of the project gained exclusion and inclusion
+              criteria and six more real papers from OpenAlex, so there was something left to screen.
             </p>
           </div>
         </div>
@@ -147,48 +143,40 @@
         </div>
         <dl class="ledger">
           <div>
-            <dt>Header and tabs</dt>
-            <dd>The header shows the project she is viewing, whether the agent works on it (an <em>Agent project</em> tag, or a <em>Make active</em> button when it doesn't), the agent's status (<em>Ready</em>, <em>Working…</em>, <em>Connecting…</em>, <em>Disconnected</em>) and a sun/moon button for dark mode. Arrow keys, Home and End move between the Chat, Graph, Reviews, Reading list and PRISMA tabs; the sidebar button hides the sidebar for more room and <kbd>Ctrl/⌘+B</kbd> brings it back.</dd>
+            <dt>Header and PRISMA strip</dt>
+            <dd>Across the top runs a small PRISMA flow: Identified, Screened, Sought, Assessed and Included, each with its count and what is still waiting under it (<em>5 to screen</em>). Clicking a box opens the reading list on those papers. The tabs are Chat, Graph, Reviews, Reading list and PRISMA, with a sun/moon button for dark mode.</dd>
           </div>
           <div>
             <dt>Chat</dt>
-            <dd><em>Make active</em> writes the switch into the message box; she sends it with Enter, the status turns <em>Working…</em>, the agent's steps appear while it works, and the answer brings a table of where the review stands. Meanwhile she types <em>Which paper should I read first?</em>, which waits its turn and is answered next. A fork tried mid-answer gets a short notice that it couldn't be done, which she dismisses. Each answer keeps its thinking and tool steps folded under <em>thinking · N steps</em>, so the answer stays in front, and once the agent is done the header and sidebar show her review as the agent's project.</dd>
+            <dd>The empty chat offers next steps in plain words instead of commands. She asks <em>Where does my review stand?</em>; the status turns <em>Working…</em>, the agent's steps stay folded under <em>thinking · N steps</em>, and the answer is a table of where the review stands, matching the strip.</dd>
           </div>
           <div>
-            <dt>Message box</dt>
-            <dd>She attaches an image and removes it, the model picker shows <code>claude-opus-5-5</code>, and she changes the thinking level from medium to high and back. A two-line question (Shift+Enter starts the second line) goes out with the Send button; Esc stops it, and the reply reads <em>Stopped before finishing.</em> In a new session she types a plan for the day, a starter command replaces it, and <em>Restore previous draft</em> brings it back.</dd>
+            <dt>Highlight words</dt>
+            <dd><em>Highlight words</em> opens two lists, include and exclude. <em>Suggest from your criteria</em> fills them from her scope, she removes a word she disagrees with and saves. From then on those words are marked in every title and abstract: green for include, vermilion and underlined for exclude, with a legend above the abstract.</dd>
           </div>
           <div>
-            <dt>Sidebar and sessions</dt>
-            <dd>Projects with screening progress (<em>9 of 12 screened</em>, <em>No records yet</em>) and an <em>agent</em> tag on the agent's project; sessions from all projects, newest first. She reopens an earlier session and unfolds its steps: a thinking note, and a tool card whose long output expands and collapses. <em>Fork</em> copies that session and <em>New session</em> starts an empty one, whose starter commands fit her review.</dd>
+            <dt>Screening desk</dt>
+            <dd>An open paper shows <em>Include</em>, <em>Exclude</em> and <em>Maybe</em> with their keys I, E and M. She includes one with I, and the panel moves to the next paper while the strip counts down. She excludes one with E, picks which of her criteria it failed from a numbered list and adds a note. She marks one <em>Maybe</em>, which keeps it waiting. On a paper the agent already screened, the desk shows its verdict, reason and confidence, and she confirms it.</dd>
           </div>
           <div>
             <dt>Reading list</dt>
-            <dd>The next-step bar (<code>1 full text ready · Screen full texts</code>) writes that command into the message box. State chips with counts filter the list, by click or arrow keys; <em>Excluded · T/A</em> lists the five title/abstract exclusions, and a record's panel shows its verdict and the reason recorded. ↑/↓, Enter, Esc and the Previous/Next buttons walk the records, and <em>Ask agent to reconsider</em> writes a request that quotes the recorded reason. Searching <em>triage</em> finds TriageAgent, with both screening verdicts, its DOI and <em>Open PDF</em>, which shows the paper; a search with no matches says <em>No records match this filter.</em></dd>
+            <dd>Each paper's verdict carries a mark: green with a check for include, vermilion with a cross for exclude, yellow with a question mark for maybe. Filters by stage, a search box, and each row says what it needs next.</dd>
           </div>
           <div>
             <dt>Reviews</dt>
-            <dd>The newest review file opens first, with a table and a formula; the file picker switches to her mini-review. <em>Contents</em> jumps to a section, a numbered citation jumps to its reference (DOI linked) and Back returns. She selects one sentence and <em>Check claim</em> writes a request naming the file, the project and the sentence; each section also has <em>Revise</em> and <em>Check</em>, which write their own requests.</dd>
+            <dd>She selects a sentence in her review and a note appears in the margin beside it, quoting it, with <em>Check claim</em>. Pressing it writes the request into the message box and keeps the sentence tinted; nothing is sent.</dd>
           </div>
           <div>
             <dt>Paper graph</dt>
-            <dd>Hovering a paper labels it and its neighbours. Clicking TriageAgent opens its details and three actions, <em>Find citing papers</em>, <em>Auto-edges</em> and <em>Explain neighbors</em>, each writing a request into the message box. She closes the details, drags a paper, pans and zooms, checks the legend of link types, searches <em>galatea</em> (Enter picks the most-connected match) and clears the selection. The sun/moon button turns the whole app dark, the graph included, and back to light.</dd>
+            <dd>How her papers connect: cites, related and same-topic links.</dd>
           </div>
           <div>
-            <dt>PRISMA</dt>
-            <dd>The PRISMA-ScR flow diagram, every count taken from her records, with a <em>Download SVG</em> button.</dd>
-          </div>
-          <div>
-            <dt>An empty project</dt>
-            <dd>Viewing an empty project, the header offers <em>Make active</em> instead of the tag, and PRISMA, the reading list and the reviews each say what to do next, with a button that writes it into the message box, naming the project.</dd>
-          </div>
-          <div>
-            <dt>Connection</dt>
-            <dd>An old link to a project name that no longer exists still opens her project's reviews. When the agent process stops, a banner says so and <em>Reconnect</em> starts a fresh agent; her sessions are still there, and one reopens with its whole conversation.</dd>
+            <dt>Dark mode and PRISMA</dt>
+            <dd>The sun/moon button turns the whole app to a calm charcoal. The PRISMA diagram is drawn from her records, so her own exclusion reason now has its own line in the excluded box, and the papers still waiting are counted below.</dd>
           </div>
           <div>
             <dt>Phone width</dt>
-            <dd>At 430 px the sidebar becomes a drawer that Esc or a tap outside closes, a record opens as a full-screen sheet with <em>Next</em>, the review gets a <em>Contents</em> menu, and PRISMA gets a <em>Fit / 100 %</em> switch; at 100 % the diagram scrolls sideways.</dd>
+            <dd>At 390 px the strip collapses to one line (<em>18 screened · 8 sought · 4 included</em>), and a paper opens as a full-screen sheet with its marked abstract.</dd>
           </div>
         </dl>
       </section>
