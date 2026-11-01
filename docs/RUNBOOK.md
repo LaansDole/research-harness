@@ -230,14 +230,15 @@ and the technical detail goes to `~/.omp/logs/omp.<date>.log`. It runs only on y
 
 #### Screen in the browser
 
-Open **Reading list** and click any paper that still needs a decision. Under its abstract is the
-screening desk:
+Open **Reading list** and click any paper that still needs a decision. Under its title and DOI,
+above the abstract, is the screening desk:
 
 - **Include** (`I`), **Exclude** (`E`), **Maybe** (`M`) — the keys work anywhere in the list, as
   long as you are not typing in the search box.
 - Exclude asks for a reason first: your project's own exclusion criteria are listed and numbered,
   so `E`, then `3`, then Enter records that criterion as the reason. *Other…* lets you type one.
-- A note is optional on any verdict; one line about what you saw in the abstract.
+- A note is optional on any verdict; one line about what you saw in the abstract. Enter saves from
+  the note field too, so Exclude → `3` → note → Enter is one pass without the mouse.
 - Saving moves you to the next paper that still needs a decision, and the PRISMA strip at the top
   updates as you go.
 
