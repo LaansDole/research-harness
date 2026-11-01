@@ -1,4 +1,4 @@
-/* research web layout on collab-web's theme tokens (tokens.css). */
+/* research web layout on the tokens of theme.css (over collab-web's tokens.css). */
 [hidden] {
 	display: none !important;
 }
@@ -11,6 +11,11 @@
 	color: var(--fg);
 	font-family: var(--font-ui);
 	font-size: 14px;
+}
+
+/* Every count a researcher compares down a column lines up; review prose keeps proportional figures. */
+.rw-app :is(.rw-count, .rw-strip, .rw-badge, .rw-faint, .rw-table, .rw-status, .rw-chip) {
+	font-variant-numeric: tabular-nums;
 }
 
 /* Inset ring so scroll containers never clip it; accent clears 3:1 in both themes. */
@@ -111,7 +116,6 @@
 
 .rw-list li.rw-selected {
 	background: var(--selected);
-	box-shadow: inset 2px 0 0 var(--accent);
 }
 
 .rw-row {
@@ -262,6 +266,117 @@
 	.rw-tabs {
 		padding-right: 32px;
 		mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+	}
+}
+
+/* The PRISMA strip: the header's second row, five hairline boxes joined by arrows. */
+.rw-strip {
+	display: flex;
+	flex-basis: 100%;
+	flex-wrap: nowrap;
+	align-items: stretch;
+	gap: 4px;
+	min-width: 0;
+	overflow-x: auto;
+	padding-bottom: 2px;
+	scrollbar-width: none;
+}
+
+/* Three classes: beats the generic `.rw-app button:not(...)` control styling. */
+.rw-app .rw-strip .rw-strip-box {
+	display: flex;
+	flex: none;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0;
+	padding: 2px 8px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	background: none;
+	line-height: 1.25;
+}
+
+.rw-app .rw-strip .rw-strip-box:hover {
+	background: var(--accent-muted);
+}
+
+/* The stage the Reading list is filtered to (prisma.ts activeStage). */
+.rw-app .rw-strip .rw-strip-box[aria-current="true"] {
+	border-color: var(--accent);
+	background: var(--accent-muted);
+}
+
+/* Mixed toward --fg so the count clears 4.5:1 on the tinted fill of a hovered or current box too. */
+.rw-strip-n {
+	color: color-mix(in srgb, var(--rw-ink) 80%, var(--fg));
+	font-size: 13px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+
+.rw-strip-label {
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+/* Pending work reads as a count, not an aside: upright, tabular, with the number in ink. */
+.rw-strip-pending {
+	color: var(--fg-muted);
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Same mix as .rw-strip-n: at 11px the plain ink reads 4.26:1 on a current box's tinted fill. */
+.rw-strip-pending-n {
+	color: color-mix(in srgb, var(--rw-ink) 80%, var(--fg));
+	font-weight: 600;
+}
+
+.rw-strip-arrow {
+	flex: none;
+	align-self: center;
+	color: var(--rw-ink);
+}
+
+/* Narrow: one line of the three counts a researcher quotes, no boxes, no arrows. */
+@media (max-width: 899px) {
+	.rw-strip {
+		gap: 0;
+		font-size: 12px;
+	}
+
+	.rw-strip-arrow,
+	.rw-strip-pending,
+	.rw-app .rw-strip .rw-strip-box[data-stage="identified"],
+	.rw-app .rw-strip .rw-strip-box[data-stage="assessed"] {
+		display: none;
+	}
+
+	.rw-app .rw-strip .rw-strip-box {
+		flex-direction: row;
+		gap: 4px;
+		padding: 2px 4px;
+		border-color: transparent;
+	}
+
+	/* The collapsed line has no boxes: the current stage keeps its tint, not an outline. */
+	.rw-app .rw-strip .rw-strip-box[aria-current="true"] {
+		border-color: transparent;
+	}
+
+	.rw-strip-box[data-stage="screened"]::after,
+	.rw-strip-box[data-stage="sought"]::after {
+		content: "·";
+		color: var(--fg-faint);
+	}
+
+	.rw-strip-n,
+	.rw-strip-label {
+		font-size: 12px;
+	}
+
+	.rw-strip-label {
+		text-transform: lowercase;
 	}
 }
 
@@ -421,8 +536,9 @@
 	text-align: left;
 }
 
-.rw-starters code {
-	color: var(--accent);
+/* Starter cards name the action, not the command, so the title reads as prose in the ink colour. */
+.rw-starter-title {
+	color: var(--fg);
 	font-weight: 600;
 }
 
@@ -522,12 +638,12 @@
 	min-height: 34px;
 	border-radius: 999px;
 	background: var(--accent);
-	color: var(--accent-fg, #fff);
+	color: var(--accent-fg);
 }
 
 .rw-app .rw-send:hover {
 	background: color-mix(in srgb, var(--accent) 85%, var(--fg));
-	color: var(--accent-fg, #fff);
+	color: var(--accent-fg);
 }
 
 .rw-send[aria-disabled="true"] {
@@ -577,10 +693,16 @@
 	align-items: center;
 	gap: 8px;
 	padding: 8px 16px;
-	background: var(--bg-raised);
-	border-bottom: 1px solid var(--border);
-	border-left: 3px solid var(--err);
+	background: color-mix(in srgb, var(--err) 10%, var(--bg-raised));
+	border-bottom: 1px solid color-mix(in srgb, var(--err) 40%, transparent);
 	color: var(--fg);
+}
+
+/* The icon carries the alert so red is never the only signal (banner and toasts alike). */
+.rw-banner > svg,
+.rw-toast > svg {
+	flex: none;
+	color: var(--err);
 }
 
 .rw-banner pre {
@@ -616,8 +738,7 @@
 	gap: 8px;
 	max-width: 360px;
 	padding: 8px 8px 8px 12px;
-	border: 1px solid var(--border-strong);
-	border-left: 3px solid var(--err);
+	border: 1px solid var(--err);
 	border-radius: var(--radius);
 	background: var(--bg-overlay);
 	box-shadow: var(--shadow-overlay);

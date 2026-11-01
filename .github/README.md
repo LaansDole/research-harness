@@ -20,9 +20,9 @@
   <img src="https://img.shields.io/badge/APIs-arXiv%20%2B%20OpenAlex%20(keyless)-ffa94d?style=flat&colorA=222222" alt="keyless APIs">
 </p>
 
-![research web in light mode, Chat tab, mid-turn: the researcher asked "Switch the active project to demo-web-ui"; the agent's folded steps are open on its thinking and the bash and write tool calls it ran, and its answer says the active project is now demo-web-ui, followed by a table of PRISMA-ScR counts read from review.db. The status reads Working… (a queued follow-up is running) and the message box shows a Stop button beside the claude-opus-5-5 and Thinking: medium pickers. The sidebar lists the projects demo-web-ui (9 of 12 screened) and llm-multi-agent-design and one earlier session; the header still offers Make active until the turn settles and the views refresh.](../assets/research/research-web-poster.png)
+![research web in light mode, Reading list tab, a decision half-made at the screening desk: the paper "Explainability of Agent Behavior in Clinical Decision Support Systems" is open in the panel on the right with Exclude chosen, and the reason picker underneath lists this project's own exclusion criteria, numbered 1 to 9 — number 2, "Multi-agent systems without LLMs (rule-based agents, reinforcement learning)", is selected, with Population / Concept / Context not met, No abstract and Other… below it. Under the picker sit Save exclusion and Cancel and a note that reads "Reinforcement-learning agents, no language model."; below that the abstract is marked with the researcher's own highlight words, green for include and vermilion underlined for exclude. The header strip counts 20 Identified, 18 Screened with 5 still to screen, 8 Sought with 2 to retrieve, 5 Assessed with 1 to assess, 4 Included, and the list behind the panel holds all five papers still waiting, their titles marked.](../assets/research/research-web-poster.png)
 
-_[Watch the 6-minute demo ↗](https://laansdole.github.io/research-harness/#research-web)_ — one unedited take with chapters. A researcher returns to her scoping review on multi-agent LLMs for clinical decision support, asks which paper to read first, triages her reading list, checks a claim in her review, explores the paper graph, and opens the PRISMA diagram. Recorded with real agent turns on a demo project built from a real OpenAlex search.
+_[Watch the 5½-minute demo ↗](https://laansdole.github.io/research-harness/#research-web)_ — one unedited take with chapters, in real time. A researcher comes back to her scoping review on multi-agent LLMs for clinical decision support, asks the agent where the review stands, opens her reading list from the PRISMA strip, has the words from her own criteria marked in every title and abstract, screens four papers herself — include, exclude with a reason, maybe, and one where she confirms what the agent suggested — marks a claim in her draft for checking, glances at the paper graph and ends on the PRISMA diagram her decisions just changed. Recorded with a real agent turn on a demo project built from a real OpenAlex search.
 
 ## Get started
 
@@ -41,31 +41,38 @@ Then just say what you are working on — *"I'm starting a scoping review on LLM
 
 - **Frames your question** as PCC/PICO with inclusion and exclusion criteria.
 - **Plans the search** — which databases suit your question, and ready-to-paste search strings in each one's own syntax. It searches arXiv, OpenAlex and your own folder of PDFs itself; for paywalled databases you run the string and import the export (RIS, BibTeX or CSV). Nothing is scraped.
-- **Screens** — removes duplicates, then checks each record against your criteria and gives a one-sentence reason you can check. You see the verdicts before they are saved.
+- **Screens with you** — it removes duplicates, then screens each record against your criteria and records its verdict with a one-sentence reason and how confident it is. At the screening desk you confirm or overrule any of them with one key — *Include*, *Exclude* or *Maybe*, the exclusion reason picked from your own criteria, a note if you want one — and what you decide is recorded as your decision, with your reason.
+- **Marks your own words** — the terms from your inclusion and exclusion criteria are highlighted in every title and abstract, green for include and vermilion for exclude, so you can see at a glance why a paper is there. Suggested from your scope; edit the list whenever it is wrong.
 - **Finds full texts** from open-access sources only (OpenAlex, Unpaywall, arXiv, your own PDFs). Anything it cannot find is marked *not retrieved*, never guessed.
 - **Drafts a cited review** from your included papers, citing only papers in your review.
 - **Counts for you** — every PRISMA-ScR number comes from each record's state, so the diagram always adds up.
 - **Exports** RIS or BibTeX for Covidence, Zotero or EndNote whenever you want.
 
+### Screening desk
+
+![research web Reading list tab, filtered to the 4 records not screened yet, with the screening desk open on "A Survey on LLM-based Multi-Agent AI Hospital" (Zonghai Yao; Hong Qing Yu, 2025) and its DOI. The decision line reads "Your decision: Maybe — Unclear from the title and abstract", with Maybe outlined in amber beside Include and Exclude and their I, E and M keys, an optional note box, and a Screen button next to "No PDF downloaded". Below, the abstract is marked with the researcher's highlight words — green for include words, vermilion underlined for exclude words — and the four waiting titles on the left carry the same marks. The header strip counts 20 Identified, 18 Screened with 4 to screen, 8 Sought, 5 Assessed, 4 Included.](../assets/research/web-screening.png)
+
+One paper at a time, with its abstract, its marks and the verdict the agent already recorded, if it has one. Confirm it or change it: *Include*, *Exclude* or *Maybe* with one key; an exclusion asks which of your own criteria it failed and lets you add a note; *Maybe* keeps the paper open for later. The panel moves to the next paper on its own, and every decision you make is written as your call, with your reason, into the PRISMA counts.
+
 ### Reading list
 
-![research web Reading list tab for the demo-web-ui project, filtered to Excluded at title/abstract (5 of 14 records): each row shows the paper's title, authors, year and venue, an Excluded · T/A state, and an "Ask agent to reconsider" button. Filter chips above show All 14, Duplicate 2, Excluded T/A 5, Passed T/A 1, Full text ready 1, Full text not found 1, Included 4, beside a search box; a banner offers "Screen full texts" for the 1 full text ready.](../assets/research/web-reading-list.png)
+![research web Reading list tab for the demo-web-ui project, all 20 records: each row shows the paper's title, authors, year and venue with the researcher's highlight words marked in the titles, then its state and what it needs next — Duplicate, Passed T/A with a Retry PDF button, Not screened with a Screen button, and a vermilion "Excluded · T/A" with "Ask agent to reconsider". Filter chips above read All 20, Not screened 4, Duplicate 2, Excluded · T/A 6, Passed T/A 2, Full text ready 1, Full text not found 1, Included 4, beside a search box, and a "Highlight words 23" button sits under them; a banner offers "Screen them" for the 4 not screened.](../assets/research/web-reading-list.png)
 
-Every record with its state, verdict and reason. Filter by state, search by title, author or DOI, and triage with the keyboard (↑/↓, Enter, Esc).
+Every record with its state, verdict and reason. Filter by state, search by title, author or DOI, move with ↑/↓ and screen without leaving the keyboard. Each row says what it needs next, and the counts at the top are links — click *Screened* to see only the papers still waiting for you.
 
 ### Paper graph
 
-![research web Graph tab: the paper graph across all projects, a handful of papers connected by cites, related and same-topic edges, with a side panel open on "Development of a Large Language Model-based Multi-Agent Clinical Decision Support System for Korean Triage and Acuity Scale" (2025, Adv Artif Intell Mach Learn, DOI link) and buttons for Find citing papers, Auto-edges and Explain neighbors.](../assets/research/web-graph.png)
+![research web Graph tab: the paper graph across all projects, nine papers connected by cites, related and same-topic edges, with "TriageAgent: Towards Better Multi-Agents Collaborations for LLM-Based Clinical Triage" selected and its side panel open — Lu M; Ho B; Ren D; Wang X, 2024, Findings of EMNLP, id triageagent, degree 2, with its DOI link — and buttons for Find citing papers, Auto-edges and Explain neighbors.](../assets/research/web-graph.png)
 
 How your papers connect — citation links checked against OpenAlex, plus related and same-topic links. Click a paper for its details.
 
 ### PRISMA diagram
 
-![research web PRISMA tab: the PRISMA-ScR flow for demo-web-ui — 14 records identified from OpenAlex, 2 duplicates removed, 12 screened, 5 excluded (no abstract 3, Other 1, Concept 1), 7 reports sought, 1 not retrieved (no open-access copy found), 5 assessed for eligibility, 0 excluded, 4 studies included, with notes for 1 awaiting full-text retrieval and 1 awaiting full-text screening, and a Download SVG button.](../assets/research/web-prisma.png)
+![research web PRISMA tab in dark mode: the PRISMA-ScR flow for demo-web-ui — 20 records identified from OpenAlex, 2 duplicates removed, 18 screened, 6 excluded with the researcher's own reasons listed (no abstract 3, Other 1, "Multi-agent systems without LLMs (rule-based agents, reinforcement learning)" 1, Concept 1), 8 reports sought, 1 not retrieved (no open-access copy found), 5 assessed for eligibility, 0 excluded, 4 studies included, and notes below for 4 awaiting title/abstract screening (1 maybe), 2 awaiting full-text retrieval and 1 awaiting full-text screening.](../assets/research/web-prisma.png)
 
 Drawn from your records and ready to download as SVG for your manuscript.
 
-**You stay in control.** The reading list, review, graph and PRISMA views only show your work. Buttons such as *Screen full texts* or *Check the claims in this section* just fill in the message box — nothing runs until you press Enter. The workspace runs on your own machine (`127.0.0.1`), and each review lives in its own folder under `~/.research-harness/projects/`, so several reviews can run side by side.
+**You stay in control.** The agent screens and writes down what it decided and why, and you can confirm or overrule any verdict at the desk with one key — your decisions are recorded as yours, with your reason, and the diagram counts them. The reading list, review, graph and PRISMA views only show work that is already there. Buttons such as *Screen full texts* or *Check the claims in this section* just fill in the message box — nothing runs until you press Enter. The workspace runs on your own machine (`127.0.0.1`), and each review lives in its own folder under `~/.research-harness/projects/`, so several reviews can run side by side.
 
 ## Commands
 

@@ -1,4 +1,4 @@
-/* Research views (Reading list, Reviews, Graph, PRISMA) on collab-web tokens. Shared utilities stay in app.css. */
+/* Research views (Reading list, Reviews, Graph, PRISMA) on theme.css tokens. Shared utilities stay in app.css. */
 
 :is(.rw-records, .rw-reviews, .rw-graph, .rw-prisma, .rw-empty) :focus-visible {
 	outline: 2px solid var(--ring);
@@ -93,8 +93,7 @@
 	gap: 12px;
 	margin-bottom: 12px;
 	padding: 8px 12px;
-	border: 1px solid var(--border);
-	border-left: 3px solid var(--accent);
+	border: 1px solid var(--border-strong);
 	border-radius: var(--radius);
 	background: var(--bg-raised);
 }
@@ -103,6 +102,13 @@
 	border-color: var(--accent);
 	background: var(--accent-muted);
 	font-weight: 500;
+}
+
+/* The count is the point of the callout; the ink carries it instead of a coloured stripe. */
+.rw-next-n {
+	color: var(--rw-ink);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
 }
 
 .rw-chips {
@@ -215,6 +221,7 @@
 	padding: 12px 8px;
 }
 
+/* A stage badge: where a record stands when no verdict is recorded for it yet. */
 .rw-badge {
 	display: inline-block;
 	padding: 2px 8px;
@@ -223,17 +230,49 @@
 	white-space: nowrap;
 }
 
-/* Text mixed toward --fg so every badge clears 4.5:1 in both themes. */
-.rw-badge-ok {
-	background: color-mix(in srgb, var(--ok) 14%, transparent);
-	color: color-mix(in srgb, var(--ok) 55%, var(--fg));
+
+/* Highlighter verdict mark: the word on a band over the lower part of the line, with its icon.
+ * The uneven corner radii read as the ends of a drawn stroke; the band never carries meaning alone. */
+.rw-mark {
+	position: relative;
+	z-index: 0; /* own stacking context, so the band below stays above the row's background */
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 1px 6px 2px;
+	color: var(--rw-hl-fg);
+	font-size: 12px;
+	font-weight: 400; /* inside the detail panel's bold <dt> labels too */
+	white-space: nowrap;
 }
 
-.rw-badge-err {
-	background: color-mix(in srgb, var(--err) 14%, transparent);
-	color: color-mix(in srgb, var(--err) 55%, var(--fg));
+/* The band itself: only the lower part of the line, so its rounded, uneven ends are visible. */
+.rw-mark::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 34% 0 0;
+	border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px;
+	background: var(--rw-hl);
 }
 
+.rw-mark svg {
+	flex: none;
+}
+
+.rw-mark-include {
+	--rw-hl: var(--rw-hl-include);
+}
+
+.rw-mark-exclude {
+	--rw-hl: var(--rw-hl-exclude);
+}
+
+.rw-mark-maybe {
+	--rw-hl: var(--rw-hl-maybe);
+}
+
+/* Badge text mixed toward --fg so it clears 4.5:1 in both themes. */
 .rw-badge-accent {
 	background: var(--accent-muted);
 	color: color-mix(in srgb, var(--accent) 70%, var(--fg));
@@ -242,6 +281,290 @@
 .rw-badge-muted {
 	background: var(--selected);
 	color: var(--fg-muted);
+}
+
+/* Screening desk: the decision a researcher makes on the open paper, in the detail panel.
+ * A hairline box like every other box here; the verdict buttons wear the highlighter band. */
+.rw-desk {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 12px 12px 12px 0;
+	padding: 8px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+}
+
+.rw-desk-said {
+	margin: 0;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.rw-desk-why {
+	color: var(--fg-muted);
+}
+
+/* Three lines of the agent's reasoning, then Show more. */
+.rw-clamp {
+	display: -webkit-box;
+	overflow: hidden;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 3;
+}
+
+.rw-app .rw-desk-more {
+	font-size: 12px;
+	color: var(--accent);
+	text-decoration: underline;
+}
+
+.rw-desk-verdicts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+/* The band is the hover/selected cue; the icon and the word carry the meaning on their own. */
+.rw-app .rw-desk-verdict {
+	position: relative;
+	z-index: 0;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: none;
+	font-size: 13px;
+}
+
+/* Include, Exclude and Maybe on one row inside the 380px drawer: tighter than a default button
+ * (the extra specificity is what beats the base button padding), full 29px hit target kept.
+ * The row still wraps on a phone, where there is no width to win. */
+.rw-app .rw-desk-verdicts .rw-desk-verdict {
+	gap: 4px;
+	padding: 4px 8px;
+}
+
+.rw-desk-verdict::before {
+	content: "";
+	position: absolute;
+	z-index: -1;
+	inset: 38% 5px 3px;
+	border-radius: 2px 7px 3px 6px / 6px 3px 7px 2px;
+	background: var(--rw-hl);
+	opacity: 0;
+}
+
+.rw-app .rw-desk-verdict:hover {
+	background: none;
+}
+
+.rw-desk-verdict:hover::before,
+.rw-desk-verdict[aria-pressed="true"]::before {
+	opacity: 1;
+}
+
+.rw-app .rw-desk-verdict[aria-pressed="true"] {
+	border-color: var(--accent);
+}
+
+.rw-desk-verdict:disabled {
+	opacity: 0.5;
+}
+
+.rw-desk-verdict kbd {
+	padding: 0 4px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	background: var(--bg-inset);
+	color: var(--fg-muted);
+	font: inherit;
+	font-size: 11px;
+}
+
+/* The one primary exclusion reason: the project's own criteria first, then the PCC dimensions. */
+.rw-reasons {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding-top: 6px;
+	border-top: 1px solid var(--border);
+}
+
+.rw-reasons p {
+	margin: 0;
+}
+
+.rw-reasons [role="radiogroup"] {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.rw-app .rw-reasons [role="radio"] {
+	display: flex;
+	align-items: baseline;
+	gap: 8px;
+	padding: 4px 8px;
+	font-size: 13px;
+	text-align: left;
+}
+
+.rw-app .rw-reasons [role="radio"][aria-checked="true"] {
+	border-color: var(--accent);
+	background: var(--selected);
+}
+
+.rw-reason-n {
+	flex: none;
+	min-width: 14px;
+	color: var(--accent);
+	font-size: 11px;
+	font-variant-numeric: tabular-nums;
+}
+
+.rw-reason-actions {
+	display: flex;
+	gap: 6px;
+}
+
+.rw-desk-note {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.rw-desk-note input,
+.rw-reasons input[type="text"] {
+	padding: 4px 8px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-inset);
+	color: var(--fg);
+	font: inherit;
+	font-size: 13px;
+}
+
+.rw-desk-error,
+.rw-desk-done,
+.rw-desk-blocked {
+	margin: 8px 12px 8px 0;
+	font-size: 12px;
+}
+
+.rw-desk-error {
+	margin: 0;
+}
+
+/* Criteria highlights: the researcher's own words marked in titles and abstracts.
+ * Exclude marks also carry a dotted underline, so the two never depend on colour alone. */
+.rw-hl {
+	border-radius: 2px;
+	padding: 0 1px;
+	background: var(--rw-hl);
+	color: var(--rw-hl-fg);
+}
+
+.rw-hl-include {
+	--rw-hl: var(--rw-hl-include);
+}
+
+.rw-hl-exclude {
+	--rw-hl: var(--rw-hl-exclude);
+	text-decoration: underline dotted;
+	text-underline-offset: 2px;
+}
+
+.rw-hl-legend {
+	margin: 0 0 4px;
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+/* The highlight-words editor, under the reading-list toolbar. */
+.rw-app .rw-words-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.rw-words {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0 0 8px;
+	padding: 8px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+}
+
+.rw-words p {
+	margin: 0;
+}
+
+.rw-words-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.rw-words-label {
+	flex: none;
+	min-width: 96px;
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+.rw-words-chips {
+	display: flex;
+	flex: 1;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
+}
+
+.rw-word {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 2px 1px 6px;
+	border-radius: var(--radius-sm);
+	background: var(--rw-hl);
+	color: var(--rw-hl-fg);
+	font-size: 12px;
+}
+
+.rw-word .rw-icon {
+	min-width: 18px;
+	min-height: 18px;
+	padding: 2px;
+	color: var(--rw-hl-fg);
+}
+
+.rw-word .rw-icon:hover {
+	background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+
+.rw-words-chips input {
+	flex: 1;
+	min-width: 160px;
+	padding: 4px 8px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-inset);
+	color: var(--fg);
+	font: inherit;
+	font-size: 13px;
+}
+
+.rw-words-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
 }
 
 .rw-drawer {
@@ -395,6 +718,55 @@ dialog.rw-drawer {
 	overflow-wrap: anywhere;
 }
 
+/* Claim checks as margin notes: the review column reserves a right margin wide enough for a card,
+ * and the note sits beside the line the selection starts on. Below 1100px the toolbar carries the
+ * action alone, as before. */
+.rw-margin {
+	display: none;
+}
+
+@media (min-width: 1100px) {
+	.rw-margin {
+		position: relative;
+		display: block;
+		flex: 0 0 210px;
+		align-self: stretch;
+	}
+}
+
+.rw-margin-note {
+	position: absolute;
+	left: 0;
+	width: 100%;
+	padding: 8px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	background: var(--bg-raised);
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+/* A hairline connector back to the line the selection starts on: the strip's arrow language,
+ * drawn across the column gap (32px in .rw-reviews-body). */
+.rw-margin-note::before {
+	content: "";
+	position: absolute;
+	top: 12px;
+	right: 100%;
+	width: 26px;
+	border-top: 1px solid var(--rw-ink);
+}
+
+.rw-margin-quote {
+	margin: 0 0 6px;
+	color: var(--fg-muted);
+}
+
+/* The sentence a claim check was asked about stays marked while its note is up. */
+::highlight(rw-claim) {
+	background-color: var(--rw-claim-tint);
+}
+
 .rw-doc section {
 	scroll-margin-top: 8px;
 }
@@ -426,6 +798,14 @@ dialog.rw-drawer {
 .rw-reviews .rw-toolbar button:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
+}
+
+/* One Check claim at a time: where the margin note has room to sit beside the text, it owns the
+ * action and the toolbar copy would just be a second button for the same selection. */
+@media (min-width: 1100px) {
+	.rw-reviews:has(.rw-margin-note) .rw-check-claim {
+		display: none;
+	}
 }
 
 .rw-revise {
@@ -508,19 +888,22 @@ dialog.rw-drawer {
 	gap: 4px;
 }
 
+/* The server-drawn SVG is black ink on white; dark mode frames it as a paper card instead of
+ * letting it glare (--rw-prisma-dim is `none` in light). */
 .rw-prisma-card {
 	max-width: 100%;
 	width: fit-content;
 	padding: 16px;
-	border: 1px solid var(--border-strong);
+	border: 1px solid var(--rw-paper-border);
 	border-radius: var(--radius-lg);
-	background: var(--panel);
+	background: var(--rw-paper);
 	overflow: auto;
 }
 
 .rw-prisma-card img {
 	display: block;
 	max-width: 100%;
+	filter: var(--rw-prisma-dim);
 }
 
 .rw-prisma-card.rw-actual img {

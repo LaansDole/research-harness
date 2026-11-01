@@ -1,9 +1,13 @@
-import { BookOpen, ChevronDown, ChevronUp, X } from "lucide-react";
+import { BookOpen, ChevronDown, ChevronUp, Highlighter, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { RecordRow, ReviewState } from "../../data";
+import type { Criteria } from "../../criteria";
+import type { Highlights, RecordRow, ReviewState, Stage } from "../../data";
 import { problemClass, useFetch } from "../api";
 import { EmptyState } from "./EmptyState";
+import { hasMarks, HighlightLegend, HighlightWords, Marked, NO_WORDS } from "./HighlightWords";
+import { needsDecision, RecordedVerdict, ScreeningDesk, stagesFor } from "./ScreeningDesk";
+import { VerdictMark } from "./VerdictMark";
 import "./views.css";
 
 /** Human labels in review.py STATES order (the chip order). */
@@ -40,10 +44,18 @@ const NEEDS_FULLTEXT: Partial<Record<ReviewState, true>> = {
 	fulltext_retrieved: true,
 };
 
-function tone(state: ReviewState): string {
-	if (state === "included") return "ok";
-	if (state.endsWith("_excluded")) return "err";
-	return state === "duplicate" ? "muted" : "accent";
+/** The states that record a screening verdict: those read as highlighter marks, the rest as badges. */
+const STATE_VERDICT: Partial<Record<ReviewState, string>> = {
+	screened_excluded: "exclude",
+	fulltext_excluded: "exclude",
+	included: "include",
+};
+
+/** A record's state: its verdict in highlighter, or a neutral badge for a stage it is passing through. */
+function stateMark(state: ReviewState): ReactNode {
+	const verdict = STATE_VERDICT[state];
+	if (verdict !== undefined) return <VerdictMark verdict={verdict} label={LABELS[state]} />;
+	return <span className={`rw-badge rw-badge-${state === "duplicate" ? "muted" : "accent"}`}>{LABELS[state]}</span>;
 }
 
 /** Prefill actions for one record, most relevant first (the row shows the first). */
@@ -72,20 +84,35 @@ export function RecordsView({
 	active,
 	tick,
 	prefill,
+	state,
+	onState,
+	onChanged,
 }: {
 	slug: string;
 	/** Whether `slug` is the agent's active project: slash commands only target that one. */
 	active: boolean;
 	tick: number;
 	prefill(text: string): void;
+	/** The state filter, owned by App so the header's PRISMA strip can set and mark it. */
+	state: ReviewState | "";
+	onState(state: ReviewState | ""): void;
+	/** A decision was saved: counts, the PRISMA strip and this list all need re-reading. */
+	onChanged(): void;
 }): ReactNode {
 	const base = `/api/projects/${encodeURIComponent(slug)}`;
 	// ponytail: one fetch, client-side filtering; server ?state= filtering if a project reaches thousands of rows.
 	const records = useFetch<RecordRow[]>(`${base}/records`, tick);
-	const [state, setState] = useState<ReviewState | "">("");
+	const criteria = useFetch<Criteria>(`${base}/criteria`, tick);
+	const storedWords = useFetch<Highlights>(`${base}/highlights`, tick);
+	// The saved lists, until this session edits them; the editor hands back what the server stored.
+	const [editedWords, setEditedWords] = useState<Highlights | null>(null);
+	const [wordsOpen, setWordsOpen] = useState(false);
+	const words = editedWords ?? storedWords.data ?? NO_WORDS;
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
+	/** Shown after the last paper in this list took its decision: there is nowhere to advance to. */
+	const [allDecided, setAllDecided] = useState<string | null>(null);
 	const tbodyRef = useRef<HTMLTableSectionElement | null>(null);
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const restoreFocus = useRef(false);
@@ -97,12 +124,14 @@ export function RecordsView({
 		return () => mq.removeEventListener("change", onChange);
 	}, []);
 
-	// A different project starts fresh: its filter and selection mean nothing here.
+	// A different project starts fresh: its search and selection mean nothing here (App resets the filter).
 	useEffect(() => {
-		setState("");
 		setQuery("");
 		setSelectedId(null);
 		setOpen(false);
+		setAllDecided(null);
+		setEditedWords(null);
+		setWordsOpen(false);
 	}, [slug]);
 
 	// Mobile: a native modal dialog, so everything behind the sheet is inert and Tab stays inside it.
@@ -210,21 +239,39 @@ export function RecordsView({
 		if (dir === 0) return;
 		e.preventDefault();
 		const next = (chips.indexOf(state) + dir + chips.length) % chips.length;
-		setState(chips[next] ?? "");
+		onState(chips[next] ?? "");
 		(e.currentTarget.children[next] as HTMLElement | undefined)?.focus();
 	};
 	// The roving tab stop: the selected row, else the first.
 	const tabStop = selectedIndex >= 0 ? selectedIndex : 0;
 
+	/**
+	 * A decision was saved: refresh the counts and move to the next paper in this list that still
+	 * waits for one at the same stage, so a screening run is one keystroke per paper.
+	 */
+	const onSaved = (saved: RecordRow, stage: Stage): void => {
+		onChanged();
+		const at = shown.findIndex(r => r.id === saved.id);
+		const next =
+			shown.slice(at + 1).find(r => needsDecision(r, stage)) ??
+			shown.slice(0, Math.max(at, 0)).find(r => needsDecision(r, stage));
+		if (next === undefined) {
+			setAllDecided(`All ${shown.length} papers in this list are decided.`);
+			return;
+		}
+		setAllDecided(null);
+		setSelectedId(next.id);
+	};
+
 	const details = selected && (
 		<>
 			<div className="rw-drawer-head">
-				<span className={`rw-badge rw-badge-${tone(selected.state)}`}>{LABELS[selected.state]}</span>
+				{stateMark(selected.state)}
 				<span className="rw-drawer-nav">
 					<button
 						type="button"
 						className="rw-icon"
-						aria-label="Previous record"
+						aria-label="Previous paper"
 						disabled={selectedIndex === 0}
 						onClick={() => select(selectedIndex - 1)}
 					>
@@ -233,7 +280,7 @@ export function RecordsView({
 					<button
 						type="button"
 						className="rw-icon"
-						aria-label="Next record"
+						aria-label="Next paper"
 						disabled={selectedIndex === shown.length - 1}
 						onClick={() => select(selectedIndex + 1)}
 					>
@@ -244,7 +291,9 @@ export function RecordsView({
 					</button>
 				</span>
 			</div>
-			<h2 id="rw-drawer-title">{selected.title}</h2>
+			<h2 id="rw-drawer-title">
+				<Marked text={selected.title} words={words} />
+			</h2>
 			<p className="rw-faint">{[selected.authors, selected.year, selected.venue].filter(Boolean).join(" · ")}</p>
 			{selected.doi && (
 				<p>
@@ -261,6 +310,8 @@ export function RecordsView({
 					</a>
 				</p>
 			)}
+			<ScreeningDesk slug={slug} record={selected} criteria={criteria.data} onSaved={onSaved} />
+			{allDecided !== null && <p className="rw-notice rw-desk-done">{allDecided}</p>}
 			<div className="rw-drawer-actions">
 				{selected.has_pdf ? (
 					<a
@@ -283,17 +334,15 @@ export function RecordsView({
 				))}
 			</div>
 			<dl>
-				{selected.ta_verdict && (
-					<>
-						<dt>Title/abstract verdict: {selected.ta_verdict}</dt>
-						<dd>{selected.ta_rationale ?? "No rationale recorded."}</dd>
-					</>
+				{selected.ta_verdict && !stagesFor(selected.state).includes("ta") && (
+					<RecordedVerdict
+						label="Title/abstract"
+						verdict={selected.ta_verdict}
+						rationale={selected.ta_rationale}
+					/>
 				)}
-				{selected.ft_verdict && (
-					<>
-						<dt>Full-text verdict: {selected.ft_verdict}</dt>
-						<dd>{selected.ft_rationale ?? "No rationale recorded."}</dd>
-					</>
+				{selected.ft_verdict && !stagesFor(selected.state).includes("ft") && (
+					<RecordedVerdict label="Full text" verdict={selected.ft_verdict} rationale={selected.ft_rationale} />
 				)}
 				{selected.exclusion_reason &&
 					selected.exclusion_reason !== selected.ta_rationale &&
@@ -304,7 +353,12 @@ export function RecordsView({
 						</>
 					)}
 				<dt>Abstract</dt>
-				<dd>{selected.abstract || "No abstract recorded."}</dd>
+				{(hasMarks(selected.abstract ?? "", words) || hasMarks(selected.title, words)) && (
+					<dd>
+						<HighlightLegend />
+					</dd>
+				)}
+				<dd>{selected.abstract ? <Marked text={selected.abstract} words={words} /> : "No abstract recorded."}</dd>
 			</dl>
 		</>
 	);
@@ -322,7 +376,7 @@ export function RecordsView({
 			{step && (
 				<div className="rw-next">
 					<span>
-						{step.count} {step.text}
+						<span className="rw-next-n">{step.count}</span> {step.text}
 					</span>
 					<button type="button" onClick={() => prefill(active ? step.slash : `${step.prose} in project ${slug}`)}>
 						{step.label}
@@ -330,7 +384,7 @@ export function RecordsView({
 				</div>
 			)}
 			<div className="rw-toolbar">
-				<div className="rw-chips" role="radiogroup" aria-label="Filter by state" onKeyDown={onChipKey}>
+				<div className="rw-chips" role="radiogroup" aria-label="Filter by stage" onKeyDown={onChipKey}>
 					{chips.map(s => (
 						<button
 							key={s || "all"}
@@ -338,7 +392,7 @@ export function RecordsView({
 							role="radio"
 							aria-checked={state === s}
 							tabIndex={state === s ? 0 : -1}
-							onClick={() => setState(s)}
+							onClick={() => onState(s)}
 						>
 							{s === "" ? "All" : LABELS[s]}{" "}
 							<span className="rw-count">{s === "" ? all.length : counts[s]}</span>
@@ -349,21 +403,41 @@ export function RecordsView({
 					type="search"
 					className="rw-search"
 					placeholder="Search title, author, DOI"
-					aria-label="Search records"
+					aria-label="Search papers"
 					value={query}
 					onChange={e => setQuery(e.target.value)}
 				/>
 				<span className="rw-faint" role="status">
-					{shown.length} of {all.length} records
+					{shown.length} of {all.length} papers
 				</span>
+				<button
+					type="button"
+					className="rw-words-toggle"
+					aria-expanded={wordsOpen}
+					onClick={() => setWordsOpen(o => !o)}
+				>
+					<Highlighter size={14} aria-hidden /> Highlight words
+					{words.include.length + words.exclude.length > 0 && (
+						<span className="rw-count">{words.include.length + words.exclude.length}</span>
+					)}
+				</button>
 			</div>
+			{wordsOpen && (
+				<HighlightWords
+					slug={slug}
+					words={words}
+					criteria={criteria.data}
+					onSaved={setEditedWords}
+					onClose={() => setWordsOpen(false)}
+				/>
+			)}
 			<div className="rw-records-body">
 				<div className="rw-records-list">
 					<table className="rw-table" role="grid" aria-label="Reading list">
 						<thead>
 							<tr>
-								<th>Record</th>
-								<th>State</th>
+								<th>Paper</th>
+								<th>Stage</th>
 								<th className="rw-wide">PDF</th>
 								<th className="rw-wide">
 									<span className="rw-sr">Action</span>
@@ -389,14 +463,14 @@ export function RecordsView({
 										onKeyDown={e => onRowKey(e, i)}
 									>
 										<td>
-											<div className="rw-title">{r.title}</div>
+											<div className="rw-title">
+												<Marked text={r.title} words={words} />
+											</div>
 											<div className="rw-faint">
 												{[r.authors, r.year, r.venue].filter(Boolean).join(" · ")}
 											</div>
 										</td>
-										<td>
-											<span className={`rw-badge rw-badge-${tone(r.state)}`}>{LABELS[r.state]}</span>
-										</td>
+										<td>{stateMark(r.state)}</td>
 										<td className="rw-wide">
 											{r.has_pdf ? (
 												<a
@@ -426,7 +500,7 @@ export function RecordsView({
 							})}
 						</tbody>
 					</table>
-					{shown.length === 0 && <p className="rw-faint rw-pad">No records match this filter.</p>}
+					{shown.length === 0 && <p className="rw-faint rw-pad">No papers match this filter.</p>}
 				</div>
 				{selected &&
 					(narrow ? (
@@ -442,7 +516,7 @@ export function RecordsView({
 							{details}
 						</dialog>
 					) : (
-						<aside className="rw-drawer" aria-label="Record details">
+						<aside className="rw-drawer" aria-label="Paper details">
 							{details}
 						</aside>
 					))}
