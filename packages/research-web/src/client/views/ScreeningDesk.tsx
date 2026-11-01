@@ -332,6 +332,12 @@ export function ScreeningDesk({
 					value={note}
 					placeholder="Anything to remember about this decision"
 					onChange={e => setNote(e.target.value)}
+					onKeyDown={e => {
+						// A note is the last thing typed before an exclusion is saved; Enter finishes it.
+						if (e.key !== "Enter" || !reasons || !confirmable) return;
+						e.preventDefault();
+						confirm();
+					}}
 				/>
 			</label>
 			{error !== null && <p className="rw-error rw-desk-error">{error}</p>}
