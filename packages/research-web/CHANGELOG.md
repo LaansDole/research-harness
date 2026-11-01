@@ -10,6 +10,8 @@
 - Added reading-list state filters with counts, search, keyboard triage and a record detail panel with abstract and screening rationale; review contents, citation previews and per-section Check; PRISMA SVG download.
 - Added a PRISMA strip in the header: identified, screened, sought, assessed and included counts for the viewed project, with what is still pending under each, and each one opens the reading list on that stage.
 - Added margin notes in a review: select a sentence on a wide screen and the Check claim action appears beside it, keeping the sentence marked until the request is sent.
+- Added a screening desk in the reading list: for any paper still waiting on a decision, Include, Exclude or Maybe (keys I, E and M) with a reason picked from your own criteria, saved through `review.py verdict` and marked `[researcher]`, then it moves on to the next undecided paper.
+- Added highlight words: keep an include and an exclude list per project — suggested from your criteria in one click — and they are marked in every title and abstract, green for include and vermilion underlined for exclude.
 
 ### Changed
 
@@ -23,6 +25,7 @@
 - The web UI now has its own look: deep-teal ink on cool paper (light) or soft charcoal (dark), hairline boxes and tabular counts, replacing the inherited cyan/pink theme.
 - The header strip marks the stage the reading list is filtered to, and its pending counts read as counts rather than italic asides.
 - In dark mode the PRISMA diagram sits on a paper card, dimmed so it is no longer the brightest thing on screen.
+- Buttons and help text name the action instead of the command — "Screen the 3 waiting papers", not `/screen` — and the views say papers, stage and project rather than records, state and slug; an empty chat on a project the agent is not on offers to make it active.
 
 ### Fixed
 
