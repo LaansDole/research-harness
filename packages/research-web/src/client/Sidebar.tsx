@@ -24,7 +24,7 @@ export function progress(counts: Record<string, number>): { done: number; total:
 	let total = 0;
 	for (const [state, n] of Object.entries(counts)) if (state !== "duplicate") total += n;
 	const done = (counts.included ?? 0) + (counts.screened_excluded ?? 0) + (counts.fulltext_excluded ?? 0);
-	return { done, total, label: total > 0 ? `${done} of ${total} screened` : "No records yet" };
+	return { done, total, label: total > 0 ? `${done} of ${total} screened` : "No papers yet" };
 }
 
 export function Sidebar(props: SidebarProps): ReactNode {
