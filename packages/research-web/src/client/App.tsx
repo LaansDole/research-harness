@@ -59,50 +59,111 @@ const [HASH_TAB = "", HASH_SLUG = ""] = (
 	location.hash.startsWith("#ref-") ? (sessionStorage.getItem(VIEW_KEY) ?? "") : decodeHash(location.hash.slice(1))
 ).split("/");
 
-/** Starter prompts; descriptions condensed from research/prompts/*.md frontmatter. */
-function starters(projects: readonly ProjectSummary[]): [string, string][] {
+interface Starter {
+	/** What the researcher is about to do, in her words; the command stays in `prefill`. */
+	title: string;
+	description: string;
+	prefill: string;
+}
+
+/** Starter actions; descriptions condensed from research/prompts/*.md frontmatter. */
+function starters(projects: readonly ProjectSummary[]): Starter[] {
 	const counts = projects.find(p => p.active)?.counts;
-	const out: [string, string][] = [];
+	const out: Starter[] = [];
 	if (projects.length === 0)
-		out.push(["/scope ", "Turn a fuzzy question into PCC/PICO with inclusion/exclusion criteria."]);
+		out.push({
+			title: "Scope a question",
+			description: "Turn a fuzzy question into PCC/PICO with inclusion and exclusion criteria.",
+			prefill: "/scope ",
+		});
 	if (counts) {
-		if (counts.identified > 0) out.push(["/screen", "Screen unscreened records against the PCC criteria."]);
+		if (counts.identified > 0)
+			out.push({
+				title: `Screen the ${counts.identified} waiting ${counts.identified === 1 ? "paper" : "papers"}`,
+				description: "Judge each paper's title and abstract against your PCC criteria.",
+				prefill: "/screen",
+			});
 		if (counts.screened_included > 0)
-			out.push(["/fulltext", "Retrieve full texts for screened-in records, open access first."]);
+			out.push({
+				title: "Retrieve full texts",
+				description: "Fetch the full text of every paper that passed title and abstract, open access first.",
+				prefill: "/fulltext",
+			});
 		if (counts.fulltext_retrieved > 0)
-			out.push(["/screen full-text", "Screen retrieved full texts against the criteria."]);
-		if (counts.included > 0) out.push(["/review", "Synthesize a cited review from the included papers."]);
+			out.push({
+				title: "Screen full texts",
+				description: "Judge the full texts you already have against your criteria.",
+				prefill: "/screen full-text",
+			});
+		if (counts.included > 0)
+			out.push({
+				title: "Write the review",
+				description: "Synthesize a cited review from the included papers.",
+				prefill: "/review",
+			});
 	}
-	out.push(["/find ", "Search arXiv, OpenAlex and the local PDF corpus; save deduped records."]);
-	out.push(["/import ", "Import RIS/BibTeX/CSV exports into the project."]);
-	out.push(["/litreview ", "Mini review: search, screen, fetch PDFs, synthesize with citations."]);
+	out.push({
+		title: "Find papers",
+		description: "Search arXiv, OpenAlex and your local PDF library; save what is new, without duplicates.",
+		prefill: "/find ",
+	});
+	out.push({
+		title: "Import references",
+		description: "Bring RIS, BibTeX or CSV exports from your reference manager into the project.",
+		prefill: "/import ",
+	});
+	out.push({
+		title: "Run a whole mini review",
+		description: "Search, screen, fetch PDFs and synthesize with citations, in one go.",
+		prefill: "/litreview ",
+	});
 	if (counts && progress(counts).total > 0)
-		out.push(["/prisma", "Redraw the PRISMA flow diagram from the review store."]);
+		out.push({
+			title: "Redraw the PRISMA diagram",
+			description: "Rebuild the flow diagram from your screening decisions.",
+			prefill: "/prisma",
+		});
 	return out.slice(0, 6);
 }
 
 function ChatEmpty({
 	projects,
+	viewed,
 	prefill,
+	onMakeActive,
 }: {
 	projects: readonly ProjectSummary[];
+	/** The project the other tabs are showing, which may not be the agent's. */
+	viewed: ProjectSummary | null;
 	prefill(text: string): void;
+	onMakeActive(slug: string): void;
 }): ReactNode {
 	const active = projects.find(p => p.active);
+	const papers = viewed === null ? 0 : progress(viewed.counts).total;
 	return (
 		<div className="rw-chat-empty">
 			<h2>What should we research?</h2>
-			<p className="rw-faint">
-				{active
-					? `Agent project: ${active.slug} · ${progress(active.counts).label}`
-					: "No research project yet. Start by scoping a question."}
-			</p>
+			{active ? (
+				<p className="rw-faint">
+					Agent project: {active.slug} · {progress(active.counts).label}
+				</p>
+			) : viewed === null ? (
+				<p className="rw-faint">No research project yet. Start by scoping a question.</p>
+			) : (
+				<p className="rw-faint">
+					You're viewing {viewed.slug} ({papers} {papers === 1 ? "paper" : "papers"}). Make it active to work on it
+					with the agent.{" "}
+					<button type="button" className="rw-link" onClick={() => onMakeActive(viewed.slug)}>
+						Make active
+					</button>
+				</p>
+			)}
 			<ul className="rw-starters">
-				{starters(projects).map(([command, description]) => (
-					<li key={command}>
-						<button type="button" onClick={() => prefill(command)}>
-							<code>{command.trim()}</code>
-							<span className="rw-faint">{description}</span>
+				{starters(projects).map(starter => (
+					<li key={starter.prefill}>
+						<button type="button" onClick={() => prefill(starter.prefill)}>
+							<span className="rw-starter-title">{starter.title}</span>
+							<span className="rw-faint">{starter.description}</span>
 						</button>
 					</li>
 				))}
@@ -283,6 +344,12 @@ export function App(): ReactNode {
 		requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>(".rw-chat textarea")?.focus());
 	}, []);
 
+	/** The one request that hands a project to the agent; the header and the empty chat share it. */
+	const makeActive = useCallback(
+		(target: string): void => prefill(`Switch the active project to ${target}`),
+		[prefill],
+	);
+
 	const send = (message: string, images: ImageContent[]): void => {
 		setDraft("");
 		setPrefilled(false);
@@ -410,7 +477,7 @@ export function App(): ReactNode {
 							(active ? (
 								<span className="rw-chip">Agent project</span>
 							) : (
-								<button type="button" onClick={() => prefill(`Switch the active project to ${slug}`)}>
+								<button type="button" onClick={() => makeActive(slug)}>
 									Make active
 								</button>
 							))}
@@ -454,7 +521,12 @@ export function App(): ReactNode {
 					<>
 						<div className="rw-transcript">
 							{chatEmpty ? (
-								<ChatEmpty projects={projects.data ?? []} prefill={prefill} />
+								<ChatEmpty
+									projects={projects.data ?? []}
+									viewed={viewed}
+									prefill={prefill}
+									onMakeActive={makeActive}
+								/>
 							) : (
 								<Transcript
 									entries={shownEntries}

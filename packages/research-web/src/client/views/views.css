@@ -792,6 +792,14 @@ dialog.rw-drawer {
 	cursor: not-allowed;
 }
 
+/* One Check claim at a time: where the margin note has room to sit beside the text, it owns the
+ * action and the toolbar copy would just be a second button for the same selection. */
+@media (min-width: 1100px) {
+	.rw-reviews:has(.rw-margin-note) .rw-check-claim {
+		display: none;
+	}
+}
+
 .rw-revise {
 	display: inline-flex;
 	gap: 6px;
