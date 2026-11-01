@@ -246,8 +246,9 @@ Everything you decide is written by the same `review.py verdict` the agent uses 
 machine, the history rows and the PRISMA counts cannot tell the difference, except that your
 rationales are tagged `[researcher]`, so the record shows "You decided". If a decision is not legal
 (`maybe` at the full-text stage, a paper already past that stage), the desk says so in one sentence
-and changes nothing. Where the agent already suggested a verdict, the desk shows it above the
-buttons so you can agree with it or overrule it.
+and changes nothing. Where the agent has already screened the paper its verdict is already
+recorded; the desk shows it above the buttons so you can confirm it or overrule it, and your
+decision replaces it as yours, with your reason.
 
 **Highlight words** (the button beside the search box) keeps an include list and an exclude list
 per project; press *Suggest from your criteria* to fill them from your `scope.md`, then edit
