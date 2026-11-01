@@ -214,19 +214,45 @@ The same research agent, in a browser tab instead of the terminal. The **Chat** 
 the TUI, and the sidebar on the left lists your projects with their screening progress, your
 past sessions, and the model. The other tabs show your work without typing commands: **Graph**
 (the paper graph), **Reviews** (your written reviews, with clickable citations), **Reading list**
-(every record with its verdict and PDF) and **PRISMA** (the flow diagram).
+(every paper with its verdict and PDF) and **PRISMA** (the flow diagram).
 
-The tabs only show; they never change your review. Buttons such as *Screen* or *Check claim*
-write a suggested message into the chat box, and nothing happens until you press Enter. Press
-Ctrl+C in the terminal where you started it to stop. Hard to read? The sun/moon button at the right
-of the top bar switches between light (the default) and dark; the choice is kept across restarts.
+Most tabs only show; buttons such as *Screen* or *Check claim* write a suggested message into the
+chat box, and nothing happens until you press Enter. The one exception is the screening desk below.
+Press Ctrl+C in the terminal where you started it to stop. Hard to read? The sun/moon button at the
+right of the top bar switches between light (the default) and dark; the choice is kept across
+restarts.
 
-Empty projects say so in grey with what to do next. A project with no records yet shows
-*No screening records in this project yet. Ask the agent to find or import papers, and the
-PRISMA diagram will appear here.* on the PRISMA tab. Red text means something actually
-failed; the UI never shows code or error dumps, and the technical detail goes to
-`~/.omp/logs/omp.<date>.log`. It runs only on your own machine (`127.0.0.1`) and needs the
-checkout's dependencies installed (`bun install` in the harness folder).
+Empty projects say so in grey with what to do next. A project with nothing in it yet shows
+*No papers yet — The PRISMA flow diagram draws itself once the project has papers to screen.* on
+the PRISMA tab. Red text means something actually failed; the UI never shows code or error dumps,
+and the technical detail goes to `~/.omp/logs/omp.<date>.log`. It runs only on your own machine
+(`127.0.0.1`) and needs the checkout's dependencies installed (`bun install` in the harness folder).
+
+#### Screen in the browser
+
+Open **Reading list** and click any paper that still needs a decision. Under its abstract is the
+screening desk:
+
+- **Include** (`I`), **Exclude** (`E`), **Maybe** (`M`) — the keys work anywhere in the list, as
+  long as you are not typing in the search box.
+- Exclude asks for a reason first: your project's own exclusion criteria are listed and numbered,
+  so `E`, then `3`, then Enter records that criterion as the reason. *Other…* lets you type one.
+- A note is optional on any verdict; one line about what you saw in the abstract.
+- Saving moves you to the next paper that still needs a decision, and the PRISMA strip at the top
+  updates as you go.
+
+Everything you decide is written by the same `review.py verdict` the agent uses — the state
+machine, the history rows and the PRISMA counts cannot tell the difference, except that your
+rationales are tagged `[researcher]`, so the record shows "You decided". If a decision is not legal
+(`maybe` at the full-text stage, a paper already past that stage), the desk says so in one sentence
+and changes nothing. Where the agent already suggested a verdict, the desk shows it above the
+buttons so you can agree with it or overrule it.
+
+**Highlight words** (the button beside the search box) keeps an include list and an exclude list
+per project; press *Suggest from your criteria* to fill them from your `scope.md`, then edit
+freely. Those words are marked in every title and abstract — green for include, vermilion with a
+dotted underline for exclude — so a 300-word abstract can be judged at a glance. They are a reading
+aid only: they never decide anything.
 
 ---
 

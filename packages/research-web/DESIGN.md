@@ -276,7 +276,7 @@ A cool, near-neutral paper-and-graphite palette with a single deep-teal ink and 
 - **Label** (400, 12px, tabular): strip labels, badges, verdict marks, metadata, context cluster, margin notes.
 - **Label – small** (400–600, 11px): pending counts, agent chip, composer hint.
 - **Section label** (600, 11px, 0.06em, uppercase): sidebar section headings (Projects, Sessions) only.
-- **Command** (mono, 600, teal): slash-command names on starter cards.
+- **Command** (mono, 600, teal): a literal command inside running copy (`research web` in the failure banner). Never an action label — buttons name the action in words.
 
 ### Named Rules
 **The Tabular Count Rule.** Every number a researcher compares down a column or across the strip uses tabular figures (`.rw-count`, strip, badges, table, status, chips). Review prose keeps proportional figures.
@@ -290,7 +290,7 @@ A fixed app shell: a 280px sidebar and a fluid work column (`grid-template-colum
 Spacing runs on 2/4/6/8/12/16 px for controls and rows, 20px between sidebar sections, 24–48px around empty states. Tap targets are at least 28px (icons) and 32px (chips, search, drawer controls).
 
 Responsive behaviour:
-- **< 1100px:** the margin column disappears; Check claim lives in the sticky toolbar only.
+- **< 1100px:** the margin column disappears; Check claim lives in the sticky toolbar only. At or above it, while a margin note is up, the toolbar's Check claim hides so one selection never offers the same button twice.
 - **< 900px:** the sidebar becomes an off-canvas drawer (min(300px, 85vw), overlay shadow, scrim, inert when closed); the PRISMA strip collapses to one unboxed line of Screened · Sought · Included with lowercase labels and no arrows or pending counts; the record detail opens as a full-screen native dialog; the review TOC becomes a `<details>` disclosure.
 - **< 640px:** wide table columns (PDF, actions) hide.
 - **< 600px:** the tab row scrolls with a 32px fade mask at its end; toasts move above the composer.
@@ -332,6 +332,24 @@ Small, diagram-like corners over hairline 1px borders: 4px for strip boxes, badg
 ### Verdict Marks (signature)
 - Inline highlighter strokes: 13px lucide icon (Check / X / CircleHelp) + the word, 12px ink on the lower-line band. Used for title/abstract and full-text verdicts in the drawer, and for a record's state wording in the table when a verdict exists. An unrecorded verdict renders as plain text with no band.
 
+### Screening Desk (signature)
+- Sits in the detail drawer above the agent's actions, for a paper that still needs a decision at its stage. A 12px muted stage line ("Title and abstract" / "Full text", with a link to the other stage when both apply), then the agent's standing suggestion as a verdict mark plus its confidence in 11px muted, then the three verdict buttons: Include, Exclude and Maybe, each a default button whose band (include green / exclude vermilion / maybe yellow) is drawn as a 3px `::before` stripe inside the left edge — the fill stays sheet-white so the row of buttons never reads as a block of colour. Maybe is absent at the full-text stage, where it is illegal.
+- Each button carries its shortcut as a `<kbd>`: 11px muted on the inset fill in a hairline box (`I`, `E`, `M`). The keys work from anywhere in the reading list unless focus is in a text field.
+- A saved verdict leaves the desk and reappears as a verdict mark with "You decided" or "The agent decided" above the rationale, clamped to three lines with a Show more disclosure.
+- A refusal from `review.py` prints as one plain err-coloured sentence under the buttons, and nothing moves.
+
+### Reason Picker
+- Exclude opens a list in place of the buttons: the project's own exclusion criteria first, then the PCC dimensions, "No abstract" and "Other…", each row numbered 1–9 in an 11px teal tabular prefix. Arrow keys move, a digit selects, Enter confirms, Escape returns to the buttons.
+- Below it, one optional note field (strong hairline, inset fill) and a Save / Cancel pair. "Other…" turns the note field into the reason itself.
+
+### Criteria Marks
+- The project's highlight words marked in titles and abstracts: include words get the green highlighter band, exclude words the vermilion band plus a dotted underline, so the two never depend on colour alone. 2px corners, 1px horizontal padding, text colour unchanged.
+- An 11px muted legend ("green = include words, vermilion underlined = exclude words") sits above the abstract whenever the paper has any mark.
+
+### Highlight-Words Editor
+- Opens under the Reading list toolbar: a raised 6px-cornered box with a strong hairline, holding one row per list (96px muted label, then the words as chips in their own band colour with an 18px remove button, then an inset text field — type and press Enter to add).
+- Actions are plain buttons: Suggest from your criteria, Save, Cancel. The toolbar button that opens it carries a Highlighter icon and the total word count as a muted tabular chip.
+
 ### Stage Badges
 - Small 4px-cornered labels (2px 8px, 12px) for records without a verdict: teal wash with teal-mixed text, or the muted variant (selected wash, muted text) for duplicates.
 
@@ -341,7 +359,7 @@ Small, diagram-like corners over hairline 1px borders: 4px for strip boxes, badg
 
 ### Cards / Containers
 - **Next-step callout:** 6px corners, strong hairline, sheet-white, 8px 12px padding; the count is in teal 600 tabular.
-- **Starter cards:** default buttons laid out in an auto-fill grid (min 240px), 10px 12px padding, teal mono command name over muted description.
+- **Starter cards:** default buttons laid out in an auto-fill grid (min 240px), 10px 12px padding, a 600 ink action title over a muted description; the slash command is the prefill, never the label.
 - **Detail drawer:** no card; a hairline left border, sticky header on the page ground, 1.5 line height.
 - **PRISMA card:** 8px corners, 16px padding, `--rw-paper` fill (white light, off-white #e3e5e2 dark) with its own border; the server SVG inside is dimmed in dark mode. The SVG's own drawing is out of scope.
 

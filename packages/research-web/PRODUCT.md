@@ -16,7 +16,7 @@ research web is the browser workspace of research-harness: one command (`researc
 
 ## Positioning
 
-PRISMA counts are derived from per-record states in the project's review store, never typed by hand, so the diagram reconciles by construction. Screening verdicts carry a recorded reason and confidence and follow the researcher's PCC method. The agent does the work, but buttons in the research views only write a request into the message box; nothing changes the project until the researcher sends it.
+PRISMA counts are derived from per-record states in the project's review store, never typed by hand, so the diagram reconciles by construction. Screening verdicts carry a recorded reason and confidence and follow the researcher's PCC method. The agent does the work, and buttons in the research views write a request into the message box so nothing changes until the researcher sends it — except screening, which the researcher can do herself from the reading list, through the same `review.py verdict` the agent uses.
 
 ## Operating Context
 
@@ -27,7 +27,7 @@ PRISMA counts are derived from per-record states in the project's review store, 
 
 ## Capabilities and Constraints
 
-- Local only: binds `127.0.0.1`, reads projects read-only; only the agent writes to a project.
+- Local only: binds `127.0.0.1`. The only project writes it makes are screening verdicts (through the `review.py` CLI, never SQL) and the per-project highlight-word list; everything else is read-only and goes through the agent.
 - Open-access PDFs only; no shadow libraries, no scraping of paywalled databases.
 - The client reuses collab-web's theme tokens and transcript components (`packages/collab-web`, inherited from upstream oh-my-pi). Research-web-specific styling must live in `packages/research-web` so upstream syncs stay conflict-free.
 - Light and dark themes exist today, toggled by a sun/moon button and remembered.
