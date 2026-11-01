@@ -515,6 +515,7 @@ export function App(): ReactNode {
 							prefill={prefill}
 							state={recordsChip}
 							onState={setRecordsChip}
+							onChanged={() => setTick(t => t + 1)}
 						/>
 					),
 				)}

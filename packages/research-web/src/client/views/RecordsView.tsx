@@ -1,9 +1,11 @@
 import { BookOpen, ChevronDown, ChevronUp, X } from "lucide-react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import type { RecordRow, ReviewState } from "../../data";
+import type { Criteria } from "../../criteria";
+import type { RecordRow, ReviewState, Stage } from "../../data";
 import { problemClass, useFetch } from "../api";
 import { EmptyState } from "./EmptyState";
+import { needsDecision, RecordedVerdict, ScreeningDesk, stagesFor } from "./ScreeningDesk";
 import { VerdictMark } from "./VerdictMark";
 import "./views.css";
 
@@ -83,6 +85,7 @@ export function RecordsView({
 	prefill,
 	state,
 	onState,
+	onChanged,
 }: {
 	slug: string;
 	/** Whether `slug` is the agent's active project: slash commands only target that one. */
@@ -92,13 +95,18 @@ export function RecordsView({
 	/** The state filter, owned by App so the header's PRISMA strip can set and mark it. */
 	state: ReviewState | "";
 	onState(state: ReviewState | ""): void;
+	/** A decision was saved: counts, the PRISMA strip and this list all need re-reading. */
+	onChanged(): void;
 }): ReactNode {
 	const base = `/api/projects/${encodeURIComponent(slug)}`;
 	// ponytail: one fetch, client-side filtering; server ?state= filtering if a project reaches thousands of rows.
 	const records = useFetch<RecordRow[]>(`${base}/records`, tick);
+	const criteria = useFetch<Criteria>(`${base}/criteria`, tick);
 	const [query, setQuery] = useState("");
 	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const [open, setOpen] = useState(false);
+	/** Shown after the last paper in this list took its decision: there is nowhere to advance to. */
+	const [allDecided, setAllDecided] = useState<string | null>(null);
 	const tbodyRef = useRef<HTMLTableSectionElement | null>(null);
 	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const restoreFocus = useRef(false);
@@ -115,6 +123,7 @@ export function RecordsView({
 		setQuery("");
 		setSelectedId(null);
 		setOpen(false);
+		setAllDecided(null);
 	}, [slug]);
 
 	// Mobile: a native modal dialog, so everything behind the sheet is inert and Tab stays inside it.
@@ -228,6 +237,24 @@ export function RecordsView({
 	// The roving tab stop: the selected row, else the first.
 	const tabStop = selectedIndex >= 0 ? selectedIndex : 0;
 
+	/**
+	 * A decision was saved: refresh the counts and move to the next paper in this list that still
+	 * waits for one at the same stage, so a screening run is one keystroke per paper.
+	 */
+	const onSaved = (saved: RecordRow, stage: Stage): void => {
+		onChanged();
+		const at = shown.findIndex(r => r.id === saved.id);
+		const next =
+			shown.slice(at + 1).find(r => needsDecision(r, stage)) ??
+			shown.slice(0, Math.max(at, 0)).find(r => needsDecision(r, stage));
+		if (next === undefined) {
+			setAllDecided(`All ${shown.length} papers in this list are decided.`);
+			return;
+		}
+		setAllDecided(null);
+		setSelectedId(next.id);
+	};
+
 	const details = selected && (
 		<>
 			<div className="rw-drawer-head">
@@ -273,6 +300,8 @@ export function RecordsView({
 					</a>
 				</p>
 			)}
+			<ScreeningDesk slug={slug} record={selected} criteria={criteria.data} onSaved={onSaved} />
+			{allDecided !== null && <p className="rw-notice rw-desk-done">{allDecided}</p>}
 			<div className="rw-drawer-actions">
 				{selected.has_pdf ? (
 					<a
@@ -295,21 +324,15 @@ export function RecordsView({
 				))}
 			</div>
 			<dl>
-				{selected.ta_verdict && (
-					<>
-						<dt>
-							Title/abstract verdict: <VerdictMark verdict={selected.ta_verdict} />
-						</dt>
-						<dd>{selected.ta_rationale ?? "No rationale recorded."}</dd>
-					</>
+				{selected.ta_verdict && !stagesFor(selected.state).includes("ta") && (
+					<RecordedVerdict
+						label="Title/abstract"
+						verdict={selected.ta_verdict}
+						rationale={selected.ta_rationale}
+					/>
 				)}
-				{selected.ft_verdict && (
-					<>
-						<dt>
-							Full-text verdict: <VerdictMark verdict={selected.ft_verdict} />
-						</dt>
-						<dd>{selected.ft_rationale ?? "No rationale recorded."}</dd>
-					</>
+				{selected.ft_verdict && !stagesFor(selected.state).includes("ft") && (
+					<RecordedVerdict label="Full text" verdict={selected.ft_verdict} rationale={selected.ft_rationale} />
 				)}
 				{selected.exclusion_reason &&
 					selected.exclusion_reason !== selected.ta_rationale &&
