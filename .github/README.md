@@ -91,7 +91,7 @@ In the terminal, three more:
 
 | Command | In plain words |
 |---|---|
-| `research update` | Get the latest version of the harness from GitHub and reinstall it (`research update --check` only tells you what is new) |
+| `research update` | Get the latest version of the harness from GitHub, reinstall it and list what changed (`research update --check` only tells you what is new) |
 | `research doctor` | Check the install and say what is missing |
 | `research version` | Show which harness version you have (`research/VERSION` plus the commit) |
 | `research web` | Open the workspace in your browser |

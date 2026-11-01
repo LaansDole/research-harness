@@ -87,7 +87,7 @@ bash research/tests/run.sh
 Last three lines should be:
 
 ```text
-Ran 129 tests in 10.144s
+Ran 133 tests in 10.144s
 
 OK (skipped=1)
 ```
@@ -105,13 +105,19 @@ research update           # get it, then reinstall and health-check
 `main`), re-runs `setup.sh` so the prompts, agents and plugin match the new code, and finishes
 with `research doctor`. It re-runs the install even when the checkout is already current, so it is
 also the command to run when `doctor` says installed files differ from the checkout.
-The last line is `research-harness updated <old> -> <new> (N new commits)`,
+It then prints `research-harness updated <old> -> <new> (N new commits)`,
 where `<old>`/`<new>` read `<version> (<sha>)` (`unknown` for commits that predate `research/VERSION`) and
 `N` counts only work that is actually new to your copy (after a history rebuild, commits you
-already have are not counted again). `research version` prints the installed version.
-The version lives in `research/VERSION`, not in a git tag, because the daily rebase sync rewrites
-`main` and would leave tags behind; bump it by editing the file when you cut a release.
+already have are not counted again), followed by a `What's new:` list of the `research/CHANGELOG.md`
+sections newer than your old version (`--check` shows the same list). `research version` prints
+the installed version.
 Run it from anywhere; it works on the folder you cloned.
+The version lives in `research/VERSION`, not in a git tag, because the daily rebase sync rewrites
+`main` and would leave tags behind. To cut a release, run **Actions → Research release** with the
+new `x.y.z`: it moves the `## [Unreleased]` entries of `research/CHANGELOG.md` under
+`## [x.y.z] - <date>`, sets `research/VERSION`, and opens a `release/x.y.z` PR; merging it is the
+release. It refuses an empty `[Unreleased]` or a version that is not newer. Same edit locally:
+`bash .github/scripts/research-release.sh x.y.z`.
 
 It stops and changes nothing when:
 
@@ -565,7 +571,7 @@ Measured 2026-09-19 on a 50-record PubMed CSV and a 43-PDF folder.
 | Checkpoint | Expected | What a different result means |
 |---|---|---|
 | `bash bin/research doctor` | no `FAIL` line, `status: ready` (the Jev line is a `warn` until you opt in) | a `FAIL` line → `research update` |
-| `bash research/tests/run.sh` | `Ran 129 tests ... OK (skipped=1)`, ~10 s | the scripts are broken; stop and report |
+| `bash research/tests/run.sh` | `Ran 133 tests ... OK (skipped=1)`, ~10 s | the scripts are broken; stop and report |
 | `/import` of the 50-record CSV | `added: 50, already_present: 0, skipped: 0` | `skipped > 0` → rows without a title; `added: 0` → format not recognised |
 | Re-run the same `/import` | `added: 0, already_present: 50` | duplicates created → the store is not idempotent; report it |
 | Field completeness after CSV import | 50 titles, 48 DOIs, 50 years, **0 abstracts, 0 journals** | more abstracts is better (a richer export); fewer titles means a parsing problem |
