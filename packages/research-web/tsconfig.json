@@ -6,6 +6,7 @@
 		"test/reducer.test.ts",
 		"test/transcript-session.test.tsx",
 		"test/verdict.test.ts",
+		"test/screening-keys.test.ts",
 		"node_modules"
 	]
 }
