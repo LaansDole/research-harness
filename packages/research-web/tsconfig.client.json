@@ -4,7 +4,8 @@
     "src/client",
     "test/reducer.test.ts",
     "test/transcript-session.test.tsx",
-    "test/verdict.test.ts"
+    "test/verdict.test.ts",
+    "test/screening-keys.test.ts"
   ],
   "compilerOptions": {
     "jsx": "react-jsx",
