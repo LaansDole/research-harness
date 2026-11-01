@@ -117,7 +117,8 @@ const SUGGEST_LIMIT = 12;
  */
 export function suggestTerms(criteria: Criteria): { include: string[]; exclude: string[] } {
 	const seen = new Set<string>();
-	const include = terms([criteria.question, ...Object.values(criteria.pcc), ...criteria.inclusion], seen).slice(
+	// PCC first: the dimensions are the criteria themselves; the question only fills what is left.
+	const include = terms([...Object.values(criteria.pcc), ...criteria.inclusion, criteria.question], seen).slice(
 		0,
 		SUGGEST_LIMIT,
 	);

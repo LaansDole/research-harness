@@ -448,6 +448,117 @@
 	margin: 0;
 }
 
+/* Criteria highlights: the researcher's own words marked in titles and abstracts.
+ * Exclude marks also carry a dotted underline, so the two never depend on colour alone. */
+.rw-hl {
+	border-radius: 2px;
+	padding: 0 1px;
+	background: var(--rw-hl);
+	color: var(--rw-hl-fg);
+}
+
+.rw-hl-include {
+	--rw-hl: var(--rw-hl-include);
+}
+
+.rw-hl-exclude {
+	--rw-hl: var(--rw-hl-exclude);
+	text-decoration: underline dotted;
+	text-underline-offset: 2px;
+}
+
+.rw-hl-legend {
+	margin: 0 0 4px;
+	color: var(--fg-muted);
+	font-size: 11px;
+}
+
+/* The highlight-words editor, under the reading-list toolbar. */
+.rw-app .rw-words-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.rw-words {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0 0 8px;
+	padding: 8px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-raised);
+}
+
+.rw-words p {
+	margin: 0;
+}
+
+.rw-words-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 8px;
+}
+
+.rw-words-label {
+	flex: none;
+	min-width: 96px;
+	color: var(--fg-muted);
+	font-size: 12px;
+}
+
+.rw-words-chips {
+	display: flex;
+	flex: 1;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	min-width: 0;
+}
+
+.rw-word {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 2px 1px 6px;
+	border-radius: var(--radius-sm);
+	background: var(--rw-hl);
+	color: var(--rw-hl-fg);
+	font-size: 12px;
+}
+
+.rw-word .rw-icon {
+	min-width: 18px;
+	min-height: 18px;
+	padding: 2px;
+	color: var(--rw-hl-fg);
+}
+
+.rw-word .rw-icon:hover {
+	background: color-mix(in srgb, var(--fg) 14%, transparent);
+}
+
+.rw-words-chips input {
+	flex: 1;
+	min-width: 160px;
+	padding: 4px 8px;
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius);
+	background: var(--bg-inset);
+	color: var(--fg);
+	font: inherit;
+	font-size: 13px;
+}
+
+.rw-words-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
 .rw-drawer {
 	flex: 0 0 min(380px, 42%);
 	overflow: auto;
