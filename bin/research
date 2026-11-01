@@ -60,6 +60,19 @@ harness_version() {
 	echo "$v${sha:+ ($sha)}"
 }
 
+# Print the research/CHANGELOG.md sections at <new rev> that are newer than
+# <old version>, skipping sections with no entries. An old version with no
+# heading (e.g. "unknown") prints every section: all of it is new to that copy.
+# ponytail: [Unreleased] reprints in full while VERSION is unchanged; fine until releases get frequent.
+changelog_since() {
+	git -C "$RESEARCH_HARNESS_HOME" show "$2:research/CHANGELOG.md" 2>/dev/null | awk -v stop="## [$1]" '
+		function flush() { if (body) printf "%s", buf; buf = ""; body = 0 }
+		index($0, stop) == 1 { exit }
+		/^## \[/ { flush(); insec = 1 }
+		insec { buf = buf $0 "\n"; if ($0 !~ /^#/ && $0 ~ /[^[:space:]]/) body = 1 }
+		END { flush() }' || true
+}
+
 doctor() {
 	# All locals: doctor runs inside update(), where a leaked `count` would
 	# overwrite the new-commit count printed after it.
@@ -332,9 +345,13 @@ update() {
 	else
 		count="$(git -C "$repo" rev-list --count --cherry-pick --right-only "$old...$new")"
 	fi
+	local oldver changes
+	oldver="$(harness_version "$old")"
+	changes="$(changelog_since "${oldver%% (*}" "$new")"
 	if [ "$check" -eq 1 ]; then
-		echo "$count new commits available ($(harness_version "$old") -> $(harness_version "$new")) — run 'research update' to install them."
+		echo "$count new commits available ($oldver -> $(harness_version "$new")) — run 'research update' to install them."
 		echo "  latest: $(git -C "$repo" log -1 --format=%s "$new")"
+		[ -z "$changes" ] || printf '\nWhat'\''s new:\n%s\n' "$changes"
 		return 0
 	fi
 
@@ -392,7 +409,8 @@ update() {
 
 	local rc=0
 	doctor || rc=$?
-	echo "research-harness updated $(harness_version "$old") -> $(harness_version "$new") ($count new commits)"
+	echo "research-harness updated $oldver -> $(harness_version "$new") ($count new commits)"
+	[ -z "$changes" ] || printf '\nWhat'\''s new:\n%s\n' "$changes"
 	return "$rc"
 }
 
